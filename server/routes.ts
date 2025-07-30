@@ -265,6 +265,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Content Generation from Uploaded Transcript
+  app.post("/api/generate-content-from-upload", async (req, res) => {
+    try {
+      const { transcript, contentType = 'text' } = req.body;
+      
+      if (!transcript || transcript.trim().length === 0) {
+        return res.status(400).json({ 
+          message: "Transcript is required for content generation" 
+        });
+      }
+      
+      console.log('Generating content from upload');
+      console.log('Content type:', contentType);
+      console.log('Transcript length:', transcript.length);
+      console.log('Sample content:', transcript.substring(0, 200) + '...');
+      
+      // Generate content using Claude with the uploaded transcript
+      const content = await generateLinkedInContent(transcript, contentType);
+      
+      // Return the generated content directly (not stored in database)
+      res.json({
+        id: `upload-${Date.now()}`,
+        title: content.title,
+        content: content,
+        type: contentType,
+        platform: "linkedin",
+        createdAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Content generation from upload error:', error);
+      res.status(500).json({ message: "Failed to generate content from upload" });
+    }
+  });
+
   // AI-Powered Content Generation with Claude
   app.post("/api/sessions/:sessionId/generate-content", async (req, res) => {
     try {

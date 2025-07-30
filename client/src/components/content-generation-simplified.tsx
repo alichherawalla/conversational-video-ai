@@ -13,6 +13,9 @@ export default function ContentGeneration() {
   const [selectedSession, setSelectedSession] = useState<string>("");
   const [viewingContent, setViewingContent] = useState<ContentPiece | null>(null);
   const [viewingClip, setViewingClip] = useState<Clip | null>(null);
+  const [uploadMode, setUploadMode] = useState(false);
+  const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
+  const [uploadedTranscript, setUploadedTranscript] = useState<string>("");
   
   const queryClient = useQueryClient();
 
@@ -50,6 +53,52 @@ export default function ContentGeneration() {
     },
   });
 
+  const uploadContentMutation = useMutation({
+    mutationFn: async ({ transcript, contentType }: { transcript: string; contentType: string }) => {
+      const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
+      return res.json();
+    }
+  });
+
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedVideo(file);
+    }
+  };
+
+  const handleTranscriptUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedTranscript(e.target?.result as string);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const generateFromUpload = async (contentType: string) => {
+    if (!uploadedTranscript.trim()) {
+      alert("Please provide a transcript (either upload a file or paste text)");
+      return;
+    }
+    
+    try {
+      const result = await uploadContentMutation.mutateAsync({ 
+        transcript: uploadedTranscript, 
+        contentType 
+      });
+      // Show the generated content in viewing modal
+      if (result && result.content) {
+        setViewingContent(result);
+      }
+    } catch (error) {
+      console.error("Failed to generate content from upload:", error);
+      alert("Failed to generate content. Please try again.");
+    }
+  };
+
   const selectedSessionData = sessions.find(s => s.id === selectedSession);
 
   const formatTime = (seconds: number) => {
@@ -58,33 +107,152 @@ export default function ContentGeneration() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!selectedSession) {
+  if (!selectedSession && !uploadMode) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-neutral-800 mb-4">Content Generation</h2>
           <p className="text-neutral-600 mb-6">
-            Select a completed interview session to generate LinkedIn content and video clips
+            Generate LinkedIn content from existing sessions or upload your own content
           </p>
           
-          <Card className="max-w-md mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {/* Existing Sessions */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">From Existing Session</h3>
+                <Select value={selectedSession} onValueChange={setSelectedSession}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a session" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sessions
+                      .filter(session => session.status === "completed")
+                      .map((session) => (
+                        <SelectItem key={session.id} value={session.id}>
+                          {session.title} - {formatTime(session.duration || 0)}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
+            {/* Upload Mode */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Upload Content</h3>
+                <Button 
+                  onClick={() => setUploadMode(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Upload Video & Transcript
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (uploadMode) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-neutral-800">Upload Content</h2>
+          <Button variant="outline" onClick={() => setUploadMode(false)}>
+            Back to Sessions
+          </Button>
+        </div>
+
+        <div className="space-y-6">
+          {/* Video Upload */}
+          <Card>
             <CardContent className="p-6">
-              <Select value={selectedSession} onValueChange={setSelectedSession}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sessions
-                    .filter(session => session.status === "completed")
-                    .map((session) => (
-                      <SelectItem key={session.id} value={session.id}>
-                        {session.title} - {formatTime(session.duration || 0)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <h3 className="font-semibold mb-4">Video Upload (Optional)</h3>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleVideoUpload}
+                className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
+              />
+              {uploadedVideo && (
+                <p className="text-sm text-green-600 mt-2">
+                  Video uploaded: {uploadedVideo.name}
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {/* Transcript Upload */}
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-4">Transcript (Required)</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Upload Transcript File</label>
+                  <input
+                    type="file"
+                    accept=".txt,.md,.doc,.docx"
+                    onChange={handleTranscriptUpload}
+                    className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200"
+                  />
+                </div>
+                
+                <div className="text-center text-neutral-500 text-sm">or</div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Paste Transcript Text</label>
+                  <textarea
+                    value={uploadedTranscript}
+                    onChange={(e) => setUploadedTranscript(e.target.value)}
+                    placeholder="Paste your interview transcript here..."
+                    className="w-full h-48 p-3 border border-neutral-300 rounded-lg resize-none"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Content Generation */}
+          {uploadedTranscript && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Generate Content</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Button 
+                    onClick={() => generateFromUpload("carousel")}
+                    disabled={uploadContentMutation.isPending}
+                    className="bg-primary text-white hover:bg-primary/90"
+                  >
+                    <Images className="mr-2" size={16} />
+                    LinkedIn Carousel
+                  </Button>
+                  <Button 
+                    onClick={() => generateFromUpload("image")}
+                    disabled={uploadContentMutation.isPending}
+                    className="bg-primary text-white hover:bg-primary/90"
+                  >
+                    <Image className="mr-2" size={16} />
+                    Image Post
+                  </Button>
+                  <Button 
+                    onClick={() => generateFromUpload("text")}
+                    disabled={uploadContentMutation.isPending}
+                    className="bg-primary text-white hover:bg-primary/90"
+                  >
+                    <AlignLeft className="mr-2" size={16} />
+                    Text Post
+                  </Button>
+                </div>
+                {uploadContentMutation.isPending && (
+                  <p className="text-sm text-neutral-600 mt-2">Generating content...</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     );
