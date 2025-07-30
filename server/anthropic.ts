@@ -197,96 +197,115 @@ Generate in JSON format:
 }`;
         } else {
           // Generate 3 carousel posts
-          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Each should focus on different aspects.
+          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Focus on detailed, comprehensive slide content.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct carousel posts with 5-6 slides each:
+Create 3 distinct carousel posts with detailed slides and captions:
+
+Requirements:
+- Each slide should have 40-60 words of substantive content
+- Include engaging introduction slide and compelling conclusion
+- Provide detailed caption for the carousel post
+- Use authentic information from the transcript only
 
 Generate in JSON format:
 {
   "posts": [
     {
-      "title": "Strategic Business Insights",
+      "title": "Strategic Business Insights Carousel",
+      "detailed_caption": "Behind-the-scenes look at how [main topic from interview] transformed [specific outcome]. Swipe through for the complete breakdown of the strategy, insights, and results that led to [specific achievement]. ➡️\\n\\n#Strategy #BusinessInsights #Leadership",
       "slides": [
-        {"icon": "🎯", "title": "Main Challenge", "content": "Key challenge or topic from interview"},
-        {"icon": "💡", "title": "Critical Insight", "content": "Primary learning from conversation"},
-        {"icon": "📊", "title": "Data Analysis", "content": "Analytical approach mentioned"},
-        {"icon": "🚀", "title": "Implementation", "content": "Practical application discussed"},
-        {"icon": "📈", "title": "Results", "content": "Outcomes or impact from interview"}
+        {"icon": "🎯", "title": "The Challenge", "content": "Detailed description of the main business challenge or situation discussed in the interview, including context and initial assumptions that were made"},
+        {"icon": "💡", "title": "The Breakthrough", "content": "Specific insight or realization that changed everything, including how it was discovered and what made it different from previous approaches"},
+        {"icon": "📊", "title": "Data-Driven Approach", "content": "Detailed explanation of the analytical methods, tools, or data sources used to validate the insight and make informed decisions"},
+        {"icon": "🚀", "title": "Implementation Strategy", "content": "Step-by-step breakdown of how the insight was turned into action, including specific tactics and timeline from the interview"},
+        {"icon": "📈", "title": "Measurable Results", "content": "Concrete outcomes and metrics achieved, including specific numbers, percentages, or measurable improvements mentioned"},
+        {"icon": "🔑", "title": "Key Takeaways", "content": "Actionable lessons others can apply, including what worked, what didn't, and practical next steps for similar situations"}
       ],
-      "tags": ["#Strategy", "#Business", "#Insights"]
+      "tags": ["#Strategy", "#Business", "#Leadership", "#DataDriven"]
     },
     {
-      "title": "Practical Framework",
+      "title": "Practical Implementation Framework",
+      "detailed_caption": "The exact framework that led to [specific result from interview]. This isn't theory – it's the proven process that delivered [outcome]. Save this for your next [relevant situation]. 🔖\\n\\n#Framework #Implementation #BusinessStrategy", 
       "slides": [
-        {"icon": "🔍", "title": "Research Phase", "content": "How to approach similar situations"},
-        {"icon": "⚡", "title": "Key Method", "content": "Specific approach or tool mentioned"},
-        {"icon": "🎯", "title": "Target Focus", "content": "What to focus on first"},
-        {"icon": "📋", "title": "Process Steps", "content": "Step-by-step approach"},
-        {"icon": "✅", "title": "Validation", "content": "How to verify success"}
+        {"icon": "🔍", "title": "Discovery Phase", "content": "Comprehensive approach to research and initial analysis, including specific tools, methods, and sources used to gather insights"},
+        {"icon": "⚡", "title": "Core Methodology", "content": "Detailed explanation of the main approach or framework used, including why this method was chosen over alternatives"},
+        {"icon": "🎯", "title": "Priority Focus Areas", "content": "Specific areas identified as most important to address first, including criteria used for prioritization and resource allocation"},
+        {"icon": "📋", "title": "Step-by-Step Process", "content": "Detailed breakdown of the implementation sequence, including timelines, dependencies, and key milestones from the experience"},
+        {"icon": "✅", "title": "Success Metrics", "content": "Specific indicators and validation methods used to measure progress and confirm the approach was working effectively"},
+        {"icon": "🚀", "title": "Scale & Optimize", "content": "How to expand successful elements and continuously improve the process based on results and feedback"}
       ],
-      "tags": ["#Framework", "#Process", "#Implementation"]
+      "tags": ["#Framework", "#Process", "#Implementation", "#SystemicApproach"]
     },
     {
-      "title": "Lessons Learned",
+      "title": "Lessons from Experience",
+      "detailed_caption": "What [specific experience from interview] taught us about [main lesson]. These insights came from real challenges and real solutions. Thread below 👇\\n\\n#Experience #Lessons #BusinessLearning",
       "slides": [
-        {"icon": "📚", "title": "Background", "content": "Context from the interview"},
-        {"icon": "⚠️", "title": "Challenge", "content": "Main obstacle discussed"},
-        {"icon": "🔧", "title": "Solution", "content": "How the challenge was addressed"},
-        {"icon": "💪", "title": "Key Learning", "content": "Main takeaway from experience"},
-        {"icon": "🌟", "title": "Application", "content": "How others can apply this"}
+        {"icon": "📚", "title": "The Starting Point", "content": "Initial situation and context that led to this experience, including original goals, assumptions, and market conditions"},
+        {"icon": "⚠️", "title": "Unexpected Challenges", "content": "Specific obstacles encountered that weren't anticipated, including how they were identified and initial impact on plans"},
+        {"icon": "🔧", "title": "Solution Development", "content": "Detailed process of how challenges were addressed, including creative solutions, resources required, and decision-making process"},
+        {"icon": "💪", "title": "Critical Learning", "content": "Most important insight gained from this experience that changed perspective or approach for future situations"},
+        {"icon": "🌟", "title": "Practical Application", "content": "Specific ways others can apply these lessons to their own situations, including common pitfalls to avoid"},
+        {"icon": "🎯", "title": "Your Next Step", "content": "Clear, actionable recommendation for readers based on this experience, including how to get started"}
       ],
-      "tags": ["#Lessons", "#Experience", "#Learning"]
+      "tags": ["#Lessons", "#Experience", "#Learning", "#PracticalWisdom"]
     }
   ]
-}`;
+}
+
+Each slide should provide substantial value with specific details from the interview content.`;
         }
         break;
         
       case 'image':
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Focus on caption content and visual direction for graphics/illustrations.
+          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Focus on detailed captions and comprehensive visual direction.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct image posts with detailed visual direction:
+Create 3 distinct image posts with compelling captions and detailed visual specifications:
 
-Requirements for each post:
-- Use direct, educational voice
-- Stick strictly to facts and insights from the transcript
-- Provide detailed illustration/graphics direction
-- Include engaging caption content
-- Professional tone suitable for LinkedIn
+Requirements:
+- Detailed, engaging captions with storytelling structure (hook, context, insight, call-to-action)
+- Comprehensive visual direction for graphic designers
+- Use only authentic content from the transcript
+- Professional LinkedIn tone
 
 Generate in JSON format:
 {
   "posts": [
     {
-      "title": "First image post with impactful insight",
-      "caption": "Engaging LinkedIn caption that tells the story and provides value to the audience",
-      "illustration_direction": "Detailed description of what the image/graphic should show - specific icons, layout, visual elements, colors, professional style (e.g., 'Clean minimal design with data visualization, professional blue/white color scheme, include key statistic in large bold text, small icons representing the process steps')",
-      "quote_text": "Key quote or statistic to highlight visually in the image",
-      "tags": ["#relevant", "#hashtags", "#insights"]
+      "title": "Quote-Focused Image Post",
+      "detailed_caption": "Hook: Opening line that captures attention and introduces the topic\\n\\nContext: Brief background setting up the situation from the interview\\n\\nInsight: Main lesson or breakthrough moment with specific details\\n\\nValue: What this means for the audience and why it matters\\n\\nCall-to-Action: Question or prompt encouraging engagement\\n\\nExample structure:\\n'The moment everything changed was when...\\n\\nWe thought we were building for X, but the data revealed Y.\\n\\nThis insight led to: [specific results from transcript]\\n\\nThe lesson? [key takeaway]\\n\\nWhat assumptions have you challenged in your business?'",
+      "illustration_direction": "Professional image concept: Background style (gradient, solid, pattern), main visual elements (icons, graphics, charts), text placement and hierarchy, color palette with specific hex codes, typography style (bold, clean, modern), visual metaphors or symbols, layout composition (centered, split-screen, layered), size specifications for key text elements",
+      "quote_overlay": "Most impactful quote or statistic from the interview to display prominently on the image",
+      "visual_elements": ["List of specific", "visual elements needed", "for the designer"],
+      "color_scheme": "Primary and secondary colors with purpose (e.g., 'Navy blue (#1B365D) for trust, Orange (#FF6B35) for energy, White (#FFFFFF) for clarity')",
+      "tags": ["#relevant", "#hashtags", "#from", "#content"]
     },
     {
-      "title": "Second image post with different angle",
-      "caption": "Different perspective or insight from the content with engaging storytelling",
-      "illustration_direction": "Visual concept for this variation - describe the graphic style, layout, color scheme, text placement, icons or visual elements needed",
-      "quote_text": "Another key insight or data point to emphasize visually",
-      "tags": ["#business", "#strategy", "#data"]
+      "title": "Data-Driven Results Post", 
+      "detailed_caption": "Hook: Statistical or numerical opening that grabs attention\\n\\nStory: The journey from problem to solution with specific timeline\\n\\nProcess: How the breakthrough was achieved with actionable steps\\n\\nResults: Concrete outcomes with numbers and impact\\n\\nApplication: How others can apply this learning\\n\\nEngagement: Question asking for similar experiences or results",
+      "illustration_direction": "Data visualization focused design: Chart or graph style needed, key metrics to highlight visually, infographic elements, before/after comparison layout, progress indicators, numerical callouts, professional business aesthetic, clean data presentation style",
+      "quote_overlay": "Key statistic or result to feature prominently (e.g., '300% revenue growth' or specific metric from interview)",
+      "visual_elements": ["Specific data points", "to visualize", "graphical elements needed"],
+      "color_scheme": "Data-friendly palette that enhances readability and professionalism",
+      "tags": ["#data", "#results", "#growth", "#metrics"]
     },
     {
-      "title": "Third image post with actionable takeaway",
-      "caption": "Third perspective or practical takeaway with call to action",
-      "illustration_direction": "Third visual approach - specify design elements, layout style, color palette, typography emphasis, visual metaphors or icons",
-      "quote_text": "Third key point or actionable insight to highlight",
-      "tags": ["#actionable", "#lessons", "#growth"]
+      "title": "Process/Framework Post",
+      "detailed_caption": "Hook: Challenge or problem introduction\\n\\nFramework: Step-by-step breakdown of the approach used\\n\\nImplementation: How it was executed with specific examples\\n\\nOutcome: What changed as a result\\n\\nActionable advice: Clear next steps for the audience\\n\\nCommunity question: Invite others to share their approaches",
+      "illustration_direction": "Process-focused visual design: Step-by-step layout, numbered sequence, flowchart elements, process arrows or connectors, before/after states, clear hierarchy for each step, professional framework presentation, clean structured layout",
+      "quote_overlay": "Key insight about the process or methodology that worked",
+      "visual_elements": ["Process steps", "connecting elements", "outcome indicators"],
+      "color_scheme": "Sequential color progression or consistent brand colors that guide the eye through the process",
+      "tags": ["#process", "#framework", "#strategy", "#implementation"]
     }
   ]
 }
 
-Focus on authentic insights and provide specific visual direction for graphic designers.`;
+Make each caption 150-300 words with clear structure and compelling storytelling.`;
         } else {
           prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
