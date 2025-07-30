@@ -177,17 +177,19 @@ export async function generateLinkedInContent(conversationText: string, contentT
       case 'carousel':
         if (generateAll) {
           // Generate 3 carousel posts
-          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Focus on detailed, comprehensive slide content.
+          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use an educative and direct tone throughout.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct carousel posts with detailed slides and captions:
+Create 3 distinct carousel posts with detailed slides and comprehensive captions:
 
 Requirements:
-- Each slide should have 40-60 words of substantive content
+- Each slide should have 40-60 words of substantive, educative content
 - Include engaging introduction slide and compelling conclusion
-- Provide detailed caption for the carousel post
+- Create detailed, comprehensive caption (200-400 words) with educative and direct tone
+- Break down complex concepts into clear, actionable insights
 - Use authentic information from the transcript only
+- Structure captions with: Hook → Context → Key Lessons → Practical Value → Call-to-Action
 
 Generate in JSON format:
 {
@@ -237,23 +239,23 @@ Generate in JSON format:
 Each slide should provide substantial value with specific details from the interview content.`;
         } else {
           // Generate single carousel post
-          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided.
+          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Use an educative and direct tone.
 
 Interview Content: "${conversationText}"
 
-Create a professional carousel with 6 slides and detailed caption:
+Create a professional carousel with 6 slides and comprehensive, detailed caption:
 
 Generate in JSON format:
 {
-  "title": "Professional carousel title",
-  "detailed_caption": "Engaging caption that introduces the carousel content with hook and call-to-action",
+  "title": "Professional carousel title based on main topic",
+  "detailed_caption": "🎯 Here's what I learned about [specific topic from interview]\\n\\nThe context: [Brief background from actual interview]\\n\\nKey insights that matter:\\n\\n→ [First major insight with specific details]\\n→ [Second practical lesson with examples]\\n→ [Third actionable takeaway]\\n\\nWhy this matters to you: [Direct explanation of practical value for audience]\\n\\nThe bottom line: [Clear, direct summary of main point]\\n\\nWhat's your experience with [relevant topic question]? Share your thoughts below. 👇",
   "slides": [
-    {"icon": "🎯", "title": "Slide Title", "content": "40-60 words of substantive content for this slide"},
-    {"icon": "💡", "title": "Key Learning", "content": "40-60 words of detailed insight from the interview"},
-    {"icon": "📊", "title": "Analysis", "content": "40-60 words of analytical insight from the content"},
-    {"icon": "🚀", "title": "Implementation", "content": "40-60 words of practical application"},
-    {"icon": "📈", "title": "Results", "content": "40-60 words about outcomes or impact"},
-    {"icon": "🔑", "title": "Key Takeaway", "content": "40-60 words of actionable advice"}
+    {"icon": "🎯", "title": "The Situation", "content": "40-60 words setting up the specific challenge or topic from the interview with clear context"},
+    {"icon": "💡", "title": "Key Discovery", "content": "40-60 words explaining the main insight or breakthrough with specific details from interview"},
+    {"icon": "📊", "title": "The Approach", "content": "40-60 words describing the methodology or strategy used with practical details"},
+    {"icon": "🚀", "title": "Implementation", "content": "40-60 words about how this was put into practice with specific actions taken"},
+    {"icon": "📈", "title": "Results", "content": "40-60 words about measurable outcomes and impact achieved from the experience"},
+    {"icon": "🔑", "title": "Your Takeaway", "content": "40-60 words of actionable advice readers can immediately apply to their situation"}
   ],
   "tags": ["#Business", "#Insights", "#Strategy", "#Leadership"]
 }`;
@@ -262,15 +264,16 @@ Generate in JSON format:
         
       case 'image':
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Focus on detailed captions and comprehensive visual direction.
+          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use an educative and direct tone with comprehensive captions.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct image posts with compelling captions and detailed visual specifications:
+Create 3 distinct image posts with detailed captions and comprehensive visual specifications:
 
 Requirements:
-- Detailed, engaging captions with storytelling structure (hook, context, insight, call-to-action)
-- Comprehensive visual direction for graphic designers
+- Detailed, educative captions (200-400 words) with clear structure: Hook → Context → Key Insight → Practical Value → Call-to-Action
+- Direct, educational tone that breaks down complex concepts
+- Comprehensive visual direction for graphic designers with specific design elements
 - Use only authentic content from the transcript
 - Professional LinkedIn tone
 
@@ -310,7 +313,7 @@ Generate in JSON format:
 Make each caption 150-300 words with clear structure and compelling storytelling.`;
         } else {
           // Generate single image post
-          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided.
+          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Use an educative and direct tone.
 
 Interview Content: "${conversationText}"
 
@@ -318,16 +321,16 @@ Create a detailed image post with comprehensive caption and visual direction:
 
 Generate in JSON format:
 {
-  "title": "Engaging image post title",
-  "detailed_caption": "Hook: Opening line that captures attention\\n\\nContext: Brief background from the interview\\n\\nInsight: Main lesson with specific details\\n\\nValue: What this means for the audience\\n\\nCall-to-Action: Question encouraging engagement",
-  "illustration_direction": "Professional image concept: Background style, main visual elements, text placement, color palette with hex codes, typography style, visual metaphors, layout composition",
-  "quote_overlay": "Most impactful quote or statistic to display prominently",
-  "visual_elements": ["Specific visual elements", "needed for designer"],
-  "color_scheme": "Primary and secondary colors with purpose",
-  "tags": ["#relevant", "#hashtags", "#from", "#content"]
+  "title": "Engaging image post title based on main insight",
+  "detailed_caption": "🎯 [Main insight or learning from interview]\\n\\nHere's the situation: [Brief context from the actual interview content]\\n\\nThe breakthrough came when [specific moment or realization from interview]\\n\\nWhat this taught us:\\n→ [First key lesson with details]\\n→ [Second practical insight]\\n→ [Third actionable takeaway]\\n\\nWhy this matters to you: [Direct explanation of practical value]\\n\\nThe reality is: [Clear, direct statement about the main point]\\n\\nHow do you approach [relevant challenge]? Let me know in the comments.",
+  "illustration_direction": "Professional image concept with specific details: Background style (gradient/solid/textured), main visual elements (charts/icons/graphics), text placement hierarchy, color palette with exact hex codes, typography style (modern/bold/clean), visual metaphors that support the message, layout composition (centered/asymmetrical/layered), size specifications for key elements",
+  "quote_overlay": "Most impactful quote, statistic, or key insight from the interview to display prominently",
+  "visual_elements": ["Specific visual elements needed", "iconography requirements", "data visualization needs"],
+  "color_scheme": "Primary and secondary colors with purpose and meaning (e.g., 'Blue #1B365D for trust, Orange #FF6B35 for energy')",
+  "tags": ["#relevant", "#hashtags", "#from", "#interview", "#content"]
 }
 
-Make the caption 150-300 words with clear structure.`;
+Make the caption 200-350 words with clear educative structure and direct tone.`;
         }
         break;
         
@@ -343,35 +346,30 @@ Create 3 distinct text posts:
 3. Focus on results, outcomes, or impact achieved
 
 Requirements for each post:
-- Use direct, educational voice
+- Use direct, educational voice with detailed, comprehensive content
+- Create detailed posts (200-400 words) with clear structure and practical value
 - Stick strictly to facts and insights from the transcript
-- Share genuine learnings or perspectives mentioned
+- Share genuine learnings or perspectives mentioned with specific examples
 - No fictional examples or fabricated statistics
-- Professional tone suitable for LinkedIn
+- Professional but educative tone suitable for LinkedIn
 
 Generate in JSON format:
 {
   "posts": [
     {
-      "title": "First text post focusing on lessons",
-      "hook": "Opening line highlighting key insight",
-      "body": "Educational content about lessons learned",
-      "callToAction": "Question about insights or learnings",
-      "tags": ["#lessons", "#insights", "#learning"]
+      "title": "Key Lessons from [Specific Topic]",
+      "detailed_content": "🎯 [Main lesson from interview]\\n\\nThe situation: [Context from interview]\\n\\nHere's what I learned:\\n\\n→ [First specific lesson with details from interview]\\n→ [Second insight with practical examples]\\n→ [Third actionable takeaway]\\n\\nWhy this matters: [Direct explanation of practical value]\\n\\nThe bottom line: [Clear summary of main insight]\\n\\nWhat's been your experience with [relevant topic]? Share your thoughts.",
+      "tags": ["#lessons", "#insights", "#learning", "#experience"]
     },
     {
-      "title": "Second text post about process",
-      "hook": "Opening line about methodology",
-      "body": "Educational content about approach/process",
-      "callToAction": "Question about process or methodology",
-      "tags": ["#process", "#methodology", "#approach"]
+      "title": "The Process That Worked",
+      "detailed_content": "💡 Here's the approach that led to [specific outcome from interview]\\n\\nThe challenge: [Problem statement from interview]\\n\\nOur process:\\n\\n1. [First step with details]\\n2. [Second step with specifics]\\n3. [Third step with results]\\n\\nWhat made this work: [Key success factors from interview]\\n\\nThe results: [Specific outcomes mentioned]\\n\\nYour situation might be different, but these principles apply: [Actionable advice]\\n\\nHow do you approach [relevant process question]?",
+      "tags": ["#process", "#methodology", "#strategy", "#implementation"]
     },
     {
-      "title": "Third text post about results",
-      "hook": "Opening line about outcomes",
-      "body": "Educational content about results/impact",
-      "callToAction": "Question about results or impact",
-      "tags": ["#results", "#impact", "#outcomes"]
+      "title": "Real Results from [Specific Approach]",
+      "detailed_content": "📈 [Specific result or outcome from interview]\\n\\nThe journey: [Timeline or process from interview]\\n\\nWhat we achieved:\\n\\n✓ [First specific result with details]\\n✓ [Second measurable outcome]\\n✓ [Third concrete achievement]\\n\\nThe key factors: [What made the difference based on interview]\\n\\nLessons for you: [Practical applications for audience]\\n\\nMost importantly: [Main takeaway or insight]\\n\\nWhat results are you working toward? Let's discuss.",
+      "tags": ["#results", "#impact", "#outcomes", "#success"]
     }
   ]
 }
@@ -379,20 +377,20 @@ Generate in JSON format:
 Focus on authentic insights and real experiences shared in the interview.`;
         } else {
           // Generate single text post
-          prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided.
+          prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided. Use an educative and direct tone.
 
 Interview Content: "${conversationText}"
 
-Create a professional text post with detailed structure:
+Create a comprehensive text post with detailed, educative content:
 
 Generate in JSON format:
 {
-  "title": "Professional text post title",
-  "hook": "Opening line that captures attention and introduces the topic",
-  "body": "Main educational content with insights and specific details from the interview",
-  "callToAction": "Question or prompt encouraging engagement",
-  "tags": ["#relevant", "#hashtags", "#from", "#content"]
-}`;
+  "title": "Professional text post title based on main insight",
+  "detailed_content": "🎯 [Main insight or lesson from interview]\\n\\nThe situation: [Context and background from interview]\\n\\nHere's what happened: [Specific details and timeline from interview]\\n\\nKey insights:\\n\\n→ [First major lesson with specific details]\\n→ [Second practical insight with examples]\\n→ [Third actionable takeaway]\\n\\nWhy this matters: [Direct explanation of practical value for audience]\\n\\nThe bottom line: [Clear, direct summary of main point]\\n\\nWhat's your experience with [relevant question based on content]? Share your thoughts below.",
+  "tags": ["#relevant", "#hashtags", "#from", "#interview", "#content"]
+}
+
+Make the content 200-400 words with clear educative structure, practical value, and direct tone.`;
         }
         break;
     }
@@ -402,7 +400,7 @@ Generate in JSON format:
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 800,
+      max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
