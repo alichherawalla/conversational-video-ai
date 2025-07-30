@@ -16,6 +16,8 @@ export default function RecordingStudio() {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
   const [transcriptionText, setTranscriptionText] = useState<string>("");
+  const [generatedContent, setGeneratedContent] = useState<any>(null);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [sessionSettings, setSessionSettings] = useState({
     title: "Entrepreneurial Journey",
     topic: "Entrepreneurial Journey",
@@ -160,7 +162,34 @@ export default function RecordingStudio() {
   const handleClearVideo = () => {
     setVideoBlob(null);
     setTranscriptionText("");
+    setGeneratedContent(null);
     console.log("Video blob cleared");
+  };
+
+  const handleGenerateContent = async () => {
+    if (!currentSession) return;
+    
+    setIsGeneratingContent(true);
+    try {
+      // Generate social media clips
+      const clipsResponse = await apiRequest("POST", `/api/sessions/${currentSession}/generate-clips`);
+      const clips = await clipsResponse.json();
+      
+      // Generate LinkedIn content
+      const linkedinResponse = await apiRequest("POST", `/api/sessions/${currentSession}/generate-content`, {
+        contentType: 'linkedin'
+      });
+      const linkedinContent = await linkedinResponse.json();
+      
+      setGeneratedContent({
+        clips,
+        linkedin: linkedinContent
+      });
+    } catch (error) {
+      console.error('Content generation failed:', error);
+    } finally {
+      setIsGeneratingContent(false);
+    }
   };
 
   return (
@@ -175,7 +204,10 @@ export default function RecordingStudio() {
         />
         
         {currentSession && (
-          <ConversationFlow sessionId={currentSession} />
+          <ConversationFlow 
+            sessionId={currentSession} 
+            transcribedText={transcriptionText}
+          />
         )}
         
         {/* Voice Transcription Display */}
@@ -329,20 +361,29 @@ export default function RecordingStudio() {
                     </div>
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={handleDownloadVideo}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Download className="mr-2" size={16} />
+                        Download Video
+                      </Button>
+                      <Button
+                        onClick={handleClearVideo}
+                        variant="outline"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                     <Button
-                      onClick={handleDownloadVideo}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      onClick={handleGenerateContent}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={!currentSession}
                     >
-                      <Download className="mr-2" size={16} />
-                      Download Video
-                    </Button>
-                    <Button
-                      onClick={handleClearVideo}
-                      variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                    >
-                      <Trash2 size={16} />
+                      Generate Social Media Content
                     </Button>
                   </div>
                 </div>

@@ -8,9 +8,10 @@ import type { Conversation } from "@shared/schema";
 
 interface ConversationFlowProps {
   sessionId: string;
+  transcribedText?: string;
 }
 
-export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
+export default function ConversationFlow({ sessionId, transcribedText }: ConversationFlowProps) {
   const [userResponse, setUserResponse] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
@@ -76,8 +77,19 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
     }
   }, [sessionId, conversations.length]);
 
-  const handleSubmitResponse = async () => {
-    if (!userResponse.trim()) return;
+  // Auto-process transcribed text when it becomes available
+  useEffect(() => {
+    if (transcribedText && transcribedText.trim() && currentQuestionId) {
+      setUserResponse(transcribedText);
+      // Auto-submit the transcribed response
+      setTimeout(() => {
+        handleSubmitResponse();
+      }, 1000);
+    }
+  }, [transcribedText]);
+
+  const handleSubmitTranscribedResponse = async (text: string) => {
+    if (!text.trim()) return;
 
     setIsTyping(true);
     
@@ -85,13 +97,13 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
     await createConversationMutation.mutateAsync({
       sessionId,
       type: "user_response",
-      content: userResponse,
+      content: text,
       timestamp: Math.floor(Date.now() / 1000),
     });
 
     // Get AI feedback with enhanced analysis
     const feedback = await getAIFeedbackMutation.mutateAsync({ 
-      response: userResponse, 
+      response: text, 
       sessionId,
       questionId: currentQuestionId || undefined
     });
@@ -126,7 +138,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
           questionId: currentQuestionId, 
           followUpIndex,
           baseQuestion: currentBaseQuestion,
-          userResponse: userResponse
+          userResponse: text
         });
         setFollowUpIndex(prev => prev + 1);
         setIsTyping(false);
@@ -139,7 +151,11 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
         setIsTyping(false);
       }, 2000);
     }
+  };
 
+  const handleSubmitResponse = async () => {
+    if (!userResponse.trim()) return;
+    await handleSubmitTranscribedResponse(userResponse);
     setUserResponse("");
   };
 

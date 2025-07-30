@@ -95,7 +95,7 @@ Generate only the follow-up question text, no other content.`;
       model: DEFAULT_MODEL_STR,
     });
 
-    const question = response.content[0].text.trim();
+    const question = (response.content[0] as any).text.trim();
     
     return {
       question,
@@ -141,7 +141,7 @@ Be encouraging but honest. Flag responses that are too short (under 20 words), t
       model: DEFAULT_MODEL_STR,
     });
 
-    const analysisText = response.content[0].text.trim();
+    const analysisText = (response.content[0] as any).text.trim();
     
     try {
       const analysis = JSON.parse(analysisText);
@@ -233,7 +233,7 @@ Make it story-driven and conversation-starting for professional audience.`;
       model: DEFAULT_MODEL_STR,
     });
 
-    const contentText = response.content[0].text.trim();
+    const contentText = (response.content[0] as any).text.trim();
     
     try {
       return JSON.parse(contentText);
@@ -290,7 +290,7 @@ Requirements:
       model: DEFAULT_MODEL_STR,
     });
 
-    const clipsText = response.content[0].text.trim();
+    const clipsText = (response.content[0] as any).text.trim();
     
     try {
       const result = JSON.parse(clipsText);

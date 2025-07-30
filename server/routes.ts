@@ -332,14 +332,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Use Claude to generate optimized clips
-      const clipSuggestions = await generateVideoClips(conversationText, session.duration);
+      const clipSuggestions = await generateVideoClips(conversationText, session.duration || 180);
       
       // Save clips to database
       const savedClips = [];
       for (const clipData of clipSuggestions) {
         const clip = await storage.createClip({
           sessionId,
-          ...clipData
+          title: clipData.title,
+          platform: 'social_media',
+          description: clipData.description,
+          startTime: clipData.startTime,
+          endTime: clipData.endTime,
+          socialScore: clipData.socialScore
         });
         savedClips.push(clip);
       }

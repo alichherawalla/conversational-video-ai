@@ -48,7 +48,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           console.log("Starting transcription...");
           const result = await transcribeAudio(blob);
           console.log("Transcription result:", result.text);
-          onTranscriptionComplete?.(result.text);
+          if (result.text && result.text.trim()) {
+            onTranscriptionComplete?.(result.text);
+          }
         } else if (blob.size === 0) {
           console.warn("Audio blob is empty, skipping transcription");
         }
