@@ -169,13 +169,19 @@ Be encouraging but honest. Flag responses that are too short (under 20 words), t
   }
 }
 
-export async function generateLinkedInContent(conversationText: string, contentType: 'carousel' | 'image' | 'text'): Promise<any> {
+export async function generateLinkedInContent(conversationText: string, contentType: 'carousel' | 'image' | 'text', variation: number = 1): Promise<any> {
   try {
     let prompt: string;
     
     switch (contentType) {
       case 'carousel':
-        prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        const variationPrompts = [
+          "Create a LinkedIn carousel post focusing on the main insights and learnings",
+          "Create a LinkedIn carousel post highlighting the practical applications and outcomes", 
+          "Create a LinkedIn carousel post emphasizing the strategic decisions and thought process"
+        ];
+        
+        prompt = `${variationPrompts[variation - 1] || variationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -185,6 +191,7 @@ Requirements:
 - Create 5-7 professional slides based on actual content
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
+- Variation ${variation}: Focus on different angles or aspects of the same content
 
 Generate in JSON format:
 {
@@ -203,7 +210,13 @@ Focus on authentic insights and real experiences shared in the interview.`;
         break;
         
       case 'image':
-        prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        const imageVariationPrompts = [
+          "Create a LinkedIn image post featuring the most impactful quote or insight",
+          "Create a LinkedIn image post highlighting a key statistic or breakthrough moment",
+          "Create a LinkedIn image post emphasizing the main challenge and solution discussed"
+        ];
+        
+        prompt = `${imageVariationPrompts[variation - 1] || imageVariationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -213,6 +226,7 @@ Requirements:
 - Extract one powerful real quote or insight
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
+- Variation ${variation}: Focus on different aspects or angles of the content
 
 Generate in JSON format:
 {
@@ -227,7 +241,13 @@ Focus on one powerful authentic insight that would work well as an image post.`;
         break;
         
       case 'text':
-        prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        const textVariationPrompts = [
+          "Create a LinkedIn text post focusing on the key lessons learned and insights gained",
+          "Create a LinkedIn text post highlighting the process, methodology, or approach discussed",
+          "Create a LinkedIn text post emphasizing the results, outcomes, or impact achieved"
+        ];
+        
+        prompt = `${textVariationPrompts[variation - 1] || textVariationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -237,6 +257,7 @@ Requirements:
 - Share genuine learnings or perspectives mentioned
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
+- Variation ${variation}: Focus on different perspectives or elements of the same content
 
 Generate in JSON format:
 {

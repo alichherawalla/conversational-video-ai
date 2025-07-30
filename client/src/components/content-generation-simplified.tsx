@@ -64,9 +64,13 @@ export default function ContentGeneration() {
       const contentTypes = ['carousel', 'image', 'text'];
       
       for (const contentType of contentTypes) {
-        // Generate 3 posts of each type
+        // Generate 3 posts of each type with variations
         for (let i = 0; i < 3; i++) {
-          const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
+          const res = await apiRequest("POST", "/api/generate-content-from-upload", { 
+            transcript, 
+            contentType, 
+            variation: i + 1 // Add variation number to make posts different
+          });
           const result = await res.json();
           results.push(result);
           
@@ -359,6 +363,159 @@ export default function ContentGeneration() {
                 </div>
               </CardContent>
             </Card>
+          )}
+          
+          {/* Upload Content Viewing Modal */}
+          {viewingContent && (
+            <Dialog open={!!viewingContent} onOpenChange={() => setViewingContent(null)}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between">
+                    <span>{viewingContent.title}</span>
+                    <Badge variant="secondary">{viewingContent.type.toUpperCase()}</Badge>
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  {viewingContent.type === "carousel" && (
+                    <div>
+                      <h4 className="font-semibold mb-3">LinkedIn Carousel Post</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+                        {Array.isArray((viewingContent.content as any)?.slides) && 
+                          (viewingContent.content as any).slides.map((slide: any, idx: number) => (
+                            <div key={idx} className="bg-gradient-to-br from-primary to-secondary text-white p-3 rounded-lg text-center min-h-[120px] flex flex-col justify-center">
+                              <div className="text-2xl mb-1">{slide.icon}</div>
+                              <div className="text-sm font-semibold mb-1">{slide.title}</div>
+                              <div className="text-xs opacity-90">{slide.content}</div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                      <div className="bg-neutral-50 p-4 rounded-lg">
+                        <h5 className="font-medium mb-2">Post Caption:</h5>
+                        <p className="text-sm text-neutral-700 mb-3">{(viewingContent.content as any)?.title}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingContent.type === "image" && (
+                    <div>
+                      <h4 className="font-semibold mb-3">LinkedIn Image Post</h4>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-gradient-to-br from-primary to-secondary text-white p-8 rounded-lg text-center min-h-[300px] flex flex-col justify-center">
+                          <blockquote className="text-lg font-medium mb-4">
+                            "{(viewingContent.content as any)?.quote || 'Key insight from interview'}"
+                          </blockquote>
+                          <div className="text-sm opacity-90">
+                            - {(viewingContent.content as any)?.attribution || 'Interview Insight'}
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <h5 className="font-medium mb-2">Post Content:</h5>
+                            <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.insight}</p>
+                          </div>
+                          <div>
+                            <h5 className="font-medium mb-2">Statistics:</h5>
+                            <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.statistic || 'Based on interview insights'}</p>
+                          </div>
+                          <div>
+                            <h5 className="font-medium mb-2">Hashtags:</h5>
+                            <div className="flex flex-wrap gap-1">
+                              {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewingContent.type === "text" && (
+                    <div>
+                      <h4 className="font-semibold mb-3">LinkedIn Text Post</h4>
+                      <div className="bg-neutral-50 p-6 rounded-lg space-y-4">
+                        <div>
+                          <h5 className="font-medium mb-2 text-primary">Hook:</h5>
+                          <p className="text-neutral-700">{(viewingContent.content as any)?.hook}</p>
+                        </div>
+                        <div>
+                          <h5 className="font-medium mb-2 text-primary">Body:</h5>
+                          <div className="text-neutral-700 whitespace-pre-line">{(viewingContent.content as any)?.body}</div>
+                        </div>
+                        <div>
+                          <h5 className="font-medium mb-2 text-primary">Call to Action:</h5>
+                          <p className="text-neutral-700">{(viewingContent.content as any)?.callToAction}</p>
+                        </div>
+                        <div>
+                          <h5 className="font-medium mb-2 text-primary">Hashtags:</h5>
+                          <div className="flex flex-wrap gap-1">
+                            {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Upload Clip Viewing Modal */}
+          {viewingClip && (
+            <Dialog open={!!viewingClip} onOpenChange={() => setViewingClip(null)}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between">
+                    <span>{viewingClip.title}</span>
+                    <Badge variant="secondary">CLIP</Badge>
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div className="bg-neutral-900 aspect-video rounded-lg flex items-center justify-center relative">
+                    <Button className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30">
+                      <Play className="text-white ml-1" size={24} />
+                    </Button>
+                    <div className="absolute bottom-3 left-3 bg-black/50 text-white text-sm px-3 py-1 rounded">
+                      {formatTime(viewingClip.startTime)} - {formatTime(viewingClip.endTime)}
+                    </div>
+                    <div className="absolute bottom-3 right-3 bg-black/50 text-white text-sm px-3 py-1 rounded">
+                      {formatTime(viewingClip.endTime - viewingClip.startTime)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <h5 className="font-medium mb-1">Description:</h5>
+                      <p className="text-sm text-neutral-700">{viewingClip.description}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium mb-1">Social Media Score:</h5>
+                        <div className="flex items-center">
+                          <div className="w-24 bg-neutral-200 rounded-full h-2 mr-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full" 
+                              style={{ width: `${viewingClip.socialScore}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-medium">{viewingClip.socialScore}/100</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>

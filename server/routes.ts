@@ -268,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Content Generation from Uploaded Transcript
   app.post("/api/generate-content-from-upload", async (req, res) => {
     try {
-      const { transcript, contentType = 'text' } = req.body;
+      const { transcript, contentType = 'text', variation = 1 } = req.body;
       
       if (!transcript || transcript.trim().length === 0) {
         return res.status(400).json({ 
@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Sample content:', transcript.substring(0, 200) + '...');
       
       // Generate content using Claude with the uploaded transcript
-      const content = await generateLinkedInContent(transcript, contentType);
+      const content = await generateLinkedInContent(transcript, contentType, variation);
       
       // Return the generated content directly (not stored in database)
       res.json({
