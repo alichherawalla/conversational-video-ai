@@ -41,6 +41,7 @@ export default function ContentGeneration() {
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate clips query to refresh the display
       queryClient.invalidateQueries({ queryKey: ["/api/sessions", selectedSession, "clips"] });
     },
   });
@@ -637,6 +638,13 @@ export default function ContentGeneration() {
             </Button>
           </div>
           
+          {clips.length === 0 && !generateClipsMutation.isPending && (
+            <div className="text-center py-8 text-neutral-500">
+              <p className="mb-2">No video clips generated yet</p>
+              <p className="text-sm">Generate clips to create short, shareable video segments with timestamps</p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {clips.map((clip) => (
               <div key={clip.id} className="border border-neutral-200 rounded-lg overflow-hidden">
@@ -688,6 +696,12 @@ export default function ContentGeneration() {
             </h3>
             
             <div className="space-y-4">
+              {contentPieces.filter(cp => cp.type === "carousel").length === 0 && !generateContentMutation.isPending && (
+                <div className="text-center py-4 text-neutral-500 text-sm">
+                  No carousel posts yet. Generate to create professional slide content.
+                </div>
+              )}
+              
               {contentPieces
                 .filter(cp => cp.type === "carousel")
                 .slice(0, 2)
@@ -744,6 +758,12 @@ export default function ContentGeneration() {
             </h3>
             
             <div className="space-y-4">
+              {contentPieces.filter(cp => cp.type === "image").length === 0 && !generateContentMutation.isPending && (
+                <div className="text-center py-4 text-neutral-500 text-sm">
+                  No image posts yet. Generate to create quote cards and visual content.
+                </div>
+              )}
+              
               {contentPieces
                 .filter(cp => cp.type === "image")
                 .slice(0, 2)
@@ -787,6 +807,12 @@ export default function ContentGeneration() {
             </h3>
             
             <div className="space-y-4">
+              {contentPieces.filter(cp => cp.type === "text").length === 0 && !generateContentMutation.isPending && (
+                <div className="text-center py-4 text-neutral-500 text-sm">
+                  No text posts yet. Generate to create engaging LinkedIn stories.
+                </div>
+              )}
+              
               {contentPieces
                 .filter(cp => cp.type === "text")
                 .slice(0, 2)

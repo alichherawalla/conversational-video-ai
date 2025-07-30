@@ -407,18 +407,36 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
       console.log('Conversation text length:', conversationText.length);
       console.log('Sample content:', conversationText.substring(0, 200) + '...');
       
-      const content = await generateLinkedInContent(conversationText, contentType);
+      const content = await generateLinkedInContent(conversationText, contentType, true);
       
-      // Save to database
-      const contentPiece = await storage.createContentPiece({
-        sessionId,
-        type: contentType,
-        title: content.title || 'Generated Content',
-        content: content,
-        platform: 'linkedin'
-      });
-      
-      res.json(contentPiece);
+      // Check if we got multiple posts (new batch generation)
+      if (content.posts && Array.isArray(content.posts)) {
+        // Save all posts to database
+        const savedPosts = [];
+        for (const post of content.posts) {
+          const contentPiece = await storage.createContentPiece({
+            sessionId,
+            type: contentType,
+            title: post.title || 'Generated Content',
+            content: post,
+            platform: 'linkedin'
+          });
+          savedPosts.push(contentPiece);
+        }
+        
+        res.json({ posts: savedPosts });
+      } else {
+        // Single post (legacy support)
+        const contentPiece = await storage.createContentPiece({
+          sessionId,
+          type: contentType,
+          title: content.title || 'Generated Content',
+          content: content,
+          platform: 'linkedin'
+        });
+        
+        res.json(contentPiece);
+      }
     } catch (error) {
       console.error('Content generation error:', error);
       res.status(500).json({ message: "Failed to generate content" });
@@ -461,10 +479,44 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
         return res.status(404).json({ message: "Session not found" });
       }
       
-      const conversationText = conversations
-        .filter(c => c.type === 'user_response')
-        .map(c => c.content)
-        .join(' ');
+      // Use fullTranscript if available, otherwise build from conversations
+      let conversationText = session.fullTranscript || '';
+      
+      if (!conversationText.trim()) {
+        // Fallback to building from conversations
+        const conversationPairs: Array<{question: string; response: string}> = [];
+        const questionsMap = new Map<number, string>();
+        
+        // First, map questions by timestamp
+        conversations
+          .filter(c => c.type === 'ai_question')
+          .forEach(q => {
+            questionsMap.set(q.timestamp, q.content);
+          });
+        
+        // Then build Q&A pairs
+        conversations
+          .filter(c => c.type === 'user_response')
+          .forEach(response => {
+            // Find the most recent question before this response
+            const questionTimestamps = Array.from(questionsMap.keys()).filter(t => t <= response.timestamp);
+            if (questionTimestamps.length > 0) {
+              const questionTimestamp = Math.max(...questionTimestamps);
+              const question = questionsMap.get(questionTimestamp);
+              
+              if (question) {
+                conversationPairs.push({
+                  question,
+                  response: response.content
+                });
+              }
+            }
+          });
+        
+        conversationText = conversationPairs
+          .map(pair => `Q: ${pair.question}\nA: ${pair.response}`)
+          .join('\n\n');
+      }
       
       if (!conversationText.trim()) {
         return res.status(400).json({ message: "No conversation content found" });
