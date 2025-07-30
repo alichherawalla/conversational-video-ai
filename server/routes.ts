@@ -174,15 +174,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.status(404).json({ message: "Follow-up question not found" });
         }
       } else {
-        // Select primary question
-        const question = questionId ? await storage.getQuestion(questionId) : null;
-        
-        if (!question) {
-          const questions = await storage.getQuestions();
-          const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+        // Select primary question - either specific or next unasked question
+        if (questionId) {
+          // Return specific requested question
+          const question = await storage.getQuestion(questionId);
+          if (!question) {
+            return res.status(404).json({ message: "Question not found" });
+          }
           
-          if (!randomQuestion) {
-            // Generate AI question as fallback
+          res.json({
+            question: question.primary,
+            questionId: question.id,
+            followUps: [question.followUp1, question.followUp2].filter(Boolean),
+            isFollowUp: false
+          });
+        } else {
+          // Get next unasked question from the session
+          const conversations = await storage.getConversationsBySession(sessionId);
+          const askedQuestionIds = conversations
+            .filter(c => c.type === 'ai_question')
+            .map(c => c.questionId)
+            .filter(Boolean);
+          
+          const allQuestions = await storage.getQuestions();
+          const unaskedQuestions = allQuestions.filter(q => !askedQuestionIds.includes(q.id));
+          
+          if (unaskedQuestions.length === 0) {
+            // All questions have been asked, generate AI question as fallback
             const aiQuestion = await generateAIQuestion(sessionId);
             return res.json({
               question: aiQuestion.question,
@@ -192,17 +210,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
+          // Select the first unasked question (sequential progression)
+          const nextQuestion = unaskedQuestions[0];
+          
           res.json({
-            question: randomQuestion.primary,
-            questionId: randomQuestion.id,
-            followUps: [randomQuestion.followUp1, randomQuestion.followUp2].filter(Boolean),
-            isFollowUp: false
-          });
-        } else {
-          res.json({
-            question: question.primary,
-            questionId: question.id,
-            followUps: [question.followUp1, question.followUp2].filter(Boolean),
+            question: nextQuestion.primary,
+            questionId: nextQuestion.id,
+            followUps: [nextQuestion.followUp1, nextQuestion.followUp2].filter(Boolean),
             isFollowUp: false
           });
         }

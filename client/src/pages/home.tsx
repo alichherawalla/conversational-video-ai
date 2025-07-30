@@ -29,7 +29,9 @@ export default function Home() {
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
                   <Video className="text-white" size={16} />
                 </div>
-                <h1 className="text-xl font-bold text-neutral-800">VideoAI Pro</h1>
+                <h1 className="text-xl font-bold text-neutral-800">
+                  VideoAI Pro
+                </h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -46,7 +48,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
         <div className="mb-8">
           <nav className="flex space-x-8 border-b border-neutral-200">
@@ -60,9 +62,15 @@ export default function Home() {
                     : "border-transparent text-neutral-500 hover:text-neutral-700"
                 }`}
               >
-                {tab.id === "recording" && <Video className="mr-2 inline" size={16} />}
-                {tab.id === "questions" && <i className="fas fa-question-circle mr-2"></i>}
-                {tab.id === "content" && <i className="fas fa-share-alt mr-2"></i>}
+                {tab.id === "recording" && (
+                  <Video className="mr-2 inline" size={16} />
+                )}
+                {tab.id === "questions" && (
+                  <i className="fas fa-question-circle mr-2"></i>
+                )}
+                {tab.id === "content" && (
+                  <i className="fas fa-share-alt mr-2"></i>
+                )}
                 {tab.id === "library" && <i className="fas fa-folder mr-2"></i>}
                 {tab.label}
               </button>

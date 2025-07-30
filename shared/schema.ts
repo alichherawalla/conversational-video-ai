@@ -28,6 +28,7 @@ export const questions = pgTable("questions", {
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: varchar("session_id").notNull().references(() => sessions.id, { onDelete: "cascade" }),
+  questionId: varchar("question_id").references(() => questions.id), // track which question this relates to
   type: varchar("type").notNull(), // ai_question, user_response, ai_feedback
   content: text("content").notNull(),
   timestamp: integer("timestamp").notNull(), // seconds from start

@@ -28,7 +28,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   });
 
   const createConversationMutation = useMutation({
-    mutationFn: async (data: { sessionId: string; type: string; content: string; timestamp: number }) => {
+    mutationFn: async (data: { sessionId: string; type: string; content: string; timestamp: number; questionId?: string }) => {
       const res = await apiRequest("POST", "/api/conversations", data);
       return res.json();
     },
@@ -60,6 +60,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         type: "ai_question",
         content: data.question,
         timestamp: Math.floor(Date.now() / 1000),
+        questionId: data.questionId,
       });
     },
   });
@@ -114,6 +115,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       type: "user_response",
       content: text,
       timestamp: Math.floor(Date.now() / 1000),
+      questionId: currentQuestionId || undefined,
     });
 
     // Get AI feedback with enhanced analysis
@@ -129,6 +131,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       type: "ai_feedback",
       content: JSON.stringify(feedback),
       timestamp: Math.floor(Date.now() / 1000),
+      questionId: currentQuestionId || undefined,
     });
 
     setNeedsCorrection(feedback.needsCorrection);
@@ -142,6 +145,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
           type: "ai_question",
           content: feedback.correctionMessage,
           timestamp: Math.floor(Date.now() / 1000),
+          questionId: currentQuestionId || undefined,
         });
         setIsTyping(false);
       }, 1500);
