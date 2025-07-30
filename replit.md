@@ -131,6 +131,14 @@ Preferred communication style: Simple, everyday language.
 - **Visual Question Reference**: Users can easily reference the question they're responding to throughout the conversation
 - **Contextual Understanding**: AI analyzes both the original question and user response to create relevant follow-ups
 
+### January 30, 2025 - Video Recording and Audio Integration
+- **MP4 Video Format**: Switched from WebM to MP4 format for better audio compatibility and universal playback
+- **Automatic Audio Recording**: Video recording now automatically starts parallel audio transcription recording
+- **Enhanced Download**: Download now includes both video file (MP4/WebM) and transcript text file simultaneously  
+- **Smart Format Detection**: MediaRecorder automatically selects best supported format (MP4 preferred, WebM fallback)
+- **Audio Codec Support**: Added proper opus audio codec support for WebM when MP4 not available
+- **Real-time Transcription**: Audio transcription happens in parallel with video recording for immediate text generation
+
 ### January 30, 2025 - Database Integration
 - **PostgreSQL Database**: Successfully migrated from in-memory storage to persistent PostgreSQL database
 - **Database Connection**: Integrated Neon Database with Drizzle ORM for robust data persistence

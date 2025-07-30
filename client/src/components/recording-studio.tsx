@@ -113,7 +113,9 @@ export default function RecordingStudio() {
       const url = URL.createObjectURL(videoBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${sessionSettings.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.webm`;
+      // Determine file extension based on blob type
+      const fileExtension = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+      a.download = `${sessionSettings.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

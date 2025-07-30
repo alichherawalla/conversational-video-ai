@@ -59,8 +59,34 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
         updateAudioLevel();
       }
       
-      const mimeType = options.audio ? "audio/webm" : "video/webm;codecs=vp9";
-      const mediaRecorder = new MediaRecorder(mediaStream, {
+      // Try MP4 first, fall back to WebM if not supported
+      let mimeType: string;
+      let mediaRecorder: MediaRecorder;
+      
+      if (options.audio) {
+        // For audio-only recording
+        if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "audio/mp4";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          mimeType = "audio/webm";
+        } else {
+          mimeType = "audio/webm"; // fallback
+        }
+      } else {
+        // For video with audio recording - try MP4 first
+        if (MediaRecorder.isTypeSupported("video/mp4")) {
+          mimeType = "video/mp4";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) {
+          mimeType = "video/webm;codecs=vp9,opus";
+        } else if (MediaRecorder.isTypeSupported("video/webm")) {
+          mimeType = "video/webm";
+        } else {
+          mimeType = "video/webm"; // fallback
+        }
+      }
+      
+      console.log("Using media recorder with MIME type:", mimeType);
+      mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: mimeType,
       });
       
@@ -75,8 +101,8 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
       };
 
       mediaRecorder.onstop = () => {
-        const blobType = options.audio ? "audio/webm" : "video/webm";
-        const blob = new Blob(chunksRef.current, { type: blobType });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        console.log("MediaRecorder stopped, created blob:", blob.type, blob.size);
         options.onStop?.(blob);
         
         // Clean up
