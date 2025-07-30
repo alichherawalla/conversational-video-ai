@@ -3,12 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Download, Slice, Images, Image, AlignLeft, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Play, Download, Slice, Images, Image, AlignLeft, Clock, Eye, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Session, Clip, ContentPiece } from "@shared/schema";
 
 export default function ContentGeneration() {
   const [selectedSession, setSelectedSession] = useState<string>("");
+  const [viewingContent, setViewingContent] = useState<ContentPiece | null>(null);
+  const [viewingClip, setViewingClip] = useState<Clip | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -154,9 +158,13 @@ export default function ContentGeneration() {
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                       Score: {clip.socialScore}/100
                     </span>
-                    <Button size="sm" variant="outline">
-                      <Download className="mr-1" size={12} />
-                      Export
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setViewingClip(clip)}
+                    >
+                      <Eye className="mr-1" size={12} />
+                      View Details
                     </Button>
                   </div>
                 </div>
@@ -202,7 +210,12 @@ export default function ContentGeneration() {
                         <p className="text-xs text-neutral-500">+{(content.content as any).slides.length - 2} more slides</p>
                       )}
                     </div>
-                    <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                      onClick={() => setViewingContent(content)}
+                    >
+                      <Eye className="mr-1" size={12} />
                       View Full Carousel
                     </Button>
                   </div>
@@ -240,7 +253,12 @@ export default function ContentGeneration() {
                     <p className="text-sm text-neutral-600 mb-2">
                       "{(content.content as any)?.quote || 'Key insight from interview'}"
                     </p>
-                    <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                      onClick={() => setViewingContent(content)}
+                    >
+                      <Eye className="mr-1" size={12} />
                       View Image Post
                     </Button>
                   </div>
@@ -283,7 +301,12 @@ export default function ContentGeneration() {
                         ))}
                       </div>
                     </div>
-                    <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                      onClick={() => setViewingContent(content)}
+                    >
+                      <Eye className="mr-1" size={12} />
                       View Full Post
                     </Button>
                   </div>
@@ -300,6 +323,178 @@ export default function ContentGeneration() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Content Viewing Modals */}
+      {viewingContent && (
+        <Dialog open={!!viewingContent} onOpenChange={() => setViewingContent(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>{viewingContent.title}</span>
+                <Badge variant="secondary">{viewingContent.type.toUpperCase()}</Badge>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {viewingContent.type === "carousel" && (
+                <div>
+                  <h4 className="font-semibold mb-3">LinkedIn Carousel Post</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+                    {Array.isArray((viewingContent.content as any)?.slides) && 
+                      (viewingContent.content as any).slides.map((slide: any, idx: number) => (
+                        <div key={idx} className="bg-gradient-to-br from-primary to-secondary text-white p-3 rounded-lg text-center min-h-[120px] flex flex-col justify-center">
+                          <div className="text-2xl mb-1">{slide.icon}</div>
+                          <div className="text-sm font-semibold mb-1">{slide.title}</div>
+                          <div className="text-xs opacity-90">{slide.content}</div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                  <div className="bg-neutral-50 p-4 rounded-lg">
+                    <h5 className="font-medium mb-2">Post Caption:</h5>
+                    <p className="text-sm text-neutral-700 mb-3">{(viewingContent.content as any)?.title}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewingContent.type === "image" && (
+                <div>
+                  <h4 className="font-semibold mb-3">LinkedIn Image Post</h4>
+                  <div className="bg-gradient-to-br from-primary to-secondary text-white p-8 rounded-lg text-center mb-4 min-h-[200px] flex flex-col justify-center">
+                    <blockquote className="text-xl font-medium mb-2">
+                      "{(viewingContent.content as any)?.quote}"
+                    </blockquote>
+                    <div className="text-sm opacity-90">
+                      {(viewingContent.content as any)?.insight}
+                    </div>
+                  </div>
+                  <div className="bg-neutral-50 p-4 rounded-lg">
+                    <h5 className="font-medium mb-2">Post Caption:</h5>
+                    <p className="text-sm text-neutral-700 mb-3">{(viewingContent.content as any)?.title}</p>
+                    {(viewingContent.content as any)?.statistic && (
+                      <p className="text-sm text-neutral-600 mb-3">
+                        <strong>Key Stat:</strong> {(viewingContent.content as any)?.statistic}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewingContent.type === "text" && (
+                <div>
+                  <h4 className="font-semibold mb-3">LinkedIn Text Post</h4>
+                  <div className="bg-neutral-50 p-4 rounded-lg space-y-3">
+                    <div>
+                      <h5 className="font-medium text-primary">Hook:</h5>
+                      <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.hook}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-primary">Content:</h5>
+                      <div className="text-sm text-neutral-700 whitespace-pre-line">
+                        {(viewingContent.content as any)?.body}
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-primary">Call to Action:</h5>
+                      <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.callToAction}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-primary">Hashtags:</h5>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => setViewingContent(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Clip Viewing Modal */}
+      {viewingClip && (
+        <Dialog open={!!viewingClip} onOpenChange={() => setViewingClip(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>{viewingClip.title}</span>
+                <Badge variant="secondary">Score: {viewingClip.socialScore}/100</Badge>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="aspect-video bg-neutral-900 rounded-lg relative">
+                <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                  {formatTime(viewingClip.endTime - viewingClip.startTime)}
+                </div>
+                <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center">
+                  <Clock size={12} className="mr-1" />
+                  {formatTime(viewingClip.startTime)} - {formatTime(viewingClip.endTime)}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Button className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30">
+                    <Play className="text-white ml-1" size={24} />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <h5 className="font-medium text-primary mb-1">Description:</h5>
+                  <p className="text-sm text-neutral-700">{viewingClip.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-xs text-neutral-500">Start Time</p>
+                    <p className="font-medium">{formatTime(viewingClip.startTime)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500">End Time</p>
+                    <p className="font-medium">{formatTime(viewingClip.endTime)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500">Duration</p>
+                    <p className="font-medium">{formatTime(viewingClip.endTime - viewingClip.startTime)}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between pt-4">
+                  <Badge variant="outline">Platform: {viewingClip.platform}</Badge>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">
+                      <Download className="mr-1" size={12} />
+                      Export Clip
+                    </Button>
+                    <Button size="sm" onClick={() => setViewingClip(null)}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
