@@ -28,6 +28,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const lastTranscriptTimeRef = useRef<number>(Date.now());
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isActivelyRecordingRef = useRef<boolean>(false);
+  const getTranscriptButtonRef = useRef<HTMLButtonElement>(null);
   
   // Video recording with audio
   const {
@@ -171,13 +172,20 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       // Set active recording flag
       isActivelyRecordingRef.current = true;
       
-      // Start continuous transcription every 5 seconds
+      // Start continuous transcription every 2 seconds by programmatically clicking Get Transcript
       const timer = setInterval(() => {
         if (isActivelyRecordingRef.current) {
-          console.log("Auto-transcription: Getting transcript every 5 seconds");
-          handleManualTranscript();
+          console.log("Auto-transcription: Programmatically clicking Get Transcript every 2 seconds");
+          // Click the Get Transcript button directly using ref
+          if (getTranscriptButtonRef.current && !getTranscriptButtonRef.current.disabled) {
+            console.log("Clicking Get Transcript button programmatically");
+            getTranscriptButtonRef.current.click();
+          } else {
+            console.log("Get Transcript button not available, using fallback");
+            handleManualTranscript();
+          }
         }
-      }, 5000);
+      }, 2000);
       transcriptionTimerRef.current = timer;
       
       console.log("Video and audio transcription recording started with 5-second auto-transcription");
@@ -308,6 +316,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         {isRecordingVideo && (
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
             <Button
+              ref={getTranscriptButtonRef}
               onClick={handleManualTranscript}
               className={`px-4 py-2 text-sm rounded-lg ${
                 isRecordingTranscript 
@@ -332,7 +341,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
               {accumulatedTranscript}
             </p>
             <p className="text-xs text-green-200 mt-2">
-              Auto-submits after 10s silence • Transcripts every 5s
+              Auto-submits after 10s silence • Transcripts every 2s
             </p>
           </div>
         )}
