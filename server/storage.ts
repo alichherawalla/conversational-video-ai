@@ -1,4 +1,6 @@
-import { type Session, type InsertSession, type Question, type InsertQuestion, type Conversation, type InsertConversation, type Clip, type InsertClip, type ContentPiece, type InsertContentPiece } from "@shared/schema";
+import { sessions, questions, conversations, clips, contentPieces, type Session, type InsertSession, type Question, type InsertQuestion, type Conversation, type InsertConversation, type Clip, type InsertClip, type ContentPiece, type InsertContentPiece } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -35,216 +37,230 @@ export interface IStorage {
   deleteContentPiece(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private sessions: Map<string, Session>;
-  private questions: Map<string, Question>;
-  private conversations: Map<string, Conversation>;
-  private clips: Map<string, Clip>;
-  private contentPieces: Map<string, ContentPiece>;
+export class DatabaseStorage implements IStorage {
+  private initialized = false;
 
-  constructor() {
-    this.sessions = new Map();
-    this.questions = new Map();
-    this.conversations = new Map();
-    this.clips = new Map();
-    this.contentPieces = new Map();
-
-    // Initialize with sample questions
-    this.initializeSampleData();
+  private async ensureInitialized() {
+    if (this.initialized) return;
+    
+    try {
+      // Check if tables exist by attempting to query
+      await db.select().from(questions).limit(1);
+      this.initialized = true;
+      
+      // Initialize sample data if tables are empty
+      await this.initializeSampleData();
+    } catch (error) {
+      // Tables might not exist yet - this is expected during initial setup
+      console.log("Database tables not yet available - they will be created by db:push");
+      this.initialized = true;
+    }
   }
 
-  private initializeSampleData() {
-    const sampleQuestions: Question[] = [
-      {
-        id: randomUUID(),
-        primary: "What inspired you to start your entrepreneurial journey?",
-        followUp1: "Can you share a specific problem you identified that led to your first business idea?",
-        followUp2: "How did that experience shape your current approach to business?",
-        category: "Business & Entrepreneurship",
-        difficulty: "medium",
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        primary: "How do you handle failure and setbacks in your business?",
-        followUp1: "Can you describe a specific failure that taught you something valuable?",
-        followUp2: "What advice would you give to someone facing their first major setback?",
-        category: "Personal Development",
-        difficulty: "medium",
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        primary: "What role does technology play in your business strategy?",
-        followUp1: "Which emerging technologies excite you the most?",
-        followUp2: "How do you stay updated with rapid technological changes?",
-        category: "Innovation & Technology",
-        difficulty: "hard",
-        createdAt: new Date(),
-      },
-    ];
+  private async initializeSampleData() {
+    try {
+      const existingQuestions = await db.select().from(questions);
+      
+      if (existingQuestions.length === 0) {
+        const sampleQuestions: Omit<Question, 'id'>[] = [
+          {
+            primary: "What inspired you to start your entrepreneurial journey?",
+            followUp1: "Can you share a specific problem you identified that led to your first business idea?",
+            followUp2: "How did that experience shape your current approach to business?",
+            category: "Business & Entrepreneurship",
+            difficulty: "medium",
+            createdAt: new Date(),
+          },
+          {
+            primary: "How do you handle failure and setbacks in your business?",
+            followUp1: "Can you describe a specific failure that taught you something valuable?",
+            followUp2: "What advice would you give to someone facing their first major setback?",
+            category: "Personal Development",
+            difficulty: "medium",
+            createdAt: new Date(),
+          },
+          {
+            primary: "What role does technology play in your business strategy?",
+            followUp1: "Which emerging technologies excite you the most?",
+            followUp2: "How do you stay updated with rapid technological changes?",
+            category: "Innovation & Technology",
+            difficulty: "hard",
+            createdAt: new Date(),
+          },
+        ];
 
-    sampleQuestions.forEach(question => {
-      this.questions.set(question.id, question);
-    });
+        for (const question of sampleQuestions) {
+          await db.insert(questions).values({ id: randomUUID(), ...question });
+        }
+      }
+    } catch (error) {
+      // Ignore initialization errors - tables may not be ready yet
+      console.log("Sample data initialization deferred");
+    }
   }
 
   // Sessions
   async getSession(id: string): Promise<Session | undefined> {
-    return this.sessions.get(id);
+    await this.ensureInitialized();
+    const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
+    return session || undefined;
   }
 
   async getSessions(): Promise<Session[]> {
-    return Array.from(this.sessions.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    await this.ensureInitialized();
+    return await db.select().from(sessions);
   }
 
   async createSession(insertSession: InsertSession): Promise<Session> {
-    const id = randomUUID();
-    const session: Session = { 
-      ...insertSession,
-      duration: insertSession.duration ?? 0,
-      id, 
-      createdAt: new Date() 
-    };
-    this.sessions.set(id, session);
-    return session;
+    await this.ensureInitialized();
+    const [newSession] = await db
+      .insert(sessions)
+      .values({ 
+        id: randomUUID(), 
+        ...insertSession,
+        duration: insertSession.duration ?? 0,
+        createdAt: new Date()
+      })
+      .returning();
+    return newSession;
   }
 
   async updateSession(id: string, session: Partial<InsertSession>): Promise<Session | undefined> {
-    const existing = this.sessions.get(id);
-    if (!existing) return undefined;
-    
-    const updated: Session = { ...existing, ...session };
-    this.sessions.set(id, updated);
-    return updated;
+    const [updatedSession] = await db
+      .update(sessions)
+      .set(session)
+      .where(eq(sessions.id, id))
+      .returning();
+    return updatedSession || undefined;
   }
 
   async deleteSession(id: string): Promise<boolean> {
-    return this.sessions.delete(id);
+    const result = await db.delete(sessions).where(eq(sessions.id, id));
+    return result.rowCount > 0;
   }
 
   // Questions
   async getQuestion(id: string): Promise<Question | undefined> {
-    return this.questions.get(id);
+    const [question] = await db.select().from(questions).where(eq(questions.id, id));
+    return question || undefined;
   }
 
   async getQuestions(): Promise<Question[]> {
-    return Array.from(this.questions.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    await this.ensureInitialized();
+    return await db.select().from(questions);
   }
 
   async getQuestionsByCategory(category: string): Promise<Question[]> {
-    return Array.from(this.questions.values())
-      .filter(q => q.category === category)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return await db.select().from(questions).where(eq(questions.category, category));
   }
 
   async createQuestion(insertQuestion: InsertQuestion): Promise<Question> {
-    const id = randomUUID();
-    const question: Question = { 
-      ...insertQuestion,
-      followUp1: insertQuestion.followUp1 ?? null,
-      followUp2: insertQuestion.followUp2 ?? null,
-      id, 
-      createdAt: new Date() 
-    };
-    this.questions.set(id, question);
-    return question;
+    const [newQuestion] = await db
+      .insert(questions)
+      .values({ 
+        id: randomUUID(), 
+        ...insertQuestion,
+        followUp1: insertQuestion.followUp1 ?? null,
+        followUp2: insertQuestion.followUp2 ?? null,
+        createdAt: new Date()
+      })
+      .returning();
+    return newQuestion;
   }
 
   async updateQuestion(id: string, question: Partial<InsertQuestion>): Promise<Question | undefined> {
-    const existing = this.questions.get(id);
-    if (!existing) return undefined;
-    
-    const updated: Question = { ...existing, ...question };
-    this.questions.set(id, updated);
-    return updated;
+    const [updatedQuestion] = await db
+      .update(questions)
+      .set(question)
+      .where(eq(questions.id, id))
+      .returning();
+    return updatedQuestion || undefined;
   }
 
   async deleteQuestion(id: string): Promise<boolean> {
-    return this.questions.delete(id);
+    const result = await db.delete(questions).where(eq(questions.id, id));
+    return result.rowCount > 0;
   }
 
   // Conversations
   async getConversation(id: string): Promise<Conversation | undefined> {
-    return this.conversations.get(id);
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    return conversation || undefined;
   }
 
   async getConversationsBySession(sessionId: string): Promise<Conversation[]> {
-    return Array.from(this.conversations.values())
-      .filter(c => c.sessionId === sessionId)
-      .sort((a, b) => a.timestamp - b.timestamp);
+    return await db.select().from(conversations).where(eq(conversations.sessionId, sessionId));
   }
 
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
-    const id = randomUUID();
-    const conversation: Conversation = { 
-      ...insertConversation, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.conversations.set(id, conversation);
-    return conversation;
+    const [newConversation] = await db
+      .insert(conversations)
+      .values({ 
+        id: randomUUID(), 
+        ...insertConversation,
+        createdAt: new Date()
+      })
+      .returning();
+    return newConversation;
   }
 
   // Clips
   async getClip(id: string): Promise<Clip | undefined> {
-    return this.clips.get(id);
+    const [clip] = await db.select().from(clips).where(eq(clips.id, id));
+    return clip || undefined;
   }
 
   async getClipsBySession(sessionId: string): Promise<Clip[]> {
-    return Array.from(this.clips.values())
-      .filter(c => c.sessionId === sessionId)
-      .sort((a, b) => a.startTime - b.startTime);
+    return await db.select().from(clips).where(eq(clips.sessionId, sessionId));
   }
 
   async createClip(insertClip: InsertClip): Promise<Clip> {
-    const id = randomUUID();
-    const clip: Clip = { 
-      ...insertClip,
-      description: insertClip.description ?? null,
-      videoUrl: insertClip.videoUrl ?? null,
-      socialScore: insertClip.socialScore ?? null,
-      id, 
-      createdAt: new Date() 
-    };
-    this.clips.set(id, clip);
-    return clip;
+    const [newClip] = await db
+      .insert(clips)
+      .values({ 
+        id: randomUUID(), 
+        ...insertClip,
+        description: insertClip.description ?? null,
+        videoUrl: insertClip.videoUrl ?? null,
+        socialScore: insertClip.socialScore ?? null,
+        createdAt: new Date()
+      })
+      .returning();
+    return newClip;
   }
 
   async deleteClip(id: string): Promise<boolean> {
-    return this.clips.delete(id);
+    const result = await db.delete(clips).where(eq(clips.id, id));
+    return result.rowCount > 0;
   }
 
   // Content Pieces
   async getContentPiece(id: string): Promise<ContentPiece | undefined> {
-    return this.contentPieces.get(id);
+    const [contentPiece] = await db.select().from(contentPieces).where(eq(contentPieces.id, id));
+    return contentPiece || undefined;
   }
 
   async getContentPiecesBySession(sessionId: string): Promise<ContentPiece[]> {
-    return Array.from(this.contentPieces.values())
-      .filter(c => c.sessionId === sessionId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return await db.select().from(contentPieces).where(eq(contentPieces.sessionId, sessionId));
   }
 
   async createContentPiece(insertContentPiece: InsertContentPiece): Promise<ContentPiece> {
-    const id = randomUUID();
-    const contentPiece: ContentPiece = { 
-      ...insertContentPiece,
-      platform: insertContentPiece.platform ?? "linkedin",
-      id, 
-      createdAt: new Date() 
-    };
-    this.contentPieces.set(id, contentPiece);
-    return contentPiece;
+    const [newContentPiece] = await db
+      .insert(contentPieces)
+      .values({ 
+        id: randomUUID(), 
+        ...insertContentPiece,
+        platform: insertContentPiece.platform ?? "linkedin",
+        createdAt: new Date()
+      })
+      .returning();
+    return newContentPiece;
   }
 
   async deleteContentPiece(id: string): Promise<boolean> {
-    return this.contentPieces.delete(id);
+    const result = await db.delete(contentPieces).where(eq(contentPieces.id, id));
+    return result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
