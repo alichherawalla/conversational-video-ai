@@ -3,7 +3,9 @@ import { useState, useRef, useCallback } from "react";
 interface UseMediaRecorderOptions {
   onDataAvailable?: (data: Blob) => void;
   onStop?: (blob: Blob) => void;
+  onAudioLevel?: (level: number) => void;
   audio?: boolean; // Add audio-only option
+  deviceId?: string; // Add device selection
 }
 
 export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
@@ -13,16 +15,49 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const startRecording = useCallback(async () => {
     try {
+      const audioConstraints = options.deviceId 
+        ? { deviceId: { exact: options.deviceId } }
+        : true;
+        
       const constraints = options.audio 
-        ? { audio: true } 
-        : { video: { width: 1280, height: 720 }, audio: true };
+        ? { audio: audioConstraints } 
+        : { video: { width: 1280, height: 720 }, audio: audioConstraints };
         
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       setStream(mediaStream);
+      
+      // Setup audio level monitoring for audio recording
+      if (options.audio && options.onAudioLevel) {
+        const audioContext = new AudioContext();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+        
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        
+        const updateAudioLevel = () => {
+          if (analyserRef.current) {
+            analyserRef.current.getByteFrequencyData(dataArray);
+            const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
+            options.onAudioLevel?.(average);
+            animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+          }
+        };
+        
+        updateAudioLevel();
+      }
       
       const mimeType = options.audio ? "audio/webm" : "video/webm;codecs=vp9";
       const mediaRecorder = new MediaRecorder(mediaStream, {
@@ -53,6 +88,17 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
+        }
+        
+        // Clean up audio monitoring
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
+        
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
         }
       };
 

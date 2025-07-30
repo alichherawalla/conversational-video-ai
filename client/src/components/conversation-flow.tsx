@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, User, Send, Mic, MicOff, Volume2 } from "lucide-react";
+import { Bot, User, Send, Mic, MicOff, Volume2, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useAudioTranscription } from "@/hooks/use-audio-transcription";
 import { useMediaRecorder } from "@/hooks/use-media-recorder";
@@ -22,12 +23,28 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [currentQuestion, setCurrentQuestion] = useState<string>("");
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [transcribedText, setTranscribedText] = useState("");
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMicrophone, setSelectedMicrophone] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Audio transcription hook
   const { transcribeAudio, isTranscribing } = useAudioTranscription();
 
-  // Voice recording hook
+  // Load available microphones on component mount
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices()
+      .then(devices => {
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        setAvailableDevices(audioInputs);
+        if (audioInputs.length > 0 && !selectedMicrophone) {
+          setSelectedMicrophone(audioInputs[0].deviceId);
+        }
+      })
+      .catch(err => console.error('Error enumerating devices:', err));
+  }, []);
+
+  // Voice recording hook with microphone selection and audio monitoring
   const {
     isRecording,
     startRecording,
@@ -39,12 +56,18 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
         setTranscribedText(result.text);
         setUserResponse(result.text);
         setIsRecordingVoice(false);
+        setAudioLevel(0);
       } catch (error) {
         console.error('Transcription failed:', error);
         setIsRecordingVoice(false);
+        setAudioLevel(0);
       }
     },
+    onAudioLevel: (level) => {
+      setAudioLevel(level);
+    },
     audio: true, // Audio only for transcription
+    deviceId: selectedMicrophone,
   });
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -303,6 +326,53 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
 
       {/* Voice Recording Interface */}
       <div className="space-y-4">
+        {/* Microphone Settings */}
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-gray-700 flex items-center">
+              <Settings className="mr-2" size={16} />
+              Microphone Settings
+            </h4>
+          </div>
+          
+          <div className="space-y-3">
+            {/* Microphone Selection */}
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Select Microphone:</label>
+              <Select value={selectedMicrophone} onValueChange={setSelectedMicrophone}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose microphone..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDevices.map((device) => (
+                    <SelectItem key={device.deviceId} value={device.deviceId}>
+                      {device.label || `Microphone ${device.deviceId.slice(0, 8)}...`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Audio Level Indicator */}
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Audio Level:</label>
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-100 ${
+                      audioLevel > 50 ? 'bg-green-500' : 
+                      audioLevel > 20 ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${Math.min(audioLevel * 2, 100)}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs text-gray-600 w-8">{Math.round(audioLevel)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Recording Status */}
         {(isRecording || isTranscribing) && (
           <div className="flex items-center justify-center p-4 bg-red-50 border border-red-200 rounded-lg">

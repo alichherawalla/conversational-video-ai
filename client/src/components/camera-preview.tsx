@@ -1,26 +1,55 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Square, Mic, Settings } from "lucide-react";
 import { useMediaRecorder } from "@/hooks/use-media-recorder";
+import { useAudioTranscription } from "@/hooks/use-audio-transcription";
 
 interface CameraPreviewProps {
   onRecordingComplete?: (blob: Blob) => void;
+  sessionId?: string | null;
 }
 
-export default function CameraPreview({ onRecordingComplete }: CameraPreviewProps) {
+export default function CameraPreview({ onRecordingComplete, sessionId }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const { transcribeAudio } = useAudioTranscription();
   
+  // Video recording with audio
   const {
-    isRecording,
+    isRecording: isRecordingVideo,
     duration,
     stream,
-    startRecording,
-    stopRecording,
+    startRecording: startVideoRecording,
+    stopRecording: stopVideoRecording,
     formatDuration,
   } = useMediaRecorder({
     onStop: (blob) => {
+      console.log("Video recording stopped, blob:", blob, "Size:", blob.size, "Type:", blob.type);
       onRecordingComplete?.(blob);
+      setIsRecordingAudio(false);
     },
+    // Default to include both video and audio
+  });
+
+  // Audio-only recording for transcription
+  const {
+    isRecording: isRecordingTranscript,
+    startRecording: startTranscriptRecording,
+    stopRecording: stopTranscriptRecording,
+  } = useMediaRecorder({
+    onStop: async (blob) => {
+      try {
+        console.log("Audio transcription recording stopped");
+        if (sessionId) {
+          const result = await transcribeAudio(blob);
+          console.log("Transcription result:", result.text);
+          // You could emit this to parent component or store it
+        }
+      } catch (error) {
+        console.error('Audio transcription failed:', error);
+      }
+    },
+    audio: true, // Audio-only for transcription
   });
 
   useEffect(() => {
@@ -31,10 +60,29 @@ export default function CameraPreview({ onRecordingComplete }: CameraPreviewProp
 
   const handleStartRecording = async () => {
     try {
-      await startRecording();
+      // Start both video and audio recording simultaneously
+      console.log("Starting video and audio recording...");
+      await startVideoRecording();
+      
+      // Start audio transcription recording if we have a session
+      if (sessionId) {
+        setIsRecordingAudio(true);
+        await startTranscriptRecording();
+        console.log("Both video and audio transcription recording started");
+      }
     } catch (error) {
       console.error("Recording failed:", error);
+      setIsRecordingAudio(false);
     }
+  };
+
+  const handleStopRecording = () => {
+    console.log("Stopping recordings...");
+    stopVideoRecording();
+    if (isRecordingTranscript) {
+      stopTranscriptRecording();
+    }
+    setIsRecordingAudio(false);
   };
 
   return (
@@ -43,11 +91,11 @@ export default function CameraPreview({ onRecordingComplete }: CameraPreviewProp
         <h2 className="text-xl font-semibold text-neutral-800">Camera Preview</h2>
         <div className="flex items-center space-x-2">
           <span className={`px-2 py-1 text-sm rounded-full ${
-            isRecording 
+            isRecordingVideo 
               ? "bg-red-100 text-red-800" 
               : "bg-green-100 text-green-800"
           }`}>
-            {isRecording ? "Recording" : "Ready"}
+            {isRecordingVideo ? "Recording" : "Ready"}
           </span>
         </div>
       </div>
@@ -62,7 +110,7 @@ export default function CameraPreview({ onRecordingComplete }: CameraPreviewProp
         />
         
         {/* Recording overlay */}
-        {isRecording && (
+        {isRecordingVideo && (
           <div className="absolute top-4 left-4 flex items-center space-x-2">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
             <span className="text-white text-sm font-medium">
@@ -74,14 +122,15 @@ export default function CameraPreview({ onRecordingComplete }: CameraPreviewProp
         {/* Camera controls overlay */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
           <Button
-            onClick={isRecording ? stopRecording : handleStartRecording}
+            onClick={isRecordingVideo ? handleStopRecording : handleStartRecording}
             className={`w-12 h-12 rounded-full ${
-              isRecording
+              isRecordingVideo
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-red-600 hover:bg-red-700"
             }`}
+            disabled={!sessionId}
           >
-            {isRecording ? (
+            {isRecordingVideo ? (
               <Square className="text-white" size={16} />
             ) : (
               <div className="w-4 h-4 bg-white rounded-full" />
@@ -94,6 +143,14 @@ export default function CameraPreview({ onRecordingComplete }: CameraPreviewProp
             <Settings className="text-white" size={16} />
           </Button>
         </div>
+        
+        {/* Audio transcription indicator */}
+        {isRecordingAudio && (
+          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+            Recording audio for transcription
+          </div>
+        )}
       </div>
       
       {/* Recording Stats */}

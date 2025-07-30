@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import type { InsertSession } from "@shared/schema";
 export default function RecordingStudio() {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [sessionTranscript, setSessionTranscript] = useState<string>("");
   const [sessionSettings, setSessionSettings] = useState({
     title: "Entrepreneurial Journey",
     topic: "Entrepreneurial Journey",
@@ -84,10 +85,31 @@ export default function RecordingStudio() {
     }
   };
 
+  // Fetch transcript when session changes
+  const { data: conversations = [] } = useQuery<any[]>({
+    queryKey: ["/api/sessions", currentSession, "conversations"],
+    enabled: !!currentSession,
+  });
+
+  // Update transcript when conversations change
+  useEffect(() => {
+    if (conversations.length > 0) {
+      const transcript = conversations
+        .filter(conv => conv.type === "user_response" || conv.type === "ai_question")
+        .map(conv => {
+          const timestamp = new Date(conv.timestamp * 1000).toLocaleTimeString();
+          const speaker = conv.type === "ai_question" ? "AI" : "User";
+          return `[${timestamp}] ${speaker}: ${conv.content}`;
+        })
+        .join('\n\n');
+      setSessionTranscript(transcript);
+    }
+  }, [conversations]);
+
   const handleDownloadVideo = () => {
     console.log("Download clicked, videoBlob:", videoBlob);
     if (videoBlob) {
-      console.log("Starting download...");
+      console.log("Starting video download...");
       const url = URL.createObjectURL(videoBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -96,7 +118,22 @@ export default function RecordingStudio() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      console.log("Download triggered");
+      console.log("Video download triggered");
+      
+      // Also download transcript if available
+      if (sessionTranscript) {
+        console.log("Starting transcript download...");
+        const transcriptBlob = new Blob([sessionTranscript], { type: 'text/plain' });
+        const transcriptUrl = URL.createObjectURL(transcriptBlob);
+        const transcriptLink = document.createElement('a');
+        transcriptLink.href = transcriptUrl;
+        transcriptLink.download = `${sessionSettings.title.replace(/\s+/g, '_')}_transcript_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(transcriptLink);
+        transcriptLink.click();
+        document.body.removeChild(transcriptLink);
+        URL.revokeObjectURL(transcriptUrl);
+        console.log("Transcript download triggered");
+      }
     } else {
       console.log("No video blob available for download");
     }
@@ -111,7 +148,10 @@ export default function RecordingStudio() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Video Recording Panel */}
       <div className="lg:col-span-2 space-y-6">
-        <CameraPreview onRecordingComplete={handleRecordingComplete} />
+        <CameraPreview 
+          onRecordingComplete={handleRecordingComplete} 
+          sessionId={currentSession}
+        />
         
         {currentSession && (
           <ConversationFlow sessionId={currentSession} />
