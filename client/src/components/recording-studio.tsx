@@ -15,6 +15,7 @@ export default function RecordingStudio() {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
+  const [transcriptionText, setTranscriptionText] = useState<string>("");
   const [sessionSettings, setSessionSettings] = useState({
     title: "Entrepreneurial Journey",
     topic: "Entrepreneurial Journey",
@@ -137,9 +138,10 @@ export default function RecordingStudio() {
       console.log("Video download triggered");
       
       // Also download transcript if available
-      if (sessionTranscript) {
+      const combinedTranscript = [sessionTranscript, transcriptionText ? `\n\n--- Voice Transcription ---\n${transcriptionText}` : ''].filter(Boolean).join('');
+      if (combinedTranscript) {
         console.log("Starting transcript download...");
-        const transcriptBlob = new Blob([sessionTranscript], { type: 'text/plain' });
+        const transcriptBlob = new Blob([combinedTranscript], { type: 'text/plain' });
         const transcriptUrl = URL.createObjectURL(transcriptBlob);
         const transcriptLink = document.createElement('a');
         transcriptLink.href = transcriptUrl;
@@ -157,6 +159,7 @@ export default function RecordingStudio() {
 
   const handleClearVideo = () => {
     setVideoBlob(null);
+    setTranscriptionText("");
     console.log("Video blob cleared");
   };
 
@@ -168,10 +171,23 @@ export default function RecordingStudio() {
           onRecordingComplete={handleRecordingComplete} 
           sessionId={currentSession}
           onStartSession={handleStartSession}
+          onTranscriptionComplete={(text) => setTranscriptionText(text)}
         />
         
         {currentSession && (
           <ConversationFlow sessionId={currentSession} />
+        )}
+        
+        {/* Voice Transcription Display */}
+        {transcriptionText && (
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-lg font-semibold text-neutral-800 mb-2">Voice Transcription</h3>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">{transcriptionText}</p>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 

@@ -8,9 +8,10 @@ interface CameraPreviewProps {
   onRecordingComplete?: (blob: Blob) => void;
   sessionId?: string | null;
   onStartSession?: () => Promise<void>;
+  onTranscriptionComplete?: (text: string) => void;
 }
 
-export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession }: CameraPreviewProps) {
+export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession, onTranscriptionComplete }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
@@ -47,7 +48,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           console.log("Starting transcription...");
           const result = await transcribeAudio(blob);
           console.log("Transcription result:", result.text);
-          // You could emit this to parent component or store it
+          onTranscriptionComplete?.(result.text);
         } else if (blob.size === 0) {
           console.warn("Audio blob is empty, skipping transcription");
         }
