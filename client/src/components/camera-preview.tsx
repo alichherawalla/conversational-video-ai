@@ -51,6 +51,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
             console.log("Transcription result:", result.text);
             if (result.text && result.text.trim()) {
               console.log("Calling onTranscriptionComplete with:", result.text);
+              console.log("onTranscriptionComplete function:", onTranscriptionComplete);
               onTranscriptionComplete?.(result.text);
             } else {
               console.warn("Transcription result is empty or invalid");

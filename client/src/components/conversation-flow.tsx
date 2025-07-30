@@ -81,6 +81,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   // Auto-process transcribed text when it becomes available
   useEffect(() => {
     if (transcribedText && transcribedText.trim() && currentQuestionId) {
+      console.log("ConversationFlow received transcription:", transcribedText);
       setUserResponse(transcribedText);
       // Don't auto-submit, let user review first
     }

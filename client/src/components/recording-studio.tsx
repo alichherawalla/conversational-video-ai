@@ -208,6 +208,7 @@ export default function RecordingStudio() {
           onStartSession={handleStartSession}
           onTranscriptionComplete={(text) => {
             console.log("Transcription completed in recording studio:", text);
+            console.log("Setting transcriptionText to:", text);
             setTranscriptionText(text);
             setAllTranscriptions(prev => [...prev, text]);
           }}
