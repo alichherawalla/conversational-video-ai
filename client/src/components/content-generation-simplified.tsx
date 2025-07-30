@@ -16,6 +16,7 @@ export default function ContentGeneration() {
   const [uploadMode, setUploadMode] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [uploadedTranscript, setUploadedTranscript] = useState<string>("");
+  const [uploadGeneratedContent, setUploadGeneratedContent] = useState<ContentPiece[]>([]);
   
   const queryClient = useQueryClient();
 
@@ -54,9 +55,21 @@ export default function ContentGeneration() {
   });
 
   const uploadContentMutation = useMutation({
-    mutationFn: async ({ transcript, contentType }: { transcript: string; contentType: string }) => {
-      const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
-      return res.json();
+    mutationFn: async ({ transcript }: { transcript: string }) => {
+      // Generate all content types sequentially
+      const contentTypes = ['carousel', 'image', 'text'];
+      const results = [];
+      
+      for (const contentType of contentTypes) {
+        const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
+        const result = await res.json();
+        results.push(result);
+      }
+      
+      return results;
+    },
+    onSuccess: (results) => {
+      setUploadGeneratedContent(results);
     }
   });
 
@@ -78,22 +91,16 @@ export default function ContentGeneration() {
     }
   };
 
-  const generateFromUpload = async (contentType: string) => {
+  const generateFromUpload = async () => {
     if (!uploadedTranscript.trim()) {
       alert("Please provide a transcript (either upload a file or paste text)");
       return;
     }
     
     try {
-      const result = await uploadContentMutation.mutateAsync({ 
-        transcript: uploadedTranscript, 
-        contentType 
+      await uploadContentMutation.mutateAsync({ 
+        transcript: uploadedTranscript
       });
-      console.log("Upload result:", result);
-      // Show the generated content in viewing modal
-      if (result) {
-        setViewingContent(result);
-      }
     } catch (error) {
       console.error("Failed to generate content from upload:", error);
       alert("Failed to generate content. Please try again.");
@@ -163,7 +170,12 @@ export default function ContentGeneration() {
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-neutral-800">Upload Content</h2>
-          <Button variant="outline" onClick={() => setUploadMode(false)}>
+          <Button variant="outline" onClick={() => {
+            setUploadMode(false);
+            setUploadedVideo(null);
+            setUploadedTranscript("");
+            setUploadGeneratedContent([]);
+          }}>
             Back to Sessions
           </Button>
         </div>
@@ -222,38 +234,53 @@ export default function ContentGeneration() {
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4">Generate Content</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Button 
-                    onClick={() => generateFromUpload("carousel")}
-                    disabled={uploadContentMutation.isPending}
-                    className="bg-primary text-white hover:bg-primary/90"
-                  >
-                    <Images className="mr-2" size={16} />
-                    LinkedIn Carousel
-                  </Button>
-                  <Button 
-                    onClick={() => generateFromUpload("image")}
-                    disabled={uploadContentMutation.isPending}
-                    className="bg-primary text-white hover:bg-primary/90"
-                  >
-                    <Image className="mr-2" size={16} />
-                    Image Post
-                  </Button>
-                  <Button 
-                    onClick={() => generateFromUpload("text")}
-                    disabled={uploadContentMutation.isPending}
-                    className="bg-primary text-white hover:bg-primary/90"
-                  >
-                    <AlignLeft className="mr-2" size={16} />
-                    Text Post
-                  </Button>
-                </div>
+                <Button 
+                  onClick={generateFromUpload}
+                  disabled={uploadContentMutation.isPending}
+                  className="w-full bg-primary text-white hover:bg-primary/90"
+                >
+                  {uploadContentMutation.isPending ? "Generating All Content Types..." : "Generate LinkedIn Content (All Types)"}
+                </Button>
                 {uploadContentMutation.isPending && (
-                  <p className="text-sm text-neutral-600 mt-2">Generating content...</p>
+                  <p className="text-sm text-neutral-600 mt-2">Creating carousel, image, and text posts...</p>
                 )}
                 {uploadContentMutation.isSuccess && (
-                  <p className="text-sm text-green-600 mt-2">Content generated successfully! Click to view above.</p>
+                  <p className="text-sm text-green-600 mt-2">
+                    Generated {uploadGeneratedContent.length} content pieces! View them below.
+                  </p>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generated Content Display */}
+          {uploadGeneratedContent.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Generated Content</h3>
+                <div className="grid gap-4">
+                  {uploadGeneratedContent.map((content, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          {content.type === 'carousel' && <Images className="mr-2" size={16} />}
+                          {content.type === 'image' && <Image className="mr-2" size={16} />}
+                          {content.type === 'text' && <AlignLeft className="mr-2" size={16} />}
+                          <span className="font-medium capitalize">{content.type} Post</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => setViewingContent(content)}
+                          className="bg-primary text-white hover:bg-primary/90"
+                        >
+                          <Eye className="mr-1" size={12} />
+                          View Full
+                        </Button>
+                      </div>
+                      <p className="text-sm text-neutral-600">{content.title}</p>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
