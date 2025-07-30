@@ -73,25 +73,31 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     onAudioLevel: (level) => {
       setAudioLevel(level);
       
+      // Only do voice activity detection if we have a session and are recording
+      if (!sessionId || !isRecordingTranscript) return;
+      
       // Detect voice activity (level > threshold indicates speaking)
-      const activityThreshold = 10; // Adjust this threshold as needed
+      const activityThreshold = 15; // Increased threshold for better detection
       if (level > activityThreshold) {
+        console.log("Voice activity detected, level:", level);
         setLastAudioActivityTime(Date.now());
         
         // Clear any existing silence timer
         if (silenceTimer) {
+          console.log("Clearing existing silence timer");
           clearTimeout(silenceTimer);
           setSilenceTimer(null);
         }
-      } else if (lastAudioActivityTime && !silenceTimer) {
+      } else if (lastAudioActivityTime && !silenceTimer && isRecordingTranscript) {
         // Start silence timer when audio drops below threshold
+        console.log("Audio below threshold, starting 5-second silence timer");
         const timer = setTimeout(() => {
-          console.log("20 seconds of silence detected, triggering auto-submission");
+          console.log("5 seconds of silence detected, triggering auto-submission");
           if (onTranscriptionComplete) {
             onTranscriptionComplete("__AUTO_SUBMIT_SILENCE__");
           }
           setSilenceTimer(null);
-        }, 20000); // 20 seconds
+        }, 5000); // 5 seconds for testing (change back to 20000 when working)
         
         setSilenceTimer(timer);
       }
@@ -221,7 +227,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
               <span className="text-xs font-medium text-green-300">Voice Detected - Recording</span>
             </div>
             <p className="text-xs text-green-200">
-              Will auto-submit after 20 seconds of silence
+              Will auto-submit after 5 seconds of silence
             </p>
           </div>
         )}
