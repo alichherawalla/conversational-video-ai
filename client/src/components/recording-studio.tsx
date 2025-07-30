@@ -219,7 +219,7 @@ export default function RecordingStudio() {
           onTranscriptionComplete={(text) => {
             console.log("Transcription completed in recording studio:", text);
             
-            // Handle special auto-submit signal - just pass it through
+            // Handle special auto-submit signal - pass it through but don't display it
             if (text === "__AUTO_SUBMIT_SILENCE__") {
               setTranscriptionText(text);
               return;
@@ -251,7 +251,7 @@ export default function RecordingStudio() {
         )}
         
         {/* Voice Transcription Display */}
-        {transcriptionText && (
+        {transcriptionText && transcriptionText !== "__AUTO_SUBMIT_SILENCE__" && (
           <Card>
             <CardContent className="p-4">
               <h3 className="text-lg font-semibold text-neutral-800 mb-2">Voice Transcription</h3>

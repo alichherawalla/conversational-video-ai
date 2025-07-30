@@ -89,6 +89,8 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
           console.log("Auto-submitting due to silence");
           handleSubmitResponse();
         }
+        // Clear the transcription signal immediately
+        onTranscriptionProcessed?.();
         return;
       }
       
