@@ -16,6 +16,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
   const [followUpIndex, setFollowUpIndex] = useState(0);
   const [needsCorrection, setNeedsCorrection] = useState(false);
+  const [currentBaseQuestion, setCurrentBaseQuestion] = useState<string>("");
   const queryClient = useQueryClient();
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -34,12 +35,22 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   });
 
   const getAIQuestionMutation = useMutation({
-    mutationFn: async (data: { sessionId: string; questionId?: string; followUpIndex?: number }) => {
+    mutationFn: async (data: { 
+      sessionId: string; 
+      questionId?: string; 
+      followUpIndex?: number;
+      baseQuestion?: string;
+      userResponse?: string;
+    }) => {
       const res = await apiRequest("POST", "/api/ai/question", data);
       return res.json();
     },
     onSuccess: (data) => {
       setCurrentQuestionId(data.questionId);
+      // Track base question for follow-ups
+      if (!data.isFollowUp) {
+        setCurrentBaseQuestion(data.question);
+      }
       createConversationMutation.mutate({
         sessionId,
         type: "ai_question",
@@ -106,12 +117,14 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
         setIsTyping(false);
       }, 1500);
     } else if (currentQuestionId && followUpIndex < 2) {
-      // Ask follow-up question if available
+      // Ask contextual follow-up question based on user's response
       setTimeout(async () => {
         await getAIQuestionMutation.mutateAsync({ 
           sessionId, 
           questionId: currentQuestionId, 
-          followUpIndex 
+          followUpIndex,
+          baseQuestion: currentBaseQuestion,
+          userResponse: userResponse
         });
         setFollowUpIndex(prev => prev + 1);
         setIsTyping(false);

@@ -33,17 +33,45 @@ export interface AIQuestionResponse {
   followUpIndex?: number;
 }
 
-export async function generateAIQuestion(sessionId: string, questionId?: string, followUpIndex?: number): Promise<AIQuestionResponse> {
+export async function generateAIQuestion(
+  sessionId: string, 
+  questionId?: string, 
+  followUpIndex?: number,
+  baseQuestion?: string,
+  userResponse?: string
+): Promise<AIQuestionResponse> {
   try {
     let prompt: string;
     
-    if (questionId && followUpIndex !== undefined) {
-      // Generate follow-up question
-      prompt = `You are an AI interviewer conducting a professional video interview. Generate a relevant follow-up question (follow-up #${followUpIndex + 1} of 2) that digs deeper into the topic. The question should:
+    if (questionId && followUpIndex !== undefined && baseQuestion && userResponse) {
+      // Generate contextual follow-up question based on base question and user response
+      prompt = `You are an AI interviewer conducting a professional video interview. 
+
+BASE QUESTION: "${baseQuestion}"
+USER'S RESPONSE: "${userResponse}"
+
+Generate a smart follow-up question (follow-up #${followUpIndex + 1} of 2) that:
+
+- Builds directly on their specific response
+- Digs deeper into the most interesting part of their answer
+- Asks for concrete examples, outcomes, or lessons learned
+- Encourages storytelling and specific details
+- Is 10-20 words long
+- Would create engaging video content
+
+Examples of good follow-up styles:
+- "What specific outcome did that decision lead to?"
+- "Can you walk me through exactly how you handled that situation?"
+- "What would you do differently if you faced that again?"
+- "How did that experience change your approach going forward?"
+
+Generate only the follow-up question text, no other content.`;
+    } else if (questionId && followUpIndex !== undefined) {
+      // Fallback generic follow-up
+      prompt = `You are an AI interviewer. Generate a relevant follow-up question (follow-up #${followUpIndex + 1} of 2) that digs deeper into the topic. The question should:
       
       - Be specific and actionable
       - Encourage detailed examples or stories
-      - Build on the previous response naturally
       - Be 10-20 words long
       - Help create engaging video content
       

@@ -3,7 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSessionSchema, insertQuestionSchema, insertConversationSchema, insertClipSchema, insertContentPieceSchema } from "@shared/schema";
 import { generateAIQuestion, analyzeResponse, generateLinkedInContent, generateVideoClips } from "./anthropic";
+import { transcribeAudioBuffer } from "./openai";
 import { z } from "zod";
+import multer from "multer";
+
+// Configure multer for file uploads
+const upload = multer({ dest: '/tmp/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sessions
@@ -130,16 +135,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced AI Question and Follow-up System
+  // Enhanced AI Question System with Contextual Follow-ups
   app.post("/api/ai/question", async (req, res) => {
     try {
-      const { sessionId, questionId, followUpIndex } = req.body;
+      const { sessionId, questionId, followUpIndex, baseQuestion, userResponse } = req.body;
       
-      // Get conversation history to understand context
-      const conversations = await storage.getConversationsBySession(sessionId);
-      
-      if (followUpIndex !== undefined) {
-        // Return specific follow-up question
+      if (followUpIndex !== undefined && baseQuestion && userResponse) {
+        // Generate contextual AI follow-up based on user's response
+        const aiQuestion = await generateAIQuestion(
+          sessionId, 
+          questionId, 
+          followUpIndex, 
+          baseQuestion, 
+          userResponse
+        );
+        res.json({
+          question: aiQuestion.question,
+          questionId: aiQuestion.questionId,
+          isFollowUp: true,
+          followUpIndex
+        });
+      } else if (followUpIndex !== undefined) {
+        // Fallback to pre-written follow-up questions
         const question = questionId ? await storage.getQuestion(questionId) : null;
         if (!question) {
           return res.status(404).json({ message: "Question not found" });
@@ -165,7 +182,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
           
           if (!randomQuestion) {
-            return res.status(404).json({ message: "No questions available" });
+            // Generate AI question as fallback
+            const aiQuestion = await generateAIQuestion(sessionId);
+            return res.json({
+              question: aiQuestion.question,
+              questionId: aiQuestion.questionId,
+              followUps: [],
+              isFollowUp: false
+            });
           }
 
           res.json({
@@ -184,6 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     } catch (error) {
+      console.error('AI question generation error:', error);
       res.status(500).json({ message: "Failed to get AI question" });
     }
   });
@@ -199,6 +224,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('AI feedback error:', error);
       res.status(500).json({ message: "Failed to analyze response" });
+    }
+  });
+
+  // Audio Transcription with OpenAI Whisper
+  app.post("/api/transcribe", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const fs = await import('fs');
+      const audioBuffer = fs.readFileSync(req.file.path);
+      const transcription = await transcribeAudioBuffer(audioBuffer, req.file.originalname || 'audio.wav');
+      
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+      
+      res.json({
+        text: transcription.text,
+        duration: transcription.duration
+      });
+    } catch (error) {
+      console.error('Transcription error:', error);
+      res.status(500).json({ message: "Failed to transcribe audio" });
     }
   });
 

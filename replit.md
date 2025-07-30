@@ -124,6 +124,13 @@ Preferred communication style: Simple, everyday language.
   - Image posts with quotes, statistics, and personal insights  
   - Text posts with story threads, contrarian takes, and behind-the-scenes content
 
+### January 30, 2025 - Contextual AI Follow-ups and Audio Transcription
+- **Smart Follow-up Questions**: AI now generates contextual follow-up questions based on base questions and user responses
+- **Enhanced AI Conversation**: Follow-ups are personalized using Claude to dig deeper into specific user answers
+- **OpenAI Audio Transcription**: Integrated Whisper API for accurate voice-to-text conversion
+- **Voice Input Support**: Users can now provide responses via voice recording with automatic transcription
+- **Contextual Understanding**: AI analyzes both the original question and user response to create relevant follow-ups
+
 ### January 30, 2025 - Database Integration
 - **PostgreSQL Database**: Successfully migrated from in-memory storage to persistent PostgreSQL database
 - **Database Connection**: Integrated Neon Database with Drizzle ORM for robust data persistence
