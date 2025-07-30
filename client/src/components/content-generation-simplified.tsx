@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Play, Download, Slice, Images, Image, AlignLeft, Clock, Eye, X } from "lucide-react";
+import { Play, Download, Slice, Images, Image, AlignLeft, Clock, Eye, X, Sparkles, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Session, Clip, ContentPiece } from "@shared/schema";
