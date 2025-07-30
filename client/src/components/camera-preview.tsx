@@ -75,10 +75,10 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
                 return updated;
               });
               
-              // Submit to conversation flow if 5+ seconds have passed or significant content
-              if (timeSinceLastSubmission > 5000 || newChunk.split(' ').length > 5) {
+              // Submit to conversation flow only after 5+ seconds have passed
+              if (timeSinceLastSubmission > 5000) {
                 const fullTranscript = transcriptionChunksRef.current.join(' ');
-                console.log("Submitting accumulated transcript:", fullTranscript);
+                console.log("Submitting accumulated transcript after 5 seconds:", fullTranscript);
                 onTranscriptionComplete?.(fullTranscript);
                 lastSubmissionTimeRef.current = currentTime;
                 
@@ -133,13 +133,13 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         startTranscriptRecording()
       ]);
       
-      // Start continuous transcription every 1 second
+      // Start continuous transcription every 3 seconds
       const timer = setInterval(() => {
         if (isRecordingVideo) {
-          console.log("Auto-transcription: Getting transcript every 1 second");
+          console.log("Auto-transcription: Getting transcript every 3 seconds");
           handleManualTranscript();
         }
-      }, 1000);
+      }, 3000);
       transcriptionTimerRef.current = timer;
       
       console.log("Video and audio transcription recording started with 5-second auto-transcription");
