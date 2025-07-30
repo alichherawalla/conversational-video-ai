@@ -29,7 +29,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       onRecordingComplete?.(blob);
       setIsRecordingAudio(false);
     },
-    // Default to include both video and audio
+    audio: false, // This is for video with audio recording (not audio-only)
   });
 
   // Audio-only recording for transcription

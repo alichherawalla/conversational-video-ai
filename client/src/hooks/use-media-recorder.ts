@@ -27,7 +27,10 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
         
       const constraints = options.audio 
         ? { audio: audioConstraints } 
-        : { video: { width: 1280, height: 720 }, audio: audioConstraints };
+        : { 
+            video: { width: 1280, height: 720 }, 
+            audio: audioConstraints // Always include audio for video recording
+          };
         
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
@@ -86,9 +89,20 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
       }
       
       console.log("Using media recorder with MIME type:", mimeType);
-      mediaRecorder = new MediaRecorder(mediaStream, {
+      console.log("MediaStream has audio tracks:", mediaStream.getAudioTracks().length);
+      console.log("MediaStream has video tracks:", mediaStream.getVideoTracks().length);
+      
+      // Configure MediaRecorder with audio options
+      const recorderOptions: MediaRecorderOptions = {
         mimeType: mimeType,
-      });
+      };
+      
+      // Add audio bitrate for better audio quality (only for video recording)
+      if (!options.audio) {
+        recorderOptions.audioBitsPerSecond = 128000; // 128 kbps for good audio quality
+      }
+      
+      mediaRecorder = new MediaRecorder(mediaStream, recorderOptions);
       
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
