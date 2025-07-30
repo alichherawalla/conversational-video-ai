@@ -60,16 +60,19 @@ export default function ContentGeneration() {
       const results = [];
       setUploadGeneratedContent([]); // Clear previous results
       
-      // Generate content types one by one
+      // Generate 3 posts of each content type
       const contentTypes = ['carousel', 'image', 'text'];
       
       for (const contentType of contentTypes) {
-        const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
-        const result = await res.json();
-        results.push(result);
-        
-        // Update state after each generation to show progress
-        setUploadGeneratedContent([...results]);
+        // Generate 3 posts of each type
+        for (let i = 0; i < 3; i++) {
+          const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
+          const result = await res.json();
+          results.push(result);
+          
+          // Update state after each generation to show progress
+          setUploadGeneratedContent([...results]);
+        }
       }
       
       // Also generate video clips
@@ -258,7 +261,7 @@ export default function ContentGeneration() {
                   <div className="text-sm text-neutral-600 mt-2">
                     <p>Creating LinkedIn content and video clips...</p>
                     <p className="text-xs mt-1">
-                      Generated {uploadGeneratedContent.length}/3 content pieces
+                      Generated {uploadGeneratedContent.length}/9 content pieces
                       {uploadGeneratedClips.length > 0 && ` + ${uploadGeneratedClips.length} video clips`}
                     </p>
                   </div>
@@ -274,34 +277,50 @@ export default function ContentGeneration() {
 
           {/* Generated Content Display */}
           {uploadGeneratedContent.length > 0 && (
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Generated LinkedIn Content</h3>
-                <div className="grid gap-4">
-                  {uploadGeneratedContent.map((content, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center">
-                          {content.type === 'carousel' && <Images className="mr-2" size={16} />}
-                          {content.type === 'image' && <Image className="mr-2" size={16} />}
-                          {content.type === 'text' && <AlignLeft className="mr-2" size={16} />}
-                          <span className="font-medium capitalize">{content.type} Post</span>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => setViewingContent(content)}
-                          className="bg-primary text-white hover:bg-primary/90"
-                        >
-                          <Eye className="mr-1" size={12} />
-                          View Full
-                        </Button>
+            <div className="space-y-6">
+              {['carousel', 'image', 'text'].map(contentType => {
+                const filteredContent = uploadGeneratedContent.filter(c => c.type === contentType);
+                if (filteredContent.length === 0) return null;
+                
+                return (
+                  <Card key={contentType}>
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold mb-4 flex items-center">
+                        {contentType === 'carousel' && <Images className="mr-2" size={16} />}
+                        {contentType === 'image' && <Image className="mr-2" size={16} />}
+                        {contentType === 'text' && <AlignLeft className="mr-2" size={16} />}
+                        LinkedIn {contentType.charAt(0).toUpperCase() + contentType.slice(1)} Posts ({filteredContent.length})
+                      </h3>
+                      <div className="grid gap-4">
+                        {filteredContent.map((content, index) => (
+                          <div key={`${contentType}-${index}`} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-medium">{content.title}</span>
+                              <Button 
+                                size="sm" 
+                                onClick={() => {
+                                  console.log('Viewing content:', content);
+                                  setViewingContent(content);
+                                }}
+                                className="bg-primary text-white hover:bg-primary/90"
+                              >
+                                <Eye className="mr-1" size={12} />
+                                View Full
+                              </Button>
+                            </div>
+                            <p className="text-sm text-neutral-600">
+                              {contentType === 'carousel' && `${(content.content as any)?.slides?.length || 0} slides`}
+                              {contentType === 'image' && `Quote: "${(content.content as any)?.quote?.substring(0, 50)}..."`}
+                              {contentType === 'text' && `Hook: "${(content.content as any)?.hook?.substring(0, 50)}..."`}
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                      <p className="text-sm text-neutral-600">{content.title}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
 
           {/* Generated Video Clips Display */}
