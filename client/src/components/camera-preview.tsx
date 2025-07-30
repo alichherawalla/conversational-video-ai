@@ -22,7 +22,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Continuous transcription timer
-  const [transcriptionTimer, setTranscriptionTimer] = useState<NodeJS.Timeout | null>(null);
+  const transcriptionTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Video recording with audio
   const {
@@ -152,10 +152,15 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       
       // Start continuous transcription every 5 seconds
       const timer = setInterval(() => {
-        console.log("Auto-transcription: Getting transcript every 5 seconds");
-        handleManualTranscript();
+        // Only auto-transcribe if video recording is still active
+        if (isRecordingVideo) {
+          console.log("Auto-transcription: Getting transcript every 5 seconds");
+          handleManualTranscript();
+        } else {
+          console.log("Video recording stopped, skipping auto-transcription");
+        }
       }, 5000);
-      setTranscriptionTimer(timer);
+      transcriptionTimerRef.current = timer;
       
       console.log("Both video and audio transcription recording started with 5-second auto-transcription");
     } catch (error) {
@@ -166,19 +171,21 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
 
   const handleStopRecording = async () => {
     console.log("Stopping recordings...");
-    stopVideoRecording();
-    if (isRecordingTranscript) {
-      stopTranscriptRecording();
-    }
     
-    // Clean up timers
+    // Clean up timers first to prevent further auto-transcription attempts
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       setSilenceTimer(null);
     }
-    if (transcriptionTimer) {
-      clearInterval(transcriptionTimer);
-      setTranscriptionTimer(null);
+    if (transcriptionTimerRef.current) {
+      console.log("Clearing continuous transcription timer");
+      clearInterval(transcriptionTimerRef.current);
+      transcriptionTimerRef.current = null;
+    }
+    
+    stopVideoRecording();
+    if (isRecordingTranscript) {
+      stopTranscriptRecording();
     }
     
     setIsRecordingAudio(false);
@@ -187,20 +194,22 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
 
   const handleManualTranscript = async () => {
     console.log("Manual transcript requested");
-    console.log("Current state - Recording:", isRecordingTranscript, "Session:", sessionId);
+    console.log("Current state - Recording:", isRecordingTranscript, "Session:", sessionId, "Video Recording:", isRecordingVideo);
     
-    if (isRecordingTranscript) {
+    if (isRecordingTranscript && isRecordingVideo) {
       // Stop current recording and process transcription immediately
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
       
       // Start new recording immediately after stopping to continue capturing audio
       setTimeout(() => {
-        if (isRecordingVideo && !isRecordingTranscript) {
+        if (isRecordingVideo) {
           console.log("Restarting audio recording after manual transcription");
           startTranscriptRecording();
         }
-      }, 2000); // Wait 2 seconds for transcription to process
+      }, 3000); // Wait 3 seconds for transcription to process
+    } else if (!isRecordingVideo) {
+      console.log("Video recording not active, cannot process transcript");
     } else {
       console.log("No active audio recording to transcribe");
     }
