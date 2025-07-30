@@ -230,6 +230,24 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const fileSizeMB = Math.round(file.size / 1024 / 1024);
+      if (fileSizeMB > 500) {
+        toast({
+          title: "File Too Large",
+          description: "Video files must be under 500MB. Please compress your video or use the transcript-only option.",
+          variant: "destructive",
+        });
+        event.target.value = ''; // Clear the input
+        return;
+      }
+      
+      if (fileSizeMB > 100) {
+        toast({
+          title: "Large File Detected",
+          description: `Your ${fileSizeMB}MB video will take 5-15 minutes to process. Please be patient.`,
+        });
+      }
+      
       setUploadedVideo(file);
     }
   };
@@ -478,10 +496,14 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
                 </Button>
                 
                 {videoUploadMutation.isPending && (
-                  <div className="text-sm text-neutral-600 mt-2">
-                    <p>🎬 Extracting audio from video...</p>
-                    <p>🎤 Transcribing with word-level timing...</p>
+                  <div className="text-sm text-neutral-600 mt-2 space-y-1">
+                    <p>🎬 Processing large video file (this may take several minutes)...</p>
+                    <p>🎤 Extracting audio and transcribing with word-level timing...</p>
                     <p>✨ Generating LinkedIn content and precise video clips...</p>
+                    <div className="text-xs text-neutral-500 mt-2 p-2 bg-neutral-50 rounded">
+                      <strong>Large file processing:</strong> Videos over 100MB may take 5-15 minutes to process completely. 
+                      Please be patient while we extract audio, transcribe with precise timing, and generate your content.
+                    </div>
                   </div>
                 )}
                 
