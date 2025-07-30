@@ -25,7 +25,11 @@ import CameraPreview from "./camera-preview";
 import ConversationFlow from "./conversation-flow";
 import type { InsertSession } from "@shared/schema";
 
-export default function RecordingStudio() {
+interface RecordingStudioProps {
+  onNavigateToContent?: (sessionId: string) => void;
+}
+
+export default function RecordingStudio({ onNavigateToContent }: RecordingStudioProps) {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
@@ -392,7 +396,11 @@ export default function RecordingStudio() {
                       </Button>
                     </div>
                     <Button
-                      onClick={handleGenerateContent}
+                      onClick={() => {
+                        if (currentSession && onNavigateToContent) {
+                          onNavigateToContent(currentSession);
+                        }
+                      }}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                       disabled={!currentSession}
                     >

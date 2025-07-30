@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,19 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Session, Clip, ContentPiece } from "@shared/schema";
 
-export default function ContentGeneration() {
-  const [selectedSession, setSelectedSession] = useState<string>("");
+interface ContentGenerationProps {
+  selectedSessionId?: string;
+}
+
+export default function ContentGeneration({ selectedSessionId }: ContentGenerationProps) {
+  const [selectedSession, setSelectedSession] = useState<string>(selectedSessionId || "");
+  
+  // Update selected session when prop changes
+  useEffect(() => {
+    if (selectedSessionId) {
+      setSelectedSession(selectedSessionId);
+    }
+  }, [selectedSessionId]);
   const [viewingContent, setViewingContent] = useState<ContentPiece | null>(null);
   const [viewingClip, setViewingClip] = useState<Clip | null>(null);
   const [uploadMode, setUploadMode] = useState(false);
@@ -77,6 +88,49 @@ export default function ContentGeneration() {
         variant: "destructive"
       });
     }
+  });
+
+  // Session content generation mutation (like upload version)
+  const sessionContentMutation = useMutation({
+    mutationFn: async ({ sessionId }: { sessionId: string }) => {
+      const allContent = [];
+      
+      // Generate 3 posts for each content type (9 total) with separate API calls
+      const contentTypes = ['carousel', 'image', 'text'];
+      
+      for (const contentType of contentTypes) {
+        // Make 3 separate API calls for each content type
+        for (let i = 0; i < 3; i++) {
+          const res = await apiRequest("POST", `/api/sessions/${sessionId}/generate-content`, { 
+            contentType
+          });
+          const result = await res.json();
+          allContent.push(result);
+        }
+      }
+      
+      // Generate video clips
+      const clipsRes = await apiRequest("POST", `/api/sessions/${sessionId}/generate-clips`);
+      const clips = await clipsRes.json();
+      
+      return { content: allContent, clips };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", selectedSession, "clips"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions", selectedSession, "content"] });
+      toast({
+        title: "Content Generated",
+        description: "Generated 9 LinkedIn posts and video clips from your session!",
+      });
+    },
+    onError: (error) => {
+      console.error('Session content generation error:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content from session. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const uploadContentMutation = useMutation({
@@ -693,6 +747,13 @@ export default function ContentGeneration() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => sessionContentMutation.mutate({ sessionId: selectedSession })}
+            disabled={!selectedSession || sessionContentMutation.isPending}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            {sessionContentMutation.isPending ? "Generating..." : "Generate All Content"}
+          </Button>
           <Button 
             onClick={() => downloadContentPackage(selectedSessionData)}
             disabled={!selectedSession}

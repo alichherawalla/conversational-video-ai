@@ -9,6 +9,7 @@ type Tab = "recording" | "questions" | "content";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("recording");
+  const [selectedSessionForContent, setSelectedSessionForContent] = useState<string>("");
 
   const tabs = [
     { id: "recording" as Tab, label: "Recording Studio", icon: Video },
@@ -76,9 +77,18 @@ export default function Home() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "recording" && <RecordingStudio />}
+        {activeTab === "recording" && (
+          <RecordingStudio 
+            onNavigateToContent={(sessionId: string) => {
+              setSelectedSessionForContent(sessionId);
+              setActiveTab("content");
+            }}
+          />
+        )}
         {activeTab === "questions" && <QuestionBank />}
-        {activeTab === "content" && <ContentGeneration />}
+        {activeTab === "content" && (
+          <ContentGeneration selectedSessionId={selectedSessionForContent} />
+        )}
 
       </main>
     </div>
