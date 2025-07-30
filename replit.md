@@ -203,10 +203,10 @@ Preferred communication style: Simple, everyday language.
 - **Generate All Content Feature**: Added bulk content generation for sessions creating 9 LinkedIn posts plus video clips in one click
 - **Session Navigation Integration**: "Generate Social Media Content" button seamlessly navigates from Recording Studio to Content Generation
 
-### January 30, 2025 - Optimized Auto-Transcription with Silence Detection
-- **5-Second Transcription Intervals**: Changed auto-transcription from 3-second to 5-second intervals for better accuracy
-- **10-Second Silence Auto-Submit**: Implemented smart silence detection that auto-submits transcripts after 10 seconds of no new words
-- **Intelligent Word Detection**: System tracks when new words are transcribed vs silent periods for optimal submission timing  
-- **Enhanced Auto-Submit Logic**: Transcripts are submitted either when silence threshold is reached or when user manually stops recording
-- **Improved User Experience**: Real-time display shows "Auto-submits after 10s silence • Transcripts every 5s" for clear user expectations
-- **Timer Management**: Proper cleanup of all transcription and silence detection timers to prevent memory leaks
+### January 30, 2025 - Reverted to Manual-Only Transcription
+- **Removed Auto-Transcription**: Eliminated all automatic transcription functionality due to transcript quality issues
+- **Manual Control Only**: Users now control when to generate transcripts by clicking "Get Transcript" button
+- **Cleaner Transcription Process**: No more fragmented transcripts from frequent auto-processing
+- **Simplified UI**: Updated interface to show "Manual transcription • Click 'Get Transcript' when ready"
+- **Better User Experience**: Users can speak naturally without interruption and transcript when they choose
+- **Code Cleanup**: Removed unused auto-transcription timers, refs, and logic for cleaner codebase
