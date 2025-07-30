@@ -319,7 +319,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         {/* Note about voice recording */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Voice Recording Tips:</strong> Text is automatically transcribed every 5 seconds while recording. Watch the text area below fill up with your speech. Submit when ready or use the "Get Transcript" button for immediate processing.
+            💡 <strong>Voice Recording Tips:</strong> Text is automatically transcribed every 5 seconds. Only meaningful words are captured (filters out background noise, filler words). Auto-submission occurs after 15 seconds of no meaningful speech detected.
           </p>
         </div>
         

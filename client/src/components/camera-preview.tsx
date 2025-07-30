@@ -61,12 +61,39 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
             const result = await transcribeAudio(blob);
             console.log("Transcription API response:", result);
             console.log("Transcription result:", result.text);
+            
             if (result.text && result.text.trim()) {
-              console.log("Calling onTranscriptionComplete with:", result.text);
-              console.log("onTranscriptionComplete function:", onTranscriptionComplete);
-              onTranscriptionComplete?.(result.text);
+              // Check if transcription contains meaningful words
+              const cleanText = result.text.trim().toLowerCase();
+              const meaningfulWords = cleanText.split(/\s+/).filter(word => 
+                word.length > 2 && 
+                !['um', 'uh', 'hmm', 'ah', 'oh', 'the', 'and', 'but', 'subscribe'].includes(word)
+              );
+              
+              if (meaningfulWords.length > 0) {
+                console.log("Found meaningful transcription:", result.text);
+                onTranscriptionComplete?.(result.text);
+              } else {
+                console.log("No meaningful words found in transcription, checking for auto-submit");
+                // Check if we should auto-submit due to lack of meaningful content
+                if (lastAudioActivityTime && Date.now() - lastAudioActivityTime > 15000) {
+                  console.log("15+ seconds of non-meaningful audio, triggering auto-submission");
+                  onTranscriptionComplete?.("__AUTO_SUBMIT_SILENCE__");
+                  setLastAudioActivityTime(null);
+                } else if (!lastAudioActivityTime) {
+                  setLastAudioActivityTime(Date.now());
+                }
+              }
             } else {
-              console.warn("Transcription result is empty or invalid");
+              console.warn("Transcription result is empty");
+              // Track empty transcriptions for auto-submit logic
+              if (!lastAudioActivityTime) {
+                setLastAudioActivityTime(Date.now());
+              } else if (Date.now() - lastAudioActivityTime > 15000) {
+                console.log("15+ seconds of empty transcriptions, triggering auto-submission");
+                onTranscriptionComplete?.("__AUTO_SUBMIT_SILENCE__");
+                setLastAudioActivityTime(null);
+              }
             }
           } catch (error) {
             console.error("Transcription failed:", error);
@@ -81,39 +108,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     onAudioLevel: (level) => {
       setAudioLevel(level);
       
-      // Log audio levels for debugging
-      if (level > 0) {
+      // Log audio levels for debugging (reduced frequency)
+      if (level > 5) {
         console.log("Audio level:", level, "Recording:", isRecordingTranscript, "Session:", !!sessionId);
-      }
-      
-      // Only do voice activity detection if we have a session and are recording
-      if (!sessionId || !isRecordingTranscript) return;
-      
-      // Detect voice activity (lowered threshold for better detection)
-      const activityThreshold = 5; // Lowered threshold
-      if (level > activityThreshold) {
-        console.log("Voice activity detected, level:", level);
-        setLastAudioActivityTime(Date.now());
-        
-        // Clear any existing silence timer
-        if (silenceTimer) {
-          console.log("Clearing existing silence timer due to voice activity");
-          clearTimeout(silenceTimer);
-          setSilenceTimer(null);
-        }
-      } else if (lastAudioActivityTime && !silenceTimer && isRecordingTranscript) {
-        // Start silence timer when audio drops below threshold
-        console.log("Audio below threshold, starting 20-second silence timer");
-        const timer = setTimeout(() => {
-          console.log("20 seconds of silence detected, triggering auto-submission");
-          if (onTranscriptionComplete) {
-            onTranscriptionComplete("__AUTO_SUBMIT_SILENCE__");
-          }
-          setSilenceTimer(null);
-          setLastAudioActivityTime(null);
-        }, 20000); // 20 seconds for auto-submission
-        
-        setSilenceTimer(timer);
       }
     },
     audio: true, // Audio-only for transcription
@@ -139,7 +136,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       console.log("Starting video and audio recording...");
       setIsRecordingAudio(true);
       
-      // Reset audio activity tracking
+      // Reset transcription tracking
       setLastAudioActivityTime(null);
       if (silenceTimer) {
         clearTimeout(silenceTimer);
