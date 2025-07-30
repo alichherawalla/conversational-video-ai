@@ -13,6 +13,9 @@ interface ConversationFlowProps {
 export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [userResponse, setUserResponse] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [followUpIndex, setFollowUpIndex] = useState(0);
+  const [needsCorrection, setNeedsCorrection] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -31,11 +34,12 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   });
 
   const getAIQuestionMutation = useMutation({
-    mutationFn: async (data: { sessionId: string; questionId?: string }) => {
+    mutationFn: async (data: { sessionId: string; questionId?: string; followUpIndex?: number }) => {
       const res = await apiRequest("POST", "/api/ai/question", data);
       return res.json();
     },
     onSuccess: (data) => {
+      setCurrentQuestionId(data.questionId);
       createConversationMutation.mutate({
         sessionId,
         type: "ai_question",
@@ -46,7 +50,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   });
 
   const getAIFeedbackMutation = useMutation({
-    mutationFn: async (data: { response: string }) => {
+    mutationFn: async (data: { response: string; sessionId: string; questionId?: string }) => {
       const res = await apiRequest("POST", "/api/ai/feedback", data);
       return res.json();
     },
@@ -72,8 +76,12 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
       timestamp: Math.floor(Date.now() / 1000),
     });
 
-    // Get AI feedback
-    const feedback = await getAIFeedbackMutation.mutateAsync({ response: userResponse });
+    // Get AI feedback with enhanced analysis
+    const feedback = await getAIFeedbackMutation.mutateAsync({ 
+      response: userResponse, 
+      sessionId,
+      questionId: currentQuestionId || undefined
+    });
     
     // Add AI feedback
     await createConversationMutation.mutateAsync({
@@ -83,11 +91,39 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
       timestamp: Math.floor(Date.now() / 1000),
     });
 
-    // Generate follow-up question
-    setTimeout(async () => {
-      await getAIQuestionMutation.mutateAsync({ sessionId });
-      setIsTyping(false);
-    }, 2000);
+    setNeedsCorrection(feedback.needsCorrection);
+
+    // Determine next action based on feedback
+    if (feedback.needsCorrection) {
+      // If correction needed, ask for clarification/improvement
+      setTimeout(async () => {
+        await createConversationMutation.mutateAsync({
+          sessionId,
+          type: "ai_question",
+          content: feedback.correctionMessage,
+          timestamp: Math.floor(Date.now() / 1000),
+        });
+        setIsTyping(false);
+      }, 1500);
+    } else if (currentQuestionId && followUpIndex < 2) {
+      // Ask follow-up question if available
+      setTimeout(async () => {
+        await getAIQuestionMutation.mutateAsync({ 
+          sessionId, 
+          questionId: currentQuestionId, 
+          followUpIndex 
+        });
+        setFollowUpIndex(prev => prev + 1);
+        setIsTyping(false);
+      }, 2000);
+    } else {
+      // Move to next primary question
+      setTimeout(async () => {
+        await getAIQuestionMutation.mutateAsync({ sessionId });
+        setFollowUpIndex(0);
+        setIsTyping(false);
+      }, 2000);
+    }
 
     setUserResponse("");
   };
@@ -133,14 +169,21 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
                     {JSON.parse(conversation.content).feedbacks?.map((feedback: any, idx: number) => (
                       <div key={idx} className="text-sm mb-1">
                         <span className={`mr-2 ${
-                          feedback.type === "positive" ? "text-green-600" : "text-amber-600"
+                          feedback.type === "positive" ? "text-green-600" : 
+                          feedback.type === "warning" ? "text-amber-600" : "text-blue-600"
                         }`}>
-                          {feedback.type === "positive" ? "✓" : "⚠"}
+                          {feedback.type === "positive" ? "✓" : 
+                           feedback.type === "warning" ? "⚠" : "ℹ"}
                         </span>
                         {feedback.message}
                       </div>
                     ))}
-                    {JSON.parse(conversation.content).suggestion && (
+                    {JSON.parse(conversation.content).needsCorrection && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                        🔄 {JSON.parse(conversation.content).correctionMessage}
+                      </div>
+                    )}
+                    {JSON.parse(conversation.content).suggestion && !JSON.parse(conversation.content).needsCorrection && (
                       <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
                         💡 {JSON.parse(conversation.content).suggestion}
                       </div>

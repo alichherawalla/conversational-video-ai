@@ -100,7 +100,7 @@ export default function VideoLibrary() {
               <h3 className="font-semibold text-neutral-800 mb-2">{session.title}</h3>
               <p className="text-sm text-neutral-600 mb-3 line-clamp-2">{session.topic}</p>
               <div className="flex items-center justify-between text-xs text-neutral-500 mb-3">
-                <span>{formatDate(session.createdAt)}</span>
+                <span>{formatDate(session.createdAt.toString())}</span>
                 <span>8 clips generated</span>
               </div>
               <div className="flex items-center space-x-2">

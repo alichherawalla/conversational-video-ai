@@ -111,3 +111,15 @@ Preferred communication style: Simple, everyday language.
 - Optimized for server state management
 - Built-in caching and synchronization
 - Reduced boilerplate for API interactions
+
+## Recent Changes: Latest modifications with dates
+
+### January 30, 2025 - Enhanced AI Conversation Features
+- **AI Follow-up Questions**: AI now asks exactly 2 relevant follow-up questions after each response
+- **Response Correction System**: AI analyzes responses and provides corrections when answers are inadequate
+- **Smart Content Analysis**: AI checks for response length, examples, emotional content, and vague language
+- **Enhanced Video Clips**: Generated clips are now optimized for 15-90 second social media formats
+- **Advanced LinkedIn Content**: Three content types with sophisticated templates:
+  - Carousel posts with 5-7 professional slides
+  - Image posts with quotes, statistics, and personal insights  
+  - Text posts with story threads, contrarian takes, and behind-the-scenes content

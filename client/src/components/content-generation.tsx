@@ -131,7 +131,12 @@ export default function ContentGeneration() {
                         </div>
                         <p className="text-sm text-neutral-600 mb-2">{clip.description}</p>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-neutral-500">Social Score: {clip.socialScore || 0}/100</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-neutral-500">Social Score: {clip.socialScore || 0}/100</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                              {clip.endTime - clip.startTime}s clip
+                            </span>
+                          </div>
                           <Button size="sm" variant="outline">
                             <Slice className="mr-1" size={12} />
                             Create Clip
@@ -208,9 +213,14 @@ export default function ContentGeneration() {
                         <div className="text-sm text-neutral-600 mb-2">
                           {Array.isArray((content.content as any)?.slides) && 
                             (content.content as any).slides.slice(0, 3).map((slide: any, idx: number) => (
-                              <p key={idx}>Slide {idx + 1}: {slide.title}</p>
+                              <p key={idx} className="mb-1">
+                                <span className="text-primary font-medium">{slide.icon}</span> {slide.title}
+                              </p>
                             ))
                           }
+                          {Array.isArray((content.content as any)?.slides) && (content.content as any).slides.length > 3 && (
+                            <p className="text-xs text-neutral-500">+{(content.content as any).slides.length - 3} more slides</p>
+                          )}
                         </div>
                         <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
                           View Carousel
@@ -283,8 +293,15 @@ export default function ContentGeneration() {
                       <div key={content.id} className="border border-neutral-200 rounded-lg p-3">
                         <h4 className="font-medium text-neutral-800 mb-2">{content.title}</h4>
                         <div className="bg-neutral-50 rounded p-2 mb-2 text-sm text-neutral-700">
-                          <p>{(content.content as any)?.hook || 'Story hook...'}</p>
-                          <p className="mt-1">{(content.content as any)?.body?.substring(0, 50) || 'Body content...'}...</p>
+                          <p className="font-medium text-neutral-800">{(content.content as any)?.hook || 'Story hook...'}</p>
+                          <p className="mt-1 line-clamp-2">{(content.content as any)?.body?.substring(0, 100) || 'Body content...'}...</p>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(content.content as any)?.tags?.slice(0, 2).map((tag: string, idx: number) => (
+                              <span key={idx} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                         <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
                           View Full Post

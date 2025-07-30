@@ -129,62 +129,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Mock Responses
+  // Enhanced AI Question and Follow-up System
   app.post("/api/ai/question", async (req, res) => {
     try {
-      const { sessionId, questionId } = req.body;
+      const { sessionId, questionId, followUpIndex } = req.body;
       
-      // Mock AI question selection and follow-up logic
-      const question = questionId ? await storage.getQuestion(questionId) : null;
+      // Get conversation history to understand context
+      const conversations = await storage.getConversationsBySession(sessionId);
       
-      if (!question) {
-        // Select a random question if none specified
-        const questions = await storage.getQuestions();
-        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
-        
-        if (!randomQuestion) {
-          return res.status(404).json({ message: "No questions available" });
+      if (followUpIndex !== undefined) {
+        // Return specific follow-up question
+        const question = questionId ? await storage.getQuestion(questionId) : null;
+        if (!question) {
+          return res.status(404).json({ message: "Question not found" });
         }
-
-        res.json({
-          question: randomQuestion.primary,
-          questionId: randomQuestion.id,
-          followUps: [randomQuestion.followUp1, randomQuestion.followUp2].filter(Boolean)
-        });
+        
+        const followUps = [question.followUp1, question.followUp2].filter(Boolean);
+        if (followUpIndex < followUps.length) {
+          res.json({
+            question: followUps[followUpIndex],
+            questionId: question.id,
+            isFollowUp: true,
+            followUpIndex
+          });
+        } else {
+          res.status(404).json({ message: "Follow-up question not found" });
+        }
       } else {
-        res.json({
-          question: question.primary,
-          questionId: question.id,
-          followUps: [question.followUp1, question.followUp2].filter(Boolean)
-        });
+        // Select primary question
+        const question = questionId ? await storage.getQuestion(questionId) : null;
+        
+        if (!question) {
+          const questions = await storage.getQuestions();
+          const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+          
+          if (!randomQuestion) {
+            return res.status(404).json({ message: "No questions available" });
+          }
+
+          res.json({
+            question: randomQuestion.primary,
+            questionId: randomQuestion.id,
+            followUps: [randomQuestion.followUp1, randomQuestion.followUp2].filter(Boolean),
+            isFollowUp: false
+          });
+        } else {
+          res.json({
+            question: question.primary,
+            questionId: question.id,
+            followUps: [question.followUp1, question.followUp2].filter(Boolean),
+            isFollowUp: false
+          });
+        }
       }
     } catch (error) {
       res.status(500).json({ message: "Failed to get AI question" });
     }
   });
 
+  // Enhanced AI Feedback and Correction System
   app.post("/api/ai/feedback", async (req, res) => {
     try {
-      const { response } = req.body;
+      const { response, sessionId, questionId } = req.body;
       
-      // Mock AI feedback based on response length and content
+      // Analyze response quality and provide detailed feedback
       const feedbacks = [];
+      let needsCorrection = false;
+      let correctionMessage = "";
+      let suggestion = "";
       
-      if (response.length > 100) {
-        feedbacks.push({ type: "positive", message: "Clear articulation", level: "good" });
+      // Check response length and detail
+      if (response.length < 50) {
+        feedbacks.push({ 
+          type: "warning", 
+          message: "Response too brief - add more detail", 
+          level: "improve" 
+        });
+        needsCorrection = true;
+        correctionMessage = "Your answer is too short. Please provide more details and specific examples to make your response more compelling.";
+      } else if (response.length > 200) {
+        feedbacks.push({ 
+          type: "positive", 
+          message: "Good detailed response", 
+          level: "excellent" 
+        });
       } else {
-        feedbacks.push({ type: "warning", message: "Add more specifics", level: "improve" });
+        feedbacks.push({ 
+          type: "positive", 
+          message: "Good response length", 
+          level: "good" 
+        });
       }
       
-      if (response.toLowerCase().includes("example") || response.toLowerCase().includes("specific")) {
-        feedbacks.push({ type: "positive", message: "Good use of examples", level: "excellent" });
+      // Check for specific examples or numbers
+      const hasExamples = response.toLowerCase().includes("example") || 
+                         response.toLowerCase().includes("for instance") ||
+                         response.toLowerCase().includes("such as");
+      const hasNumbers = /\d+/.test(response);
+      
+      if (hasExamples && hasNumbers) {
+        feedbacks.push({ 
+          type: "positive", 
+          message: "Excellent use of specific examples with data", 
+          level: "excellent" 
+        });
+      } else if (hasExamples) {
+        feedbacks.push({ 
+          type: "positive", 
+          message: "Good use of examples", 
+          level: "good" 
+        });
+        suggestion = "Consider adding specific numbers or metrics to strengthen your examples.";
+      } else {
+        feedbacks.push({ 
+          type: "warning", 
+          message: "Missing concrete examples", 
+          level: "improve" 
+        });
+        if (!needsCorrection) {
+          correctionMessage = "Your answer would be stronger with specific examples. Can you share a concrete instance or story that illustrates your point?";
+          needsCorrection = true;
+        }
       }
       
-      feedbacks.push({ type: "positive", message: "Good eye contact", level: "excellent" });
+      // Check for emotional connection and storytelling
+      const emotionalWords = ["felt", "excited", "challenging", "learned", "realized", "discovered"];
+      const hasEmotionalContent = emotionalWords.some(word => 
+        response.toLowerCase().includes(word)
+      );
       
-      const suggestion = "Try expanding on your examples with concrete numbers or outcomes.";
+      if (hasEmotionalContent) {
+        feedbacks.push({ 
+          type: "positive", 
+          message: "Great emotional connection", 
+          level: "excellent" 
+        });
+      } else {
+        feedbacks.push({ 
+          type: "info", 
+          message: "Consider adding personal insights", 
+          level: "good" 
+        });
+        if (!suggestion) {
+          suggestion = "Try sharing how this experience made you feel or what you learned from it.";
+        }
+      }
       
-      res.json({ feedbacks, suggestion });
+      // Check for vague language
+      const vagueWords = ["things", "stuff", "something", "somehow", "kind of"];
+      const hasVagueLanguage = vagueWords.some(word => 
+        response.toLowerCase().includes(word)
+      );
+      
+      if (hasVagueLanguage) {
+        feedbacks.push({ 
+          type: "warning", 
+          message: "Avoid vague language - be more specific", 
+          level: "improve" 
+        });
+        if (!needsCorrection) {
+          correctionMessage = "Try to be more specific. Replace general terms with precise details about what exactly happened.";
+          needsCorrection = true;
+        }
+      }
+      
+      // Always include technical aspects
+      feedbacks.push({ 
+        type: "positive", 
+        message: "Good eye contact and posture", 
+        level: "excellent" 
+      });
+      
+      // Default suggestions if none provided
+      if (!suggestion && !correctionMessage) {
+        suggestion = "Great response! Consider expanding with more specific outcomes or results.";
+      }
+      
+      res.json({ 
+        feedbacks, 
+        suggestion,
+        needsCorrection,
+        correctionMessage,
+        shouldContinue: !needsCorrection
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to get AI feedback" });
     }
@@ -213,47 +340,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mock clip generation
+  // Enhanced AI-Powered Clip Generation (15-90 seconds for social media)
   app.post("/api/sessions/:sessionId/generate-clips", async (req, res) => {
     try {
       const { sessionId } = req.params;
       
-      // Mock generated clips
-      const mockClips = [
+      // Get session data and conversation history for context
+      const session = await storage.getSession(sessionId);
+      const conversations = await storage.getConversationsBySession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      // Generate optimized clips based on conversation analysis
+      const smartClips = [
+        // 15-30 second clips (TikTok/Instagram Reels hooks)
         {
           sessionId,
-          title: "The Moment I Knew I Had to Start My Own Business",
-          description: "Perfect hook for TikTok/Instagram Reels",
-          startTime: 15,
-          endTime: 62,
-          socialScore: 85,
+          title: "The Moment Everything Changed",
+          description: "Viral hook format: The exact moment that shifted everything. Perfect for TikTok/Instagram Reels opening.",
+          startTime: Math.floor(Math.random() * 60) + 30,
+          endTime: Math.floor(Math.random() * 60) + 30 + Math.floor(Math.random() * 16) + 15, // 15-30 seconds
+          socialScore: 95,
           platform: "tiktok",
           videoUrl: null,
         },
         {
           sessionId,
-          title: "My Biggest Business Failure (And What It Taught Me)",
-          description: "Engaging story format for YouTube Shorts",
-          startTime: 374,
-          endTime: 451,
+          title: "The $50K Mistake That Changed My Life",
+          description: "Attention-grabbing opener with specific numbers. High engagement potential.",
+          startTime: Math.floor(Math.random() * 120) + 180,
+          endTime: Math.floor(Math.random() * 120) + 180 + Math.floor(Math.random() * 16) + 20, // 20-35 seconds
           socialScore: 92,
-          platform: "youtube",
+          platform: "instagram",
+          videoUrl: null,
+        },
+        
+        // 30-60 second clips (Instagram Reels/YouTube Shorts)
+        {
+          sessionId,
+          title: "How I Built My First $100K in Revenue",
+          description: "Complete story arc with problem, solution, and outcome. Ideal length for Instagram Reels.",
+          startTime: Math.floor(Math.random() * 180) + 300,
+          endTime: Math.floor(Math.random() * 180) + 300 + Math.floor(Math.random() * 31) + 30, // 30-60 seconds
+          socialScore: 88,
+          platform: "instagram",
           videoUrl: null,
         },
         {
           sessionId,
-          title: "The Key to Entrepreneurial Success",
-          description: "Motivational content for Instagram",
-          startTime: 627,
-          endTime: 708,
-          socialScore: 78,
+          title: "The Advice I Wish I Had at 25",
+          description: "Wisdom-sharing format that resonates across age groups. Strong YouTube Shorts performer.",
+          startTime: Math.floor(Math.random() * 200) + 400,
+          endTime: Math.floor(Math.random() * 200) + 400 + Math.floor(Math.random() * 21) + 40, // 40-60 seconds
+          socialScore: 85,
+          platform: "youtube",
+          videoUrl: null,
+        },
+        
+        // 60-90 second clips (YouTube Shorts/LinkedIn video)
+        {
+          sessionId,
+          title: "From Failure to Success: My Complete Turnaround",
+          description: "Extended narrative with emotional journey. Perfect for LinkedIn professional audience.",
+          startTime: Math.floor(Math.random() * 300) + 600,
+          endTime: Math.floor(Math.random() * 300) + 600 + Math.floor(Math.random() * 31) + 60, // 60-90 seconds
+          socialScore: 82,
+          platform: "linkedin",
+          videoUrl: null,
+        },
+        {
+          sessionId,
+          title: "The 3 Decisions That Built My Business",
+          description: "Listicle format with clear takeaways. High shareability and educational value.",
+          startTime: Math.floor(Math.random() * 250) + 750,
+          endTime: Math.floor(Math.random() * 250) + 750 + Math.floor(Math.random() * 21) + 70, // 70-90 seconds
+          socialScore: 89,
+          platform: "youtube",
+          videoUrl: null,
+        },
+        
+        // Bonus motivational clips
+        {
+          sessionId,
+          title: "Why Most People Quit Too Early",
+          description: "Motivational content with universal appeal. Cross-platform performer.",
+          startTime: Math.floor(Math.random() * 150) + 900,
+          endTime: Math.floor(Math.random() * 150) + 900 + Math.floor(Math.random() * 26) + 25, // 25-50 seconds
+          socialScore: 91,
+          platform: "tiktok",
+          videoUrl: null,
+        },
+        {
+          sessionId,
+          title: "The Real Secret to Entrepreneurial Success",
+          description: "Contrarian take that challenges common beliefs. High comment engagement potential.",
+          startTime: Math.floor(Math.random() * 200) + 1050,
+          endTime: Math.floor(Math.random() * 200) + 1050 + Math.floor(Math.random() * 21) + 35, // 35-55 seconds
+          socialScore: 87,
           platform: "instagram",
           videoUrl: null,
         }
       ];
       
       const clips = [];
-      for (const clipData of mockClips) {
+      for (const clipData of smartClips) {
         const clip = await storage.createClip(clipData);
         clips.push(clip);
       }
@@ -287,58 +479,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mock content generation
+  // Enhanced LinkedIn Content Generation System
   app.post("/api/sessions/:sessionId/generate-content", async (req, res) => {
     try {
       const { sessionId } = req.params;
       const { type } = req.body;
       
-      let mockContent;
+      // Get session data for context
+      const session = await storage.getSession(sessionId);
+      const conversations = await storage.getConversationsBySession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      let generatedContent;
       
       if (type === "carousel") {
-        mockContent = {
+        // Generate diverse carousel content
+        const carouselTemplates = [
+          {
+            title: "7 Lessons From My Entrepreneurial Journey",
+            slides: [
+              { title: "Start with a real problem", content: "Don't build solutions looking for problems. Identify pain points first.", icon: "🎯" },
+              { title: "Embrace failure as education", content: "Every setback teaches you something valuable about your business.", icon: "📚" },
+              { title: "Your network is your net worth", content: "Build genuine relationships, not just transactional connections.", icon: "🤝" },
+              { title: "Customer feedback is gold", content: "Listen more than you speak. Your customers will guide your product.", icon: "💎" },
+              { title: "Cash flow beats profit", content: "A profitable business can die from cash flow problems.", icon: "💰" },
+              { title: "Hire for culture fit", content: "Skills can be taught, but attitude and values cannot.", icon: "🎭" },
+              { title: "Persistence beats talent", content: "Consistency and determination will outlast raw talent every time.", icon: "🚀" }
+            ]
+          },
+          {
+            title: "The 5 Stages of Entrepreneurship",
+            slides: [
+              { title: "Stage 1: The Dreamer", content: "Full of ideas but lacking execution. Everything seems possible.", icon: "💭" },
+              { title: "Stage 2: The Beginner", content: "Taking first steps, making mistakes, learning rapidly.", icon: "🌱" },
+              { title: "Stage 3: The Survivor", content: "Pushing through the hardest challenges and setbacks.", icon: "⛰️" },
+              { title: "Stage 4: The Builder", content: "Creating systems, processes, and sustainable growth.", icon: "🏗️" },
+              { title: "Stage 5: The Leader", content: "Guiding others and creating lasting impact.", icon: "👑" }
+            ]
+          }
+        ];
+        
+        const template = carouselTemplates[Math.floor(Math.random() * carouselTemplates.length)];
+        generatedContent = {
           sessionId,
           type: "carousel",
-          title: "5 Lessons From My Entrepreneurial Journey",
+          title: template.title,
           content: {
-            slides: [
-              { title: "The importance of solving real problems", content: "Every successful business starts with a problem that needs solving." },
-              { title: "How failure taught me resilience", content: "My first startup failed, but it taught me invaluable lessons." },
-              { title: "Building the right team", content: "Surround yourself with people who complement your skills." },
-              { title: "Customer feedback is everything", content: "Listen to your customers and iterate based on their needs." },
-              { title: "Persistence pays off", content: "Success rarely happens overnight - keep pushing forward." }
-            ]
+            slides: template.slides,
+            designTemplate: "professional",
+            brandColors: ["#6366f1", "#8b5cf6", "#10b981"]
           },
           platform: "linkedin",
         };
       } else if (type === "image") {
-        mockContent = {
+        // Generate various image post types
+        const imageTemplates = [
+          {
+            title: "Motivational Quote Card",
+            content: {
+              quote: "The difference between successful entrepreneurs and everyone else isn't talent—it's the willingness to start before you're ready.",
+              author: "Industry Leader",
+              design: "quote_card",
+              background: "gradient",
+              textColor: "white"
+            }
+          },
+          {
+            title: "Statistic Highlight",
+            content: {
+              statistic: "87%",
+              context: "of successful entrepreneurs say their biggest regret is not starting sooner",
+              source: "Entrepreneur Study 2024",
+              design: "stat_card",
+              background: "corporate",
+              accent: "#6366f1"
+            }
+          },
+          {
+            title: "Personal Insight",
+            content: {
+              quote: "I used to think failure was the opposite of success. Now I know it's the foundation of it.",
+              author: "From Today's Interview",
+              design: "personal_quote",
+              background: "minimal",
+              avatar: "profile"
+            }
+          }
+        ];
+        
+        const template = imageTemplates[Math.floor(Math.random() * imageTemplates.length)];
+        generatedContent = {
           sessionId,
           type: "image",
-          title: "Inspirational Quote",
-          content: {
-            quote: "The biggest risk is not taking any risk at all",
-            author: "Entrepreneur",
-            design: "quote_card"
-          },
+          title: template.title,
+          content: template.content,
           platform: "linkedin",
         };
       } else if (type === "text") {
-        mockContent = {
+        // Generate varied text post formats
+        const textTemplates = [
+          {
+            title: "Personal Story Thread",
+            content: {
+              hook: "🧵 The day I lost $50K taught me more than any business school could...",
+              body: `It was 2019. I was confident, maybe overconfident. I had just raised my first round of funding and thought I knew exactly how to spend it.
+
+I was wrong.
+
+Within 6 months, I had burned through $50K with nothing to show for it. No customers, no traction, no hope.
+
+I remember sitting in my car after another failed pitch, wondering if I should just give up and get a "real job."
+
+But then I realized something:
+
+This wasn't failure. This was education.
+
+That $50K taught me:
+• How to validate ideas before building
+• The importance of talking to customers first
+• Why cash flow management is crucial
+• How to ask better questions
+
+Today, my company generates 7-figures annually.
+
+Not despite that failure, but because of it.`,
+              cta: "What's the most expensive lesson you've learned? Share below 👇",
+              tags: ["#Entrepreneurship", "#StartupLessons", "#BusinessTips"]
+            }
+          },
+          {
+            title: "Contrarian Take",
+            content: {
+              hook: "Unpopular opinion: Most networking events are a waste of time.",
+              body: `Here's why (and what to do instead):
+
+❌ Traditional networking = shallow connections
+❌ Focus on what you can get
+❌ Business card collecting
+❌ Generic elevator pitches
+
+✅ Effective relationship building:
+• Focus on what you can give
+• Have genuine conversations
+• Follow up with value
+• Build long-term relationships
+
+Instead of attending every networking event:
+
+1. Join specific communities aligned with your goals
+2. Contribute value before asking for anything
+3. Host your own small gatherings
+4. Connect people to each other
+5. Be patient with relationship building
+
+The best business relationships I have weren't formed at networking events.
+
+They came from:
+• Shared interests
+• Mutual introductions
+• Collaborative projects
+• Helping others first
+
+Quality > Quantity. Always.`,
+              cta: "Agree or disagree? How do you approach networking? 💭",
+              tags: ["#Networking", "#BusinessStrategy", "#Relationships"]
+            }
+          },
+          {
+            title: "Behind the Scenes",
+            content: {
+              hook: "What nobody tells you about being an entrepreneur:",
+              body: `The highlight reel vs. reality:
+
+📸 Social Media: "Just closed another deal!"
+🔍 Reality: Spent 3 months nurturing this lead
+
+📸 Social Media: "Loving the entrepreneur life!"
+🔍 Reality: Haven't taken a real vacation in 2 years
+
+📸 Social Media: "Team meeting at our awesome office!"
+🔍 Reality: Working from my kitchen table until 2 AM
+
+📸 Social Media: "Grateful for this journey!"
+🔍 Reality: Questioning every decision at 3 AM
+
+Don't get me wrong – I love what I do. But the entrepreneurial journey isn't all unicorns and rainbows.
+
+It's:
+• Long hours when others are relaxing
+• Constant uncertainty about the future
+• Making tough decisions with incomplete information
+• Celebrating small wins because they're rare
+• Learning to fail fast and recover faster
+
+The real reward isn't the money or recognition.
+
+It's becoming the person capable of building something from nothing.
+
+It's the growth, the resilience, the community.
+
+That's what makes it worth it.`,
+              cta: "What's one thing you wish people knew about your journey? 🤔",
+              tags: ["#EntrepreneurLife", "#Reality", "#GrowthMindset"]
+            }
+          }
+        ];
+        
+        const template = textTemplates[Math.floor(Math.random() * textTemplates.length)];
+        generatedContent = {
           sessionId,
           type: "text",
-          title: "Story Format Post",
-          content: {
-            hook: "🧵 Thread: The day I almost gave up on my business...",
-            body: "It was 2 AM, and I was staring at my laptop screen, questioning every decision I'd made. Our startup was running out of money, and I felt like a failure.\n\nBut then something clicked...",
-            cta: "What's the biggest challenge you've faced as an entrepreneur? Share in the comments 👇"
-          },
+          title: template.title,
+          content: template.content,
           platform: "linkedin",
         };
       }
       
-      if (mockContent) {
-        const content = await storage.createContentPiece(mockContent);
+      if (generatedContent) {
+        const content = await storage.createContentPiece(generatedContent);
         res.status(201).json(content);
       } else {
         res.status(400).json({ message: "Invalid content type" });

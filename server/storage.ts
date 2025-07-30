@@ -103,7 +103,8 @@ export class MemStorage implements IStorage {
   async createSession(insertSession: InsertSession): Promise<Session> {
     const id = randomUUID();
     const session: Session = { 
-      ...insertSession, 
+      ...insertSession,
+      duration: insertSession.duration ?? 0,
       id, 
       createdAt: new Date() 
     };
@@ -144,7 +145,9 @@ export class MemStorage implements IStorage {
   async createQuestion(insertQuestion: InsertQuestion): Promise<Question> {
     const id = randomUUID();
     const question: Question = { 
-      ...insertQuestion, 
+      ...insertQuestion,
+      followUp1: insertQuestion.followUp1 ?? null,
+      followUp2: insertQuestion.followUp2 ?? null,
       id, 
       createdAt: new Date() 
     };
@@ -201,7 +204,10 @@ export class MemStorage implements IStorage {
   async createClip(insertClip: InsertClip): Promise<Clip> {
     const id = randomUUID();
     const clip: Clip = { 
-      ...insertClip, 
+      ...insertClip,
+      description: insertClip.description ?? null,
+      videoUrl: insertClip.videoUrl ?? null,
+      socialScore: insertClip.socialScore ?? null,
       id, 
       createdAt: new Date() 
     };
@@ -227,7 +233,8 @@ export class MemStorage implements IStorage {
   async createContentPiece(insertContentPiece: InsertContentPiece): Promise<ContentPiece> {
     const id = randomUUID();
     const contentPiece: ContentPiece = { 
-      ...insertContentPiece, 
+      ...insertContentPiece,
+      platform: insertContentPiece.platform ?? "linkedin",
       id, 
       createdAt: new Date() 
     };

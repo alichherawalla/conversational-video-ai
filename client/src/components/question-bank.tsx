@@ -130,7 +130,7 @@ export default function QuestionBank() {
                 <Label htmlFor="followUp1">Follow-up Question 1</Label>
                 <Textarea
                   id="followUp1"
-                  value={newQuestion.followUp1}
+                  value={newQuestion.followUp1 || ""}
                   onChange={(e) => setNewQuestion({ ...newQuestion, followUp1: e.target.value })}
                   placeholder="Can you share a specific example?"
                   rows={2}
@@ -141,7 +141,7 @@ export default function QuestionBank() {
                 <Label htmlFor="followUp2">Follow-up Question 2</Label>
                 <Textarea
                   id="followUp2"
-                  value={newQuestion.followUp2}
+                  value={newQuestion.followUp2 || ""}
                   onChange={(e) => setNewQuestion({ ...newQuestion, followUp2: e.target.value })}
                   placeholder="How did that experience shape your current approach?"
                   rows={2}
