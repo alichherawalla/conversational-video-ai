@@ -82,10 +82,20 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   useEffect(() => {
     if (transcribedText && transcribedText.trim() && currentQuestionId) {
       console.log("ConversationFlow received transcription:", transcribedText);
+      
+      // Handle special auto-submit signal for silence detection
+      if (transcribedText === "__AUTO_SUBMIT_SILENCE__") {
+        if (userResponse.trim()) {
+          console.log("Auto-submitting due to 20 seconds of silence");
+          handleSubmitResponse();
+        }
+        return;
+      }
+      
       setUserResponse(transcribedText);
       // Don't auto-submit, let user review first
     }
-  }, [transcribedText]);
+  }, [transcribedText, currentQuestionId, userResponse]);
 
   const handleSubmitTranscribedResponse = async (text: string) => {
     if (!text.trim()) return;
@@ -302,6 +312,13 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       <div className="space-y-4">
         {/* Note about voice recording */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Voice Recording Tips:</strong> After you finish speaking, wait 20 seconds of silence and the system will automatically submit your response. You can also submit manually using the button below.
+          </p>
+        </div>
+        
+        {/* Manual input section */}
+        <div className="space-y-3">
           <p className="text-sm text-blue-800">
             💡 <strong>Voice-first interview:</strong> Start video recording to automatically capture and transcribe your spoken responses.
           </p>

@@ -16,8 +16,7 @@ export default function RecordingStudio() {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
   const [transcriptionText, setTranscriptionText] = useState<string>("");
-  const [realtimeTranscriptionText, setRealtimeTranscriptionText] = useState<string>("");
-  const [isPartialTranscription, setIsPartialTranscription] = useState<boolean>(false);
+
   const [allTranscriptions, setAllTranscriptions] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState<any>(null);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
@@ -210,53 +209,35 @@ export default function RecordingStudio() {
           onStartSession={handleStartSession}
           onTranscriptionComplete={(text) => {
             console.log("Transcription completed in recording studio:", text);
+            
+            // Handle special auto-submit signal - just pass it through
+            if (text === "__AUTO_SUBMIT_SILENCE__") {
+              setTranscriptionText(text);
+              return;
+            }
+            
             console.log("Setting transcriptionText to:", text);
             setTranscriptionText(text);
             setAllTranscriptions(prev => [...prev, text]);
           }}
-          onRealtimeTranscription={(text, isPartial) => {
-            console.log("Real-time transcription update:", text, "isPartial:", isPartial);
-            setRealtimeTranscriptionText(text);
-            setIsPartialTranscription(isPartial);
-          }}
+
         />
         
         {currentSession && (
           <ConversationFlow 
             sessionId={currentSession} 
-            transcribedText={realtimeTranscriptionText || transcriptionText}
-            onTranscriptionProcessed={() => {
-              setTranscriptionText("");
-              setRealtimeTranscriptionText("");
-            }}
+            transcribedText={transcriptionText}
+            onTranscriptionProcessed={() => setTranscriptionText("")}
           />
         )}
         
-        {/* Real-time Voice Transcription Display */}
-        {(realtimeTranscriptionText || transcriptionText) && (
+        {/* Voice Transcription Display */}
+        {transcriptionText && (
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-neutral-800">Voice Transcription</h3>
-                {isPartialTranscription && (
-                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full flex items-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-1"></div>
-                    Live
-                  </span>
-                )}
-              </div>
-              <div className={`p-3 border rounded-lg ${
-                isPartialTranscription 
-                  ? "bg-blue-50 border-blue-200" 
-                  : "bg-green-50 border-green-200"
-              }`}>
-                <p className={`text-sm ${
-                  isPartialTranscription 
-                    ? "text-blue-800 italic" 
-                    : "text-green-800"
-                }`}>
-                  {realtimeTranscriptionText || transcriptionText}
-                </p>
+              <h3 className="text-lg font-semibold text-neutral-800 mb-2">Voice Transcription</h3>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">{transcriptionText}</p>
               </div>
             </CardContent>
           </Card>

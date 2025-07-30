@@ -3,38 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Square, Mic, Settings } from "lucide-react";
 import { useMediaRecorder } from "@/hooks/use-media-recorder";
 import { useAudioTranscription } from "@/hooks/use-audio-transcription";
-import { useRealtimeTranscription } from "@/hooks/use-realtime-transcription";
 
 interface CameraPreviewProps {
   onRecordingComplete?: (blob: Blob) => void;
   sessionId?: string | null;
   onStartSession?: () => Promise<void>;
   onTranscriptionComplete?: (text: string) => void;
-  onRealtimeTranscription?: (text: string, isPartial: boolean) => void;
 }
 
-export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession, onTranscriptionComplete, onRealtimeTranscription }: CameraPreviewProps) {
+export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession, onTranscriptionComplete }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const { transcribeAudio } = useAudioTranscription();
   
-  // Real-time transcription hook
-  const {
-    startRealtimeTranscription,
-    stopRealtimeTranscription,
-    isTranscribing,
-    currentTranscription,
-    partialTranscription,
-    clearTranscription
-  } = useRealtimeTranscription({
-    onTranscriptionUpdate: (text, isPartial) => {
-      if (onRealtimeTranscription) {
-        onRealtimeTranscription(text, isPartial);
-      }
-    },
-    chunkDuration: 2 // Process audio every 2 seconds for responsiveness
-  });
+  // Voice activity detection for auto-submission
+  const [lastAudioActivityTime, setLastAudioActivityTime] = useState<number | null>(null);
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Video recording with audio
   const {
@@ -87,6 +72,29 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     },
     onAudioLevel: (level) => {
       setAudioLevel(level);
+      
+      // Detect voice activity (level > threshold indicates speaking)
+      const activityThreshold = 10; // Adjust this threshold as needed
+      if (level > activityThreshold) {
+        setLastAudioActivityTime(Date.now());
+        
+        // Clear any existing silence timer
+        if (silenceTimer) {
+          clearTimeout(silenceTimer);
+          setSilenceTimer(null);
+        }
+      } else if (lastAudioActivityTime && !silenceTimer) {
+        // Start silence timer when audio drops below threshold
+        const timer = setTimeout(() => {
+          console.log("20 seconds of silence detected, triggering auto-submission");
+          if (onTranscriptionComplete) {
+            onTranscriptionComplete("__AUTO_SUBMIT_SILENCE__");
+          }
+          setSilenceTimer(null);
+        }, 20000); // 20 seconds
+        
+        setSilenceTimer(timer);
+      }
     },
     audio: true, // Audio-only for transcription
   });
@@ -107,22 +115,21 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
-      // Clear any previous transcriptions
-      clearTranscription();
-      
       // Start both video and audio recording simultaneously
       console.log("Starting video and audio recording...");
       setIsRecordingAudio(true);
+      
+      // Reset audio activity tracking
+      setLastAudioActivityTime(null);
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        setSilenceTimer(null);
+      }
+      
       await Promise.all([
         startVideoRecording(),
         startTranscriptRecording()
       ]);
-      
-      // Start real-time transcription with the video stream (which includes audio)
-      if (stream) {
-        console.log("Starting real-time transcription...");
-        await startRealtimeTranscription(stream);
-      }
       
       console.log("Both video and audio transcription recording started");
     } catch (error) {
@@ -138,13 +145,14 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       stopTranscriptRecording();
     }
     
-    // Stop real-time transcription and get final result
-    if (isTranscribing) {
-      console.log("Stopping real-time transcription...");
-      await stopRealtimeTranscription();
+    // Clean up silence timer
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
     }
     
     setIsRecordingAudio(false);
+    setLastAudioActivityTime(null);
   };
 
   return (
@@ -205,20 +213,15 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           </Button>
         </div>
         
-        {/* Real-time transcription overlay */}
-        {(partialTranscription || currentTranscription) && isRecordingVideo && (
+        {/* Voice activity indicator */}
+        {isRecordingVideo && lastAudioActivityTime && (
           <div className="absolute top-16 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 text-white">
             <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-blue-300">Live Transcription</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-green-300">Voice Detected - Recording</span>
             </div>
-            <p className="text-sm leading-relaxed">
-              {partialTranscription && (
-                <span className="text-blue-200 italic">{partialTranscription}</span>
-              )}
-              {currentTranscription && (
-                <span className="text-white">{currentTranscription}</span>
-              )}
+            <p className="text-xs text-green-200">
+              Will auto-submit after 20 seconds of silence
             </p>
           </div>
         )}
