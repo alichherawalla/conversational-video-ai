@@ -660,24 +660,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
             transcription.words || []
           );
           
-          // Clean up temp files
+          console.log(`Successfully generated ${videoClips.length} clips for ${originalName}`);
+          
+          // Create actual video clip files using FFmpeg
+          console.log('Creating actual video clip files...');
+          const { createVideoClips } = await import('./video-clipper');
+          
+          const clipRequests = videoClips.map((clip: any) => ({
+            title: clip.title,
+            description: clip.description,
+            startTime: clip.startTime,
+            endTime: clip.endTime,
+            socialScore: clip.socialScore || 0
+          }));
+
+          // Create video clips from the original video file
+          const videoClipResults = await createVideoClips(videoPath, clipRequests);
+          
+          // Now clean up the original video file
           try {
             fs.unlinkSync(videoPath!);
           } catch (cleanupError) {
             console.warn('File cleanup warning:', cleanupError);
           }
           
-          console.log(`Successfully generated ${videoClips.length} clips for ${originalName}`);
+          console.log(`Successfully created ${videoClipResults.length} video clip files for ${originalName}`);
           
           res.json({
-            clips: videoClips.map((clip: any, index: number) => ({
+            clips: videoClipResults.map((clipResult: any, index: number) => ({
               id: `video-clip-${Date.now()}-${index}`,
-              title: clip.title,
-              description: clip.description,
-              startTime: clip.startTime,
-              endTime: clip.endTime,
-              socialScore: clip.socialScore,
-              duration: clip.endTime - clip.startTime,
+              title: clipResult.title,
+              description: clipResult.description,
+              startTime: clipResult.startTime,
+              endTime: clipResult.endTime,
+              socialScore: clipResult.socialScore,
+              duration: clipResult.endTime - clipResult.startTime,
+              videoPath: clipResult.videoPath,
               createdAt: new Date().toISOString()
             }))
           });
@@ -1075,7 +1093,7 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
     }
   });
 
-  // Download upload package (transcript, content)
+  // Download upload package (transcript, content, video clips)
   app.post("/api/download-upload-package", async (req, res) => {
     try {
       const { transcript, content, clips } = req.body;
@@ -1094,6 +1112,30 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
       // Generate and add LinkedIn content markdown
       const markdownContent = generateUploadContentMarkdown(transcript, content, clips);
       archive.append(markdownContent, { name: 'linkedin_content.md' });
+
+      // Add actual video clip files if they exist
+      if (clips && clips.length > 0) {
+        const fs = await import('fs');
+        for (const clip of clips) {
+          if (clip.videoPath && fs.existsSync(clip.videoPath)) {
+            const clipFileName = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+            archive.file(clip.videoPath, { name: `video_clips/${clipFileName}` });
+          }
+        }
+        
+        // Add clips metadata
+        const clipsMetadata = clips.map((clip: any) => ({
+          filename: `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`,
+          title: clip.title,
+          description: clip.description,
+          startTime: clip.startTime,
+          endTime: clip.endTime,
+          duration: clip.duration,
+          socialScore: clip.socialScore
+        }));
+        
+        archive.append(JSON.stringify(clipsMetadata, null, 2), { name: 'video_clips/clips_metadata.json' });
+      }
 
       archive.finalize();
     } catch (error) {

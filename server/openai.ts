@@ -11,18 +11,25 @@ Follow these instructions when using this blueprint:
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Audio transcription using Whisper with word-level timestamps
-export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: string): Promise<{ text: string; duration: number; words?: Array<{word: string, start: number, end: number}> }> {
+export async function transcribeAudioBuffer(
+  audioBuffer: Buffer,
+  filename: string,
+): Promise<{
+  text: string;
+  duration: number;
+  words?: Array<{ word: string; start: number; end: number }>;
+}> {
   try {
-    const fs = await import('fs');
-    const path = await import('path');
-    
+    const fs = await import("fs");
+    const path = await import("path");
+
     // Create a temporary file from the buffer
-    const tempFilePath = path.join('/tmp', `temp_${Date.now()}_${filename}`);
+    const tempFilePath = path.join("/tmp", `temp_${Date.now()}_${filename}`);
     fs.writeFileSync(tempFilePath, audioBuffer);
-    
+
     // Create read stream for OpenAI
     const audioReadStream = fs.createReadStream(tempFilePath);
-    
+
     const transcription = await openai.audio.transcriptions.create({
       file: audioReadStream,
       model: "whisper-1",
@@ -34,26 +41,39 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: strin
 
     // Clean up temp file
     fs.unlinkSync(tempFilePath);
-
+    console.log("transcription::", JSON.stringify(transcription));
     return {
-      text: transcription.text,
+      text: (
+        transcription.words?.map((word) =>
+          JSON.stringify({
+            word: word.word,
+            start: word.start,
+            end: word.end,
+          }),
+        ) || []
+      ).join(" "),
       duration: transcription.duration || 0,
-      words: transcription.words?.map(word => ({
-        word: word.word,
-        start: word.start,
-        end: word.end
-      })) || []
+      words:
+        transcription.words?.map((word) => ({
+          word: word.word,
+          start: word.start,
+          end: word.end,
+        })) || [],
     };
   } catch (error) {
-    console.error('Transcription error:', error);
-    throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Transcription error:", error);
+    throw new Error(
+      `Failed to transcribe audio: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
 // Direct file transcription method
-export async function transcribeAudioFile(filePath: string): Promise<{ text: string; duration: number }> {
+export async function transcribeAudioFile(
+  filePath: string,
+): Promise<{ text: string; duration: number }> {
   try {
-    const fs = await import('fs');
+    const fs = await import("fs");
     const audioReadStream = fs.createReadStream(filePath);
 
     const transcription = await openai.audio.transcriptions.create({
@@ -69,7 +89,9 @@ export async function transcribeAudioFile(filePath: string): Promise<{ text: str
       duration: 0,
     };
   } catch (error) {
-    console.error('Transcription error:', error);
-    throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Transcription error:", error);
+    throw new Error(
+      `Failed to transcribe audio: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
