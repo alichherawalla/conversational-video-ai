@@ -210,8 +210,31 @@ export default function RecordingStudio() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Video Recording Panel */}
-      <div className="lg:col-span-2 space-y-6">
+      {/* Conversation Flow Panel - Left */}
+      <div className="space-y-6">
+        {currentSession && (
+          <ConversationFlow 
+            sessionId={currentSession} 
+            transcribedText={transcriptionText}
+            onTranscriptionProcessed={() => setTranscriptionText("")}
+          />
+        )}
+        
+        {/* Voice Transcription Display */}
+        {transcriptionText && transcriptionText !== "__AUTO_SUBMIT_SILENCE__" && (
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-lg font-semibold text-neutral-800 mb-2">Voice Transcription</h3>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">{transcriptionText}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Video Recording Panel - Center */}
+      <div className="space-y-6">
         <CameraPreview 
           onRecordingComplete={handleRecordingComplete} 
           sessionId={currentSession}
@@ -239,31 +262,10 @@ export default function RecordingStudio() {
             
             setAllTranscriptions(prev => [...prev, text]);
           }}
-
         />
-        
-        {currentSession && (
-          <ConversationFlow 
-            sessionId={currentSession} 
-            transcribedText={transcriptionText}
-            onTranscriptionProcessed={() => setTranscriptionText("")}
-          />
-        )}
-        
-        {/* Voice Transcription Display */}
-        {transcriptionText && transcriptionText !== "__AUTO_SUBMIT_SILENCE__" && (
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold text-neutral-800 mb-2">Voice Transcription</h3>
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">{transcriptionText}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
-      {/* Control Panel */}
+      {/* Session Settings Panel - Right */}
       <div className="space-y-6">
         {/* Session Settings */}
         <Card>
