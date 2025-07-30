@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from "@anthropic-ai/sdk";
 
 /*
 <important_code_snippet_instructions>
@@ -18,7 +18,7 @@ const anthropic = new Anthropic({
 
 export interface AIFeedback {
   feedbacks: Array<{
-    type: 'positive' | 'warning' | 'info';
+    type: "positive" | "warning" | "info";
     message: string;
   }>;
   needsCorrection: boolean;
@@ -34,16 +34,21 @@ export interface AIQuestionResponse {
 }
 
 export async function generateAIQuestion(
-  sessionId: string, 
-  questionId?: string, 
+  sessionId: string,
+  questionId?: string,
   followUpIndex?: number,
   baseQuestion?: string,
-  userResponse?: string
+  userResponse?: string,
 ): Promise<AIQuestionResponse> {
   try {
     let prompt: string;
-    
-    if (questionId && followUpIndex !== undefined && baseQuestion && userResponse) {
+
+    if (
+      questionId &&
+      followUpIndex !== undefined &&
+      baseQuestion &&
+      userResponse
+    ) {
       // Generate contextual follow-up question based on base question and user response
       prompt = `You are an AI interviewer conducting a professional video interview. 
 
@@ -91,24 +96,28 @@ Generate only the follow-up question text, no other content.`;
 
     const response = await anthropic.messages.create({
       max_tokens: 150,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
 
     const question = (response.content[0] as any).text.trim();
-    
+
     return {
       question,
       questionId: questionId || `ai-${Date.now()}`,
-      followUpIndex
+      followUpIndex,
     };
   } catch (error) {
-    console.error('Error generating AI question:', error);
-    throw new Error('Failed to generate AI question');
+    console.error("Error generating AI question:", error);
+    throw new Error("Failed to generate AI question");
   }
 }
 
-export async function analyzeResponse(userResponse: string, sessionId: string, questionId?: string): Promise<AIFeedback> {
+export async function analyzeResponse(
+  userResponse: string,
+  sessionId: string,
+  questionId?: string,
+): Promise<AIFeedback> {
   try {
     const prompt = `You are an AI conversation analyst. Analyze this interview response and provide detailed feedback:
 
@@ -137,44 +146,53 @@ Be encouraging but honest. Flag responses that are too short (under 20 words), t
 
     const response = await anthropic.messages.create({
       max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
 
     const analysisText = (response.content[0] as any).text.trim();
-    
+
     try {
       const analysis = JSON.parse(analysisText);
-      
+
       // Ensure responseQuality is within bounds
-      analysis.responseQuality = Math.max(1, Math.min(10, analysis.responseQuality));
-      
+      analysis.responseQuality = Math.max(
+        1,
+        Math.min(10, analysis.responseQuality),
+      );
+
       return analysis;
     } catch (parseError) {
       // Fallback if JSON parsing fails
       return {
         feedbacks: [
-          { type: 'info', message: 'Response analyzed successfully' }
+          { type: "info", message: "Response analyzed successfully" },
         ],
-        needsCorrection: userResponse.trim().split(' ').length < 15,
-        correctionMessage: userResponse.trim().split(' ').length < 15 ? 
-          'Could you provide more detail? Try to share a specific example or expand on your thoughts.' : undefined,
-        suggestion: 'Consider adding more specific examples to make your response more engaging.',
-        responseQuality: userResponse.trim().split(' ').length < 15 ? 3 : 7
+        needsCorrection: userResponse.trim().split(" ").length < 15,
+        correctionMessage:
+          userResponse.trim().split(" ").length < 15
+            ? "Could you provide more detail? Try to share a specific example or expand on your thoughts."
+            : undefined,
+        suggestion: "",
+        responseQuality: userResponse.trim().split(" ").length < 15 ? 3 : 7,
       };
     }
   } catch (error) {
-    console.error('Error analyzing response:', error);
-    throw new Error('Failed to analyze response');
+    console.error("Error analyzing response:", error);
+    throw new Error("Failed to analyze response");
   }
 }
 
-export async function generateLinkedInContent(conversationText: string, contentType: 'carousel' | 'image' | 'text', generateAll: boolean = false): Promise<any> {
+export async function generateLinkedInContent(
+  conversationText: string,
+  contentType: "carousel" | "image" | "text",
+  generateAll: boolean = false,
+): Promise<any> {
   try {
     let prompt: string;
-    
+
     switch (contentType) {
-      case 'carousel':
+      case "carousel":
         if (generateAll) {
           // Generate 3 carousel posts
           prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use a BOLD, educative, and direct tone throughout.
@@ -262,8 +280,8 @@ Generate in JSON format:
 }`;
         }
         break;
-        
-      case 'image':
+
+      case "image":
         if (generateAll) {
           prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use a BOLD, educative, and provocative tone with highly engaging captions.
 
@@ -334,8 +352,8 @@ Generate in JSON format:
 Make the caption 200-350 words with clear educative structure and direct tone.`;
         }
         break;
-        
-      case 'text':
+
+      case "text":
         if (generateAll) {
           prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each post should be BOLD, provocative, and challenge conventional thinking. Use authentic content only.
 
@@ -397,17 +415,17 @@ Make the content 200-400 words with clear educative structure, practical value, 
     }
 
     if (!prompt || prompt.trim().length === 0) {
-      throw new Error('Prompt cannot be empty');
+      throw new Error("Prompt cannot be empty");
     }
 
     const response = await anthropic.messages.create({
       max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
 
     const contentText = (response.content[0] as any).text.trim();
-    
+
     try {
       // Try to parse the JSON directly
       const parsed = JSON.parse(contentText);
@@ -419,30 +437,35 @@ Make the content 200-400 words with clear educative structure, practical value, 
         try {
           return JSON.parse(jsonMatch[1]);
         } catch (innerError) {
-          console.warn('Failed to parse extracted JSON:', innerError);
+          console.warn("Failed to parse extracted JSON:", innerError);
         }
       }
-      
+
       // Fallback structured content
       return {
-        title: 'Professional Insights from Video Interview',
+        title: "Professional Insights from Video Interview",
         content: contentText,
-        tags: ['#business', '#entrepreneurship', '#insights']
+        tags: ["#business", "#entrepreneurship", "#insights"],
       };
     }
   } catch (error) {
-    console.error('Error generating LinkedIn content:', error);
-    throw new Error('Failed to generate LinkedIn content');
+    console.error("Error generating LinkedIn content:", error);
+    throw new Error("Failed to generate LinkedIn content");
   }
 }
 
-export async function generateVideoClips(conversationText: string, sessionDuration: number): Promise<Array<{
-  title: string;
-  description: string;
-  startTime: number;
-  endTime: number;
-  socialScore: number;
-}>> {
+export async function generateVideoClips(
+  conversationText: string,
+  sessionDuration: number,
+): Promise<
+  Array<{
+    title: string;
+    description: string;
+    startTime: number;
+    endTime: number;
+    socialScore: number;
+  }>
+> {
   try {
     const prompt = `Analyze this interview content and suggest 3-5 video clips optimized for social media using ONLY the actual content provided:
 
@@ -474,12 +497,12 @@ Base timestamps on logical conversation flow and actual content segments.`;
 
     const response = await anthropic.messages.create({
       max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
 
     const clipsText = (response.content[0] as any).text.trim();
-    
+
     try {
       // Try to parse JSON directly
       const parsed = JSON.parse(clipsText);
@@ -492,24 +515,29 @@ Base timestamps on logical conversation flow and actual content segments.`;
           const parsed = JSON.parse(jsonMatch[1]);
           return parsed.clips || [];
         } catch (innerError) {
-          console.warn('Failed to parse extracted JSON:', innerError);
+          console.warn("Failed to parse extracted JSON:", innerError);
         }
       }
-      
+
       // Fallback clips based on conversation analysis
-      const segments = conversationText.split('\n').filter(line => line.trim().length > 50);
-      const clipDuration = Math.min(60, Math.max(15, Math.floor(sessionDuration / 4)));
-      
+      const segments = conversationText
+        .split("\n")
+        .filter((line) => line.trim().length > 50);
+      const clipDuration = Math.min(
+        60,
+        Math.max(15, Math.floor(sessionDuration / 4)),
+      );
+
       return segments.slice(0, 3).map((segment, index) => ({
         title: `Key Insight ${index + 1}`,
-        description: segment.substring(0, 100) + '...',
-        startTime: Math.floor(sessionDuration * (index + 1) / 5),
-        endTime: Math.floor(sessionDuration * (index + 1) / 5) + clipDuration,
-        socialScore: 70 + (index * 5)
+        description: segment.substring(0, 100) + "...",
+        startTime: Math.floor((sessionDuration * (index + 1)) / 5),
+        endTime: Math.floor((sessionDuration * (index + 1)) / 5) + clipDuration,
+        socialScore: 70 + index * 5,
       }));
     }
   } catch (error) {
-    console.error('Error generating video clips:', error);
-    throw new Error('Failed to generate video clips');
+    console.error("Error generating video clips:", error);
+    throw new Error("Failed to generate video clips");
   }
 }

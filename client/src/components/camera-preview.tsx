@@ -324,27 +324,6 @@ export default function CameraPreview({
           </Button>
         </div>
 
-        {/* Manual transcript button - always show when video recording */}
-        {isRecordingVideo && (
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
-            <Button
-              onClick={handleManualTranscript}
-              className={`px-4 py-2 text-sm rounded-lg ${
-                isRecordingTranscript && !isProcessingTranscript
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
-              }`}
-              disabled={!isRecordingTranscript || isProcessingTranscript}
-            >
-              {isProcessingTranscript 
-                ? "Processing..." 
-                : isRecordingTranscript 
-                  ? "Get Transcript" 
-                  : "Not Recording"}
-            </Button>
-          </div>
-        )}
-
         {/* Audio transcription indicator */}
         {isRecordingAudio && (
           <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center">
@@ -379,6 +358,30 @@ export default function CameraPreview({
           <div className="text-sm text-neutral-600">File Size</div>
         </div>
       </div>
+
+      {/* Manual transcript button - show below camera when recording */}
+      {isRecordingVideo && (
+        <div className="mt-4 flex justify-center">
+          <Button
+            onClick={handleManualTranscript}
+            className={`px-6 py-3 text-sm rounded-lg ${
+              isRecordingTranscript && !isProcessingTranscript
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+            }`}
+            disabled={!isRecordingTranscript || isProcessingTranscript}
+          >
+            {isProcessingTranscript 
+              ? "Processing..." 
+              : isRecordingTranscript 
+                ? "Get Transcript" 
+                : "Not Recording"}
+          </Button>
+          <div className="ml-3 text-sm text-gray-600 self-center">
+            Manual transcription • Click when ready
+          </div>
+        </div>
+      )}
     </div>
   );
 }
