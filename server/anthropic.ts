@@ -210,20 +210,27 @@ Focus on one powerful insight that would work well as an image post.`;
         break;
         
       case 'text':
-        prompt = `Create a LinkedIn text post from this interview content:
+        prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
-"${conversationText}"
+Interview Content: "${conversationText}"
+
+Requirements:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Share genuine learnings or perspectives mentioned
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
 
 Generate in JSON format:
 {
-  "title": "Engaging post title",
-  "hook": "Attention-grabbing first line",
-  "body": "Main content with story or insight",
-  "callToAction": "Question or engagement prompt",
-  "tags": ["#entrepreneurship", "#business"]
+  "title": "Clear, direct title based on content",
+  "hook": "Opening line that highlights key insight from transcript",
+  "body": "Educational content using only transcript information",
+  "callToAction": "Thoughtful question based on discussed topics",
+  "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
 }
 
-Make it story-driven and conversation-starting for professional audience.`;
+Focus on authentic insights and real experiences shared in the interview.`;
         break;
     }
 
@@ -240,8 +247,20 @@ Make it story-driven and conversation-starting for professional audience.`;
     const contentText = (response.content[0] as any).text.trim();
     
     try {
-      return JSON.parse(contentText);
+      // Try to parse the JSON directly
+      const parsed = JSON.parse(contentText);
+      return parsed;
     } catch (parseError) {
+      // If JSON is wrapped in markdown code blocks, extract it
+      const jsonMatch = contentText.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[1]);
+        } catch (innerError) {
+          console.warn('Failed to parse extracted JSON:', innerError);
+        }
+      }
+      
       // Fallback structured content
       return {
         title: 'Professional Insights from Video Interview',

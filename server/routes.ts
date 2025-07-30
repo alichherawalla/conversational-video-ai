@@ -257,21 +257,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       const { contentType = 'text' } = req.body; // carousel, image, text
       
-      // Get conversation data
+      // Get conversation data including both questions and responses for context
       const conversations = await storage.getConversationsBySession(sessionId);
       const userResponses = conversations.filter(c => c.type === 'user_response');
       
       if (userResponses.length === 0) {
-        return res.status(400).json({ message: "No user responses found for content generation" });
+        return res.status(400).json({ 
+          message: "No user responses found for content generation. Please complete at least one response in your interview session first.",
+          debug: {
+            totalConversations: conversations.length,
+            conversationTypes: conversations.map(c => c.type)
+          }
+        });
       }
       
-      const conversationText = userResponses.map(c => c.content).join(' ').trim();
+      // Include questions for context, but focus on user responses
+      const questionsForContext = conversations
+        .filter(c => c.type === 'ai_question')
+        .map(c => c.content)
+        .slice(0, 3); // Limit to avoid token overflow
       
-      if (!conversationText) {
-        return res.status(400).json({ message: "No conversation content found" });
+      const userResponsesText = userResponses.map(c => c.content).join(' ').trim();
+      
+      // Combine questions and responses for better context
+      const conversationText = `
+Context Questions: ${questionsForContext.join(' | ')}
+
+User Responses: ${userResponsesText}
+      `.trim();
+      
+      if (!userResponsesText) {
+        return res.status(400).json({ message: "No meaningful conversation content found" });
       }
       
-      console.log('Generating content for:', conversationText.substring(0, 100) + '...');
+      console.log('Generating content for session:', sessionId);
+      console.log('Content type:', contentType);
+      console.log('Conversation text length:', conversationText.length);
+      console.log('Sample content:', conversationText.substring(0, 200) + '...');
       
       const content = await generateLinkedInContent(conversationText, contentType);
       
