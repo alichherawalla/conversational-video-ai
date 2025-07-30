@@ -29,7 +29,7 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
         ? { audio: audioConstraints } 
         : { 
             video: { width: 1280, height: 720 }, 
-            audio: audioConstraints // Always include audio for video recording
+            audio: true // Ensure audio is always included for video recording
           };
         
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);

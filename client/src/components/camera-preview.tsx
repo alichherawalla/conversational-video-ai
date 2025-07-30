@@ -13,6 +13,7 @@ interface CameraPreviewProps {
 export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const { transcribeAudio } = useAudioTranscription();
   
   // Video recording with audio
@@ -28,6 +29,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       console.log("Video recording stopped, blob:", blob, "Size:", blob.size, "Type:", blob.type);
       onRecordingComplete?.(blob);
       setIsRecordingAudio(false);
+      setAudioLevel(0);
     },
     audio: false, // This is for video with audio recording (not audio-only)
   });
@@ -52,6 +54,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       } catch (error) {
         console.error('Audio transcription failed:', error);
       }
+    },
+    onAudioLevel: (level) => {
+      setAudioLevel(level);
     },
     audio: true, // Audio-only for transcription
   });
@@ -158,6 +163,12 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
             Recording audio for transcription
+            <div className="ml-2 w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-green-500 transition-all duration-100"
+                style={{ width: `${Math.min(audioLevel * 2, 100)}%` }}
+              ></div>
+            </div>
           </div>
         )}
       </div>
