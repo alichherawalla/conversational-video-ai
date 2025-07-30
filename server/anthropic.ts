@@ -227,6 +227,10 @@ Make it story-driven and conversation-starting for professional audience.`;
         break;
     }
 
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error('Prompt cannot be empty');
+    }
+
     const response = await anthropic.messages.create({
       max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],

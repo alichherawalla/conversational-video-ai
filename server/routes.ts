@@ -259,14 +259,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get conversation data
       const conversations = await storage.getConversationsBySession(sessionId);
-      const conversationText = conversations
-        .filter(c => c.type === 'user_response')
-        .map(c => c.content)
-        .join(' ');
+      const userResponses = conversations.filter(c => c.type === 'user_response');
       
-      if (!conversationText.trim()) {
+      if (userResponses.length === 0) {
+        return res.status(400).json({ message: "No user responses found for content generation" });
+      }
+      
+      const conversationText = userResponses.map(c => c.content).join(' ').trim();
+      
+      if (!conversationText) {
         return res.status(400).json({ message: "No conversation content found" });
       }
+      
+      console.log('Generating content for:', conversationText.substring(0, 100) + '...');
       
       const content = await generateLinkedInContent(conversationText, contentType);
       

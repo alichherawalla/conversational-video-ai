@@ -166,7 +166,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         await getAIQuestionMutation.mutateAsync({ sessionId });
         setFollowUpIndex(0); // Reset follow-up counter for new question
         setCurrentQuestionId(null); // Clear current question context
-        setCurrentBaseQuestion(null);
+        setCurrentBaseQuestion("");
         setIsTyping(false);
       }, 2000);
     }

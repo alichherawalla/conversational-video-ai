@@ -193,7 +193,7 @@ export default function RecordingStudio() {
       
       // Generate LinkedIn content
       const linkedinResponse = await apiRequest("POST", `/api/sessions/${currentSession}/generate-content`, {
-        contentType: 'linkedin'
+        contentType: 'text'
       });
       const linkedinContent = await linkedinResponse.json();
       

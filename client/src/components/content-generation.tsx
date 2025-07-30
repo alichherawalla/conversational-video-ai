@@ -38,7 +38,7 @@ export default function ContentGeneration() {
 
   const generateContentMutation = useMutation({
     mutationFn: async ({ sessionId, type }: { sessionId: string; type: string }) => {
-      const res = await apiRequest("POST", `/api/sessions/${sessionId}/generate-content`, { type });
+      const res = await apiRequest("POST", `/api/sessions/${sessionId}/generate-content`, { contentType: type });
       return res.json();
     },
     onSuccess: () => {
@@ -59,7 +59,7 @@ export default function ContentGeneration() {
       ctx.font = '24px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(`Clip: ${clip.title}`, canvas.width/2, canvas.height/2);
-      ctx.fillText(`Duration: ${clip.duration}s`, canvas.width/2, canvas.height/2 + 40);
+      ctx.fillText(`Duration: ${clip.endTime - clip.startTime}s`, canvas.width/2, canvas.height/2 + 40);
     }
     
     canvas.toBlob((blob) => {
