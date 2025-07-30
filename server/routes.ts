@@ -257,7 +257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         text: transcription.text,
-        duration: transcription.duration
+        duration: transcription.duration,
+        words: transcription.words || []
       });
     } catch (error) {
       console.error('Transcription error:', error);

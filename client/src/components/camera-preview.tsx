@@ -17,12 +17,14 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const [audioLevel, setAudioLevel] = useState(0);
   const { transcribeAudio } = useAudioTranscription();
   
-  // Voice activity detection for auto-submission
-  const [lastAudioActivityTime, setLastAudioActivityTime] = useState<number | null>(null);
+  // Real-time transcription state
+  const [accumulatedTranscript, setAccumulatedTranscript] = useState("");
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Continuous transcription timer
   const transcriptionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const transcriptionChunksRef = useRef<string[]>([]);
+  const lastSubmissionTimeRef = useRef<number>(0);
   
   // Video recording with audio
   const {
@@ -56,11 +58,34 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           try {
             const result = await transcribeAudio(blob);
             console.log("Transcription result:", result);
+            console.log("Word count:", result.words?.length || 0);
             
             if (result.text && result.text.trim()) {
-              console.log("Found transcription with word-level timing:", result.text);
-              console.log("Word count:", result.words?.length || 0);
-              onTranscriptionComplete?.(result.text);
+              // Add to accumulated transcript for real-time display
+              const newChunk = result.text.trim();
+              transcriptionChunksRef.current.push(newChunk);
+              
+              const currentTime = Date.now();
+              const timeSinceLastSubmission = currentTime - lastSubmissionTimeRef.current;
+              
+              // Update accumulated transcript immediately for real-time display
+              setAccumulatedTranscript(prev => {
+                const updated = prev ? `${prev} ${newChunk}` : newChunk;
+                console.log("Real-time transcript update:", updated);
+                return updated;
+              });
+              
+              // Submit to conversation flow if 5+ seconds have passed or significant content
+              if (timeSinceLastSubmission > 5000 || newChunk.split(' ').length > 5) {
+                const fullTranscript = transcriptionChunksRef.current.join(' ');
+                console.log("Submitting accumulated transcript:", fullTranscript);
+                onTranscriptionComplete?.(fullTranscript);
+                lastSubmissionTimeRef.current = currentTime;
+                
+                // Reset accumulation after successful submission
+                transcriptionChunksRef.current = [];
+                setAccumulatedTranscript("");
+              }
             }
           } catch (error) {
             console.error("Transcription failed:", error);
@@ -95,7 +120,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       setIsRecordingAudio(true);
       
       // Reset transcription tracking
-      setLastAudioActivityTime(null);
+      setAccumulatedTranscript("");
+      transcriptionChunksRef.current = [];
+      lastSubmissionTimeRef.current = Date.now();
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         setSilenceTimer(null);
@@ -106,13 +133,13 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         startTranscriptRecording()
       ]);
       
-      // Start continuous transcription every 5 seconds
+      // Start continuous transcription every 1 second
       const timer = setInterval(() => {
         if (isRecordingVideo) {
-          console.log("Auto-transcription: Getting transcript every 5 seconds");
+          console.log("Auto-transcription: Getting transcript every 1 second");
           handleManualTranscript();
         }
-      }, 5000);
+      }, 1000);
       transcriptionTimerRef.current = timer;
       
       console.log("Video and audio transcription recording started with 5-second auto-transcription");
@@ -140,7 +167,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     }
     
     setIsRecordingAudio(false);
-    setLastAudioActivityTime(null);
+    setAccumulatedTranscript("");
+    transcriptionChunksRef.current = [];
+    lastSubmissionTimeRef.current = 0;
   };
 
   const handleManualTranscript = async () => {
@@ -233,15 +262,18 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           </div>
         )}
         
-        {/* Transcription status with word-level timing info */}
-        {isRecordingVideo && lastAudioActivityTime && (
-          <div className="absolute top-16 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 text-white">
+        {/* Real-time transcript display */}
+        {isRecordingVideo && accumulatedTranscript && (
+          <div className="absolute top-16 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 text-white max-h-32 overflow-y-auto">
             <div className="flex items-center space-x-2 mb-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-green-300">Voice Detected - Recording</span>
+              <span className="text-xs font-medium text-green-300">Real-time Transcript</span>
             </div>
-            <p className="text-xs text-green-200">
-              Word-level timing • Auto-submit after 5 seconds of silence
+            <p className="text-sm text-white leading-relaxed">
+              {accumulatedTranscript}
+            </p>
+            <p className="text-xs text-green-200 mt-2">
+              Auto-submits every 5 seconds • Word-level timing
             </p>
           </div>
         )}
