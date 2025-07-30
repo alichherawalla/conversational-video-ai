@@ -25,6 +25,7 @@ export default function CameraPreview({
   // Real-time transcription state
   const [accumulatedTranscript, setAccumulatedTranscript] = useState("");
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
 
   // Transcription tracking
   const transcriptionChunksRef = useRef<string[]>([]);
@@ -224,25 +225,38 @@ export default function CameraPreview({
 
     setIsRecordingAudio(false);
     setAccumulatedTranscript("");
+    setIsProcessingTranscript(false);
     transcriptionChunksRef.current = [];
     lastSubmissionTimeRef.current = 0;
     lastTranscriptTimeRef.current = Date.now();
   };
 
   const handleManualTranscript = async () => {
+    if (isProcessingTranscript || !isRecordingTranscript) {
+      console.log("Manual transcript skipped - already processing or not recording");
+      return;
+    }
+
     console.log("Manual transcript requested");
-    if (isRecordingTranscript) {
+    setIsProcessingTranscript(true);
+    
+    try {
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
 
+      // Wait for transcription to complete before restarting
       setTimeout(() => {
         if (isRecordingVideo) {
           console.log("Restarting audio recording after manual transcription");
           startTranscriptRecording();
+          setIsProcessingTranscript(false);
+        } else {
+          setIsProcessingTranscript(false);
         }
       }, 3000);
-    } else {
-      console.log("Manual transcript skipped - not currently recording audio");
+    } catch (error) {
+      console.error("Error during manual transcription:", error);
+      setIsProcessingTranscript(false);
     }
   };
 
@@ -316,32 +330,18 @@ export default function CameraPreview({
             <Button
               onClick={handleManualTranscript}
               className={`px-4 py-2 text-sm rounded-lg ${
-                isRecordingTranscript
+                isRecordingTranscript && !isProcessingTranscript
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
                   : "bg-gray-400 text-gray-200 cursor-not-allowed"
               }`}
-              disabled={!isRecordingTranscript}
+              disabled={!isRecordingTranscript || isProcessingTranscript}
             >
-              {isRecordingTranscript ? "Get Transcript" : "Processing..."}
+              {isProcessingTranscript 
+                ? "Processing..." 
+                : isRecordingTranscript 
+                  ? "Get Transcript" 
+                  : "Not Recording"}
             </Button>
-          </div>
-        )}
-
-        {/* Real-time transcript display */}
-        {isRecordingVideo && accumulatedTranscript && (
-          <div className="absolute top-16 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 text-white max-h-32 overflow-y-auto">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-green-300">
-                Real-time Transcript
-              </span>
-            </div>
-            <p className="text-sm text-white leading-relaxed">
-              {accumulatedTranscript}
-            </p>
-            <p className="text-xs text-green-200 mt-2">
-              Manual transcription • Click "Get Transcript" when ready
-            </p>
           </div>
         )}
 
