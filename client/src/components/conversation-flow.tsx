@@ -12,10 +12,16 @@ interface ConversationFlowProps {
   onTranscriptionProcessed?: () => void;
 }
 
-export default function ConversationFlow({ sessionId, transcribedText, onTranscriptionProcessed }: ConversationFlowProps) {
+export default function ConversationFlow({
+  sessionId,
+  transcribedText,
+  onTranscriptionProcessed,
+}: ConversationFlowProps) {
   const [userResponse, setUserResponse] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(
+    null,
+  );
   const [followUpIndex, setFollowUpIndex] = useState(0);
   const [needsCorrection, setNeedsCorrection] = useState(false);
   const [currentBaseQuestion, setCurrentBaseQuestion] = useState<string>("");
@@ -28,19 +34,27 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   });
 
   const createConversationMutation = useMutation({
-    mutationFn: async (data: { sessionId: string; type: string; content: string; timestamp: number; questionId?: string }) => {
+    mutationFn: async (data: {
+      sessionId: string;
+      type: string;
+      content: string;
+      timestamp: number;
+      questionId?: string;
+    }) => {
       const res = await apiRequest("POST", "/api/conversations", data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sessions", sessionId, "conversations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/sessions", sessionId, "conversations"],
+      });
     },
   });
 
   const getAIQuestionMutation = useMutation({
-    mutationFn: async (data: { 
-      sessionId: string; 
-      questionId?: string; 
+    mutationFn: async (data: {
+      sessionId: string;
+      questionId?: string;
       followUpIndex?: number;
       baseQuestion?: string;
       userResponse?: string;
@@ -66,7 +80,11 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   });
 
   const getAIFeedbackMutation = useMutation({
-    mutationFn: async (data: { response: string; sessionId: string; questionId?: string }) => {
+    mutationFn: async (data: {
+      response: string;
+      sessionId: string;
+      questionId?: string;
+    }) => {
       const res = await apiRequest("POST", "/api/ai/feedback", data);
       return res.json();
     },
@@ -83,10 +101,13 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
   useEffect(() => {
     if (transcribedText && transcribedText.trim() && currentQuestionId) {
       console.log("ConversationFlow received transcription:", transcribedText);
-      
+
       // Handle special auto-submit signal for silence detection
       if (transcribedText === "__AUTO_SUBMIT_SILENCE__") {
-        console.log("Auto-submit signal received, current response:", userResponse.trim());
+        console.log(
+          "Auto-submit signal received, current response:",
+          userResponse.trim(),
+        );
         if (userResponse.trim()) {
           console.log("Auto-submitting due to silence");
           handleSubmitResponse();
@@ -97,7 +118,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         onTranscriptionProcessed?.();
         return;
       }
-      
+
       // For continuous transcription, update the text area with the current transcription
       setUserResponse(transcribedText);
       // Don't auto-submit, let user review first
@@ -108,7 +129,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
     if (!text.trim()) return;
 
     setIsTyping(true);
-    
+
     // Add user response
     await createConversationMutation.mutateAsync({
       sessionId,
@@ -119,12 +140,12 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
     });
 
     // Get AI feedback with enhanced analysis
-    const feedback = await getAIFeedbackMutation.mutateAsync({ 
-      response: text, 
+    const feedback = await getAIFeedbackMutation.mutateAsync({
+      response: text,
       sessionId,
-      questionId: currentQuestionId || undefined
+      questionId: currentQuestionId || undefined,
     });
-    
+
     // Add AI feedback
     await createConversationMutation.mutateAsync({
       sessionId,
@@ -153,19 +174,21 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       // Ask contextual follow-up question based on user's response (max 2 follow-ups)
       console.log(`Asking follow-up question ${followUpIndex + 1} of 2`);
       setTimeout(async () => {
-        await getAIQuestionMutation.mutateAsync({ 
-          sessionId, 
-          questionId: currentQuestionId, 
+        await getAIQuestionMutation.mutateAsync({
+          sessionId,
+          questionId: currentQuestionId,
           followUpIndex,
           baseQuestion: currentBaseQuestion,
-          userResponse: text
+          userResponse: text,
         });
-        setFollowUpIndex(prev => prev + 1);
+        setFollowUpIndex((prev) => prev + 1);
         setIsTyping(false);
       }, 2000);
     } else {
       // Move to next primary question after 2 follow-ups or no more questions
-      console.log(`Moving to next question. Follow-ups completed: ${followUpIndex}`);
+      console.log(
+        `Moving to next question. Follow-ups completed: ${followUpIndex}`,
+      );
       setTimeout(async () => {
         await getAIQuestionMutation.mutateAsync({ sessionId });
         setFollowUpIndex(0); // Reset follow-up counter for new question
@@ -187,16 +210,18 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
     const date = new Date(timestamp * 1000);
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60);
-    
+
     if (diff < 1) return "Just now";
     if (diff < 60) return `${diff} min ago`;
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-lg font-semibold text-neutral-800 mb-4">AI Conversation Flow</h3>
-      
+      <h3 className="text-lg font-semibold text-neutral-800 mb-4">
+        AI Conversation Flow
+      </h3>
+
       {/* Current Question Display */}
       {currentQuestion && (
         <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg">
@@ -205,11 +230,15 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
               <Bot className="text-white" size={16} />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-blue-900 mb-1">Current Question</h4>
+              <h4 className="font-medium text-blue-900 mb-1">
+                Current Question
+              </h4>
               <p className="text-blue-800">{currentQuestion}</p>
               {followUpIndex > 0 && (
                 <div className="flex items-center space-x-2 mt-1">
-                  <p className="text-xs text-blue-600">Follow-up question {followUpIndex} of 2</p>
+                  <p className="text-xs text-blue-600">
+                    Follow-up question {followUpIndex} of 2
+                  </p>
                   <div className="flex space-x-1">
                     {[1, 2].map((num) => (
                       <div
@@ -226,7 +255,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
           </div>
         </div>
       )}
-      
+
       {/* Live Transcription Display */}
       {transcribedText && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -235,7 +264,9 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
               <User className="text-white" size={16} />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-green-900 mb-1">Voice Transcription</h4>
+              <h4 className="font-medium text-green-900 mb-1">
+                Voice Transcription
+              </h4>
               <p className="text-green-800 text-sm">{transcribedText}</p>
               <Button
                 onClick={handleSubmitResponse}
@@ -248,7 +279,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
           </div>
         </div>
       )}
-      
+
       <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
         {conversations.map((conversation) => (
           <div
@@ -262,8 +293,10 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
                 <Bot className="text-white" size={16} />
               </div>
             )}
-            
-            <div className={`flex-1 ${conversation.type === "user_response" ? "max-w-md" : ""}`}>
+
+            <div
+              className={`flex-1 ${conversation.type === "user_response" ? "max-w-md" : ""}`}
+            >
               <div
                 className={`rounded-lg p-3 ${
                   conversation.type === "user_response"
@@ -273,28 +306,39 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
               >
                 {conversation.type === "ai_feedback" ? (
                   <div>
-                    {JSON.parse(conversation.content).feedbacks?.map((feedback: any, idx: number) => (
-                      <div key={idx} className="text-sm mb-1">
-                        <span className={`mr-2 ${
-                          feedback.type === "positive" ? "text-green-600" : 
-                          feedback.type === "warning" ? "text-amber-600" : "text-blue-600"
-                        }`}>
-                          {feedback.type === "positive" ? "✓" : 
-                           feedback.type === "warning" ? "⚠" : "ℹ"}
-                        </span>
-                        {feedback.message}
-                      </div>
-                    ))}
+                    {JSON.parse(conversation.content).feedbacks?.map(
+                      (feedback: any, idx: number) => (
+                        <div key={idx} className="text-sm mb-1">
+                          <span
+                            className={`mr-2 ${
+                              feedback.type === "positive"
+                                ? "text-green-600"
+                                : feedback.type === "warning"
+                                  ? "text-amber-600"
+                                  : "text-blue-600"
+                            }`}
+                          >
+                            {feedback.type === "positive"
+                              ? "✓"
+                              : feedback.type === "warning"
+                                ? "⚠"
+                                : "ℹ"}
+                          </span>
+                          {feedback.message}
+                        </div>
+                      ),
+                    )}
                     {JSON.parse(conversation.content).needsCorrection && (
                       <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
                         🔄 {JSON.parse(conversation.content).correctionMessage}
                       </div>
                     )}
-                    {JSON.parse(conversation.content).suggestion && !JSON.parse(conversation.content).needsCorrection && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
-                        💡 {JSON.parse(conversation.content).suggestion}
-                      </div>
-                    )}
+                    {JSON.parse(conversation.content).suggestion &&
+                      !JSON.parse(conversation.content).needsCorrection && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
+                          💡 {JSON.parse(conversation.content).suggestion}
+                        </div>
+                      )}
                   </div>
                 ) : (
                   <p className="text-sm">{conversation.content}</p>
@@ -305,7 +349,8 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
                   conversation.type === "user_response" ? "text-right" : ""
                 }`}
               >
-                {conversation.type === "user_response" ? "You" : "AI"} • {formatTimestamp(conversation.timestamp)}
+                {conversation.type === "user_response" ? "You" : "AI"} •{" "}
+                {formatTimestamp(conversation.timestamp)}
               </div>
             </div>
 
@@ -326,8 +371,14 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
             <div className="bg-neutral-100 rounded-lg p-3">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div
+                  className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
               </div>
             </div>
           </div>
@@ -337,16 +388,12 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       {/* Response Input Section */}
       <div className="space-y-4">
         {/* Note about voice recording */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💡 <strong>Voice Recording Tips:</strong> Text is automatically transcribed every 5 seconds. Only meaningful words are captured (filters out background noise, filler words). Auto-submission occurs after 15 seconds of no meaningful speech detected.
-          </p>
-        </div>
-        
+
         {/* Manual input section */}
         <div className="space-y-3">
           <p className="text-sm text-blue-800">
-            💡 <strong>Voice-first interview:</strong> Start video recording to automatically capture and transcribe your spoken responses.
+            💡 <strong>Voice-first interview:</strong> Start video recording to
+            automatically capture and transcribe your spoken responses.
           </p>
         </div>
 

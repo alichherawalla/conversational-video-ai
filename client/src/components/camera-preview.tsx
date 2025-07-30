@@ -27,6 +27,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const lastSubmissionTimeRef = useRef<number>(0);
   const lastTranscriptTimeRef = useRef<number>(Date.now());
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isActivelyRecordingRef = useRef<boolean>(false);
   
   // Video recording with audio
   const {
@@ -167,9 +168,12 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         startTranscriptRecording()
       ]);
       
+      // Set active recording flag
+      isActivelyRecordingRef.current = true;
+      
       // Start continuous transcription every 5 seconds
       const timer = setInterval(() => {
-        if (isRecordingVideo) {
+        if (isActivelyRecordingRef.current) {
           console.log("Auto-transcription: Getting transcript every 5 seconds");
           handleManualTranscript();
         }
@@ -185,6 +189,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
 
   const handleStopRecording = async () => {
     console.log("Stopping recordings...");
+    
+    // Clear active recording flag
+    isActivelyRecordingRef.current = false;
     
     // Clear all timers
     if (silenceTimer) {
@@ -221,16 +228,21 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
 
   const handleManualTranscript = async () => {
     console.log("Manual transcript requested");
-    if (isRecordingTranscript && isRecordingVideo) {
+    if (isRecordingTranscript && isActivelyRecordingRef.current) {
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
       
       setTimeout(() => {
-        if (isRecordingVideo) {
+        if (isActivelyRecordingRef.current) {
           console.log("Restarting audio recording after manual transcription");
           startTranscriptRecording();
         }
       }, 3000);
+    } else {
+      console.log("Manual transcript skipped - conditions not met:", {
+        isRecordingTranscript,
+        isActivelyRecording: isActivelyRecordingRef.current
+      });
     }
   };
 
