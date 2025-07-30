@@ -175,38 +175,55 @@ export async function generateLinkedInContent(conversationText: string, contentT
     
     switch (contentType) {
       case 'carousel':
-        prompt = `Create a LinkedIn carousel post from this interview content:
+        prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
-"${conversationText}"
+Interview Content: "${conversationText}"
 
-Generate 5-7 professional slides in JSON format:
-{
-  "title": "Compelling carousel title",
-  "slides": [
-    {"icon": "📊", "title": "Slide title", "content": "Key insight or statistic"},
-    ...
-  ],
-  "tags": ["#entrepreneurship", "#business", "#leadership"]
-}
-
-Make it professional, actionable, and engaging for business audience.`;
-        break;
-        
-      case 'image':
-        prompt = `Create a LinkedIn image post from this interview content:
-
-"${conversationText}"
+Requirements:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Create 5-7 professional slides based on actual content
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
 
 Generate in JSON format:
 {
-  "title": "Professional post title",
-  "quote": "Powerful quote from the content",
-  "insight": "Key business insight",
-  "statistic": "Relevant number or metric if available",
-  "tags": ["#business", "#entrepreneurship"]
+  "title": "Clear, professional carousel title based on content",
+  "slides": [
+    {"icon": "📊", "title": "Slide title from transcript", "content": "Key insight from actual interview"},
+    {"icon": "💡", "title": "Another insight", "content": "Real learning or perspective shared"},
+    {"icon": "🎯", "title": "Practical takeaway", "content": "Actionable advice from the interview"},
+    {"icon": "📈", "title": "Results or impact", "content": "Actual outcomes mentioned"},
+    {"icon": "🔑", "title": "Key lesson", "content": "Main insight from conversation"}
+  ],
+  "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
 }
 
-Focus on one powerful insight that would work well as an image post.`;
+Focus on authentic insights and real experiences shared in the interview.`;
+        break;
+        
+      case 'image':
+        prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+
+Interview Content: "${conversationText}"
+
+Requirements:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Extract one powerful real quote or insight
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
+
+Generate in JSON format:
+{
+  "title": "Professional post title based on content",
+  "quote": "Actual quote or key statement from the interview",
+  "insight": "Real business insight shared in the conversation",
+  "statistic": "Only include if actual number/metric mentioned in transcript",
+  "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
+}
+
+Focus on one powerful authentic insight that would work well as an image post.`;
         break;
         
       case 'text':
@@ -282,30 +299,33 @@ export async function generateVideoClips(conversationText: string, sessionDurati
   socialScore: number;
 }>> {
   try {
-    const prompt = `Analyze this interview content and suggest 3-5 video clips optimized for social media:
+    const prompt = `Analyze this interview content and suggest 3-5 video clips optimized for social media using ONLY the actual content provided:
 
-Content: "${conversationText}"
+Interview Content: "${conversationText}"
 Total Duration: ${sessionDuration} seconds
+
+Requirements:
+- Extract clips from real conversation moments
+- Use direct, educational voice based on actual insights shared
+- Each clip should be 15-90 seconds long
+- Focus on the most valuable and engaging parts of the actual interview
+- Provide realistic timestamps based on content flow
+- No fictional examples or fabricated content
 
 Generate clips in JSON format:
 {
   "clips": [
     {
-      "title": "Clip title",
-      "description": "What makes this clip engaging",
+      "title": "Specific topic from interview",
+      "description": "Description based on actual content discussed",
       "startTime": number,
       "endTime": number,
-      "socialScore": number (1-100)
-    },
-    ...
+      "socialScore": number (1-100 based on authentic value)
+    }
   ]
 }
 
-Requirements:
-- Clips should be 15-90 seconds long
-- Focus on high-energy moments, insights, or stories
-- Optimize for engagement and shareability
-- Ensure clips have clear beginning and end points`;
+Base timestamps on logical conversation flow and actual content segments.`;
 
     const response = await anthropic.messages.create({
       max_tokens: 600,
@@ -316,27 +336,32 @@ Requirements:
     const clipsText = (response.content[0] as any).text.trim();
     
     try {
-      const result = JSON.parse(clipsText);
-      return result.clips || [];
+      // Try to parse JSON directly
+      const parsed = JSON.parse(clipsText);
+      return parsed.clips || [];
     } catch (parseError) {
-      // Fallback clips
-      const clipDuration = Math.min(60, Math.floor(sessionDuration / 3));
-      return [
-        {
-          title: 'Key Insight',
-          description: 'Main takeaway from the interview',
-          startTime: 30,
-          endTime: 30 + clipDuration,
-          socialScore: 75
-        },
-        {
-          title: 'Personal Story',
-          description: 'Engaging personal anecdote',
-          startTime: Math.floor(sessionDuration * 0.4),
-          endTime: Math.floor(sessionDuration * 0.4) + clipDuration,
-          socialScore: 80
+      // If JSON is wrapped in markdown code blocks, extract it
+      const jsonMatch = clipsText.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]);
+          return parsed.clips || [];
+        } catch (innerError) {
+          console.warn('Failed to parse extracted JSON:', innerError);
         }
-      ];
+      }
+      
+      // Fallback clips based on conversation analysis
+      const segments = conversationText.split('\n').filter(line => line.trim().length > 50);
+      const clipDuration = Math.min(60, Math.max(15, Math.floor(sessionDuration / 4)));
+      
+      return segments.slice(0, 3).map((segment, index) => ({
+        title: `Key Insight ${index + 1}`,
+        description: segment.substring(0, 100) + '...',
+        startTime: Math.floor(sessionDuration * (index + 1) / 5),
+        endTime: Math.floor(sessionDuration * (index + 1) / 5) + clipDuration,
+        socialScore: 70 + (index * 5)
+      }));
     }
   } catch (error) {
     console.error('Error generating video clips:', error);

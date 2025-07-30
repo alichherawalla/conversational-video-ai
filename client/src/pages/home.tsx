@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Video, Plus, User } from "lucide-react";
 import RecordingStudio from "@/components/recording-studio";
 import QuestionBank from "@/components/question-bank";
-import ContentGeneration from "@/components/content-generation";
-import VideoLibrary from "@/components/video-library";
+import ContentGeneration from "@/components/content-generation-simplified";
 
-type Tab = "recording" | "questions" | "content" | "library";
+type Tab = "recording" | "questions" | "content";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("recording");
@@ -15,7 +14,6 @@ export default function Home() {
     { id: "recording" as Tab, label: "Recording Studio", icon: Video },
     { id: "questions" as Tab, label: "Question Bank", icon: "question-circle" },
     { id: "content" as Tab, label: "Content Generation", icon: "share-alt" },
-    { id: "library" as Tab, label: "Video Library", icon: "folder" },
   ] as const;
 
   return (
@@ -71,7 +69,6 @@ export default function Home() {
                 {tab.id === "content" && (
                   <i className="fas fa-share-alt mr-2"></i>
                 )}
-                {tab.id === "library" && <i className="fas fa-folder mr-2"></i>}
                 {tab.label}
               </button>
             ))}
@@ -82,7 +79,7 @@ export default function Home() {
         {activeTab === "recording" && <RecordingStudio />}
         {activeTab === "questions" && <QuestionBank />}
         {activeTab === "content" && <ContentGeneration />}
-        {activeTab === "library" && <VideoLibrary />}
+
       </main>
     </div>
   );

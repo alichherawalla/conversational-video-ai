@@ -285,22 +285,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Include questions for context, but focus on user responses
-      const questionsForContext = conversations
+      // Build comprehensive transcript from conversation data
+      const conversationPairs: Array<{question: string; response: string; timestamp: number}> = [];
+      const questionsMap = new Map<number, string>();
+      
+      // First, map questions by timestamp
+      conversations
         .filter(c => c.type === 'ai_question')
-        .map(c => c.content)
-        .slice(0, 3); // Limit to avoid token overflow
+        .forEach(q => {
+          questionsMap.set(q.timestamp, q.content);
+        });
       
-      const userResponsesText = userResponses.map(c => c.content).join(' ').trim();
+      // Then build Q&A pairs
+      conversations
+        .filter(c => c.type === 'user_response')
+        .forEach(response => {
+          // Find the most recent question before this response
+          const questionTimestamps = Array.from(questionsMap.keys()).filter(t => t <= response.timestamp);
+          if (questionTimestamps.length > 0) {
+            const questionTimestamp = Math.max(...questionTimestamps);
+            const question = questionsMap.get(questionTimestamp);
+            
+            if (question) {
+              conversationPairs.push({
+                question,
+                response: response.content,
+                timestamp: response.timestamp
+              });
+            }
+          }
+        });
       
-      // Combine questions and responses for better context
-      const conversationText = `
-Context Questions: ${questionsForContext.join(' | ')}
+      // Create full transcript with timing
+      const fullTranscript = conversationPairs
+        .map(pair => `Q: ${pair.question}\nA: ${pair.response}`)
+        .join('\n\n');
+      
+      const conversationText = `Interview Transcript:
+${fullTranscript}
 
-User Responses: ${userResponsesText}
-      `.trim();
+Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
       
-      if (!userResponsesText) {
+      if (!fullTranscript) {
         return res.status(400).json({ message: "No meaningful conversation content found" });
       }
       

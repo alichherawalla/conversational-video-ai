@@ -12,6 +12,7 @@ export const sessions = pgTable("sessions", {
   aiPersonality: varchar("ai_personality").notNull().default("friendly"),
   targetDuration: varchar("target_duration").notNull().default("15-20 minutes"),
   videoUrl: text("video_url"),
+  fullTranscript: text("full_transcript"), // complete transcript with timing
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
