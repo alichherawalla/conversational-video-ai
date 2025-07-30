@@ -17,6 +17,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [followUpIndex, setFollowUpIndex] = useState(0);
   const [needsCorrection, setNeedsCorrection] = useState(false);
   const [currentBaseQuestion, setCurrentBaseQuestion] = useState<string>("");
+  const [currentQuestion, setCurrentQuestion] = useState<string>("");
   const queryClient = useQueryClient();
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -47,6 +48,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
     },
     onSuccess: (data) => {
       setCurrentQuestionId(data.questionId);
+      setCurrentQuestion(data.question);
       // Track base question for follow-ups
       if (!data.isFollowUp) {
         setCurrentBaseQuestion(data.question);
@@ -154,6 +156,24 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <h3 className="text-lg font-semibold text-neutral-800 mb-4">AI Conversation Flow</h3>
+      
+      {/* Current Question Display */}
+      {currentQuestion && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <Bot className="text-white" size={16} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900 mb-1">Current Question:</p>
+              <p className="text-blue-800 font-medium">{currentQuestion}</p>
+              {followUpIndex > 0 && (
+                <p className="text-xs text-blue-600 mt-1">Follow-up question {followUpIndex} of 2</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
         {conversations.map((conversation) => (
