@@ -611,11 +611,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Processing video clips for: ${originalName} (${Math.round(fileSize / 1024 / 1024)}MB)`);
 
         try {
-          // Generate video clips using the provided transcript
+          // Extract audio from video for word-level timing
+          const audioPath = videoPath.replace(/\.[^/.]+$/, '') + '_audio.wav';
+          
+          console.log('Extracting audio for word-level timing...');
+          await new Promise<void>((resolve, reject) => {
+            const ffmpeg = spawn('ffmpeg', [
+              '-i', videoPath!,
+              '-ac', '1', // Convert to mono
+              '-ar', '16000', // 16kHz sample rate for Whisper
+              '-acodec', 'pcm_s16le', // PCM format
+              '-y', // Overwrite output file
+              audioPath
+            ]);
+
+            let errorOutput = '';
+            ffmpeg.stderr.on('data', (data) => {
+              errorOutput += data.toString();
+            });
+
+            ffmpeg.on('close', (code) => {
+              if (code === 0) {
+                resolve();
+              } else {
+                reject(new Error(`FFmpeg failed with code ${code}: ${errorOutput}`));
+              }
+            });
+
+            ffmpeg.on('error', (err) => {
+              reject(err);
+            });
+          });
+
+          // Get word-level timing from audio
+          const audioBuffer = fs.readFileSync(audioPath);
+          console.log('Transcribing for word-level timing...');
+          const transcription = await transcribeAudioBuffer(audioBuffer, originalName);
+          
+          // Clean up audio file
+          fs.unlinkSync(audioPath);
+          
+          console.log(`Got ${transcription.words?.length || 0} word-level timestamps`);
+          
+          // Generate video clips using word-level timing data
           const videoClips = await generateVideoClips(
             transcript, 
-            120, // Estimated duration, will be calculated from transcript
-            [] // No word-level timing for uploaded transcripts
+            transcription.duration || 120,
+            transcription.words || []
           );
           
           // Clean up temp files

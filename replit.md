@@ -229,6 +229,14 @@ Preferred communication style: Simple, everyday language.
 - **Streaming Architecture**: Videos now stream directly to disk during upload rather than loading entirely in memory
 - **Word-Level Timing Integration**: Maintained OpenAI Whisper word-level transcription for precise video clip generation
 
+### January 30, 2025 - Fixed Word-Level Timing for Accurate Video Clips
+- **Critical Fix**: Video clip timing was completely inaccurate due to missing word-level timestamps from OpenAI Whisper transcription
+- **Word-Level Transcription**: Upload video clip generation now extracts audio and gets precise word-level timing using OpenAI `verbose_json` format
+- **Accurate Clip Boundaries**: Video clips now use exact word timestamps for precise start/end timing instead of estimated durations
+- **Enhanced Audio Processing**: Added FFmpeg audio extraction specifically for word-level timing analysis during video clip generation
+- **Improved Video Workflow**: Fixed `/api/upload-video-generate-clips` endpoint to properly utilize word timing data for clip generation
+- **LinkedIn Text Post Display**: Fixed text post preview and modal display to properly show `detailed_content` format content
+
 ### January 30, 2025 - Separate Workflows for Content vs Video Processing
 - **Separate Processing Buttons**: Created distinct workflows for content generation (transcript-based) and video clip processing (video file-based)
 - **Three-Step Workflow**: 1) Extract transcript from video, 2a) Generate LinkedIn content from transcript, 2b) Generate video clips from video + transcript
