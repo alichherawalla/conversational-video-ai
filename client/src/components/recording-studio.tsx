@@ -209,9 +209,9 @@ export default function RecordingStudio() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Conversation Flow Panel - Left */}
-      <div className="space-y-6">
+      <div className="lg:col-span-1 max-h-screen overflow-y-auto space-y-6">
         {currentSession && (
           <ConversationFlow 
             sessionId={currentSession} 
@@ -233,8 +233,8 @@ export default function RecordingStudio() {
         )}
       </div>
 
-      {/* Video Recording Panel - Center */}
-      <div className="space-y-6">
+      {/* Video Recording Panel - Center (Bigger) */}
+      <div className="lg:col-span-2 space-y-6">
         <CameraPreview 
           onRecordingComplete={handleRecordingComplete} 
           sessionId={currentSession}
@@ -266,7 +266,7 @@ export default function RecordingStudio() {
       </div>
 
       {/* Session Settings Panel - Right */}
-      <div className="space-y-6">
+      <div className="lg:col-span-1 space-y-6">
         {/* Session Settings */}
         <Card>
           <CardContent className="p-6">

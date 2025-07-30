@@ -85,9 +85,12 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       
       // Handle special auto-submit signal for silence detection
       if (transcribedText === "__AUTO_SUBMIT_SILENCE__") {
+        console.log("Auto-submit signal received, current response:", userResponse.trim());
         if (userResponse.trim()) {
           console.log("Auto-submitting due to silence");
           handleSubmitResponse();
+        } else {
+          console.log("No user response to auto-submit");
         }
         // Clear the transcription signal immediately
         onTranscriptionProcessed?.();

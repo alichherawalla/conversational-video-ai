@@ -97,20 +97,21 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         
         // Clear any existing silence timer
         if (silenceTimer) {
-          console.log("Clearing existing silence timer");
+          console.log("Clearing existing silence timer due to voice activity");
           clearTimeout(silenceTimer);
           setSilenceTimer(null);
         }
       } else if (lastAudioActivityTime && !silenceTimer && isRecordingTranscript) {
         // Start silence timer when audio drops below threshold
-        console.log("Audio below threshold, starting 5-second silence timer");
+        console.log("Audio below threshold, starting 20-second silence timer");
         const timer = setTimeout(() => {
-          console.log("5 seconds of silence detected, triggering auto-submission");
+          console.log("20 seconds of silence detected, triggering auto-submission");
           if (onTranscriptionComplete) {
             onTranscriptionComplete("__AUTO_SUBMIT_SILENCE__");
           }
           setSilenceTimer(null);
-        }, 5000); // 5 seconds for testing
+          setLastAudioActivityTime(null);
+        }, 20000); // 20 seconds for auto-submission
         
         setSilenceTimer(timer);
       }
