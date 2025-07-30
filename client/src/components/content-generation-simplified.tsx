@@ -81,52 +81,48 @@ export default function ContentGeneration() {
 
   const uploadContentMutation = useMutation({
     mutationFn: async ({ transcript }: { transcript: string }) => {
-      const results = [];
+      const allContent = [];
       setUploadGeneratedContent([]); // Clear previous results
+      setUploadGeneratedClips([]);
       
-      // Generate one post per content type 
+      // Generate 3 posts for each content type (9 total) with separate API calls
       const contentTypes = ['carousel', 'image', 'text'];
       
       for (const contentType of contentTypes) {
-        const res = await apiRequest("POST", "/api/generate-content-from-upload", { 
-          transcript, 
-          contentType,
-          generateAll: true // Generate 3 posts per content type
-        });
-        const result = await res.json();
-        
-        // Handle the result which now contains multiple posts
-        if (result.posts && Array.isArray(result.posts)) {
-          result.posts.forEach((post: any, index: number) => {
-            results.push({
-              id: `upload-${Date.now()}-${contentType}-${index}`,
-              title: post.title,
-              content: post,
-              type: contentType,
-              platform: "linkedin",
-              createdAt: new Date().toISOString()
-            });
+        // Make 3 separate API calls for each content type
+        for (let i = 0; i < 3; i++) {
+          const res = await apiRequest("POST", "/api/generate-content-from-upload", { 
+            transcript, 
+            contentType,
+            generateAll: false // Single post per call
           });
-        } else {
-          // Fallback for single post response
-          results.push(result);
+          const result = await res.json();
+          allContent.push(result);
         }
-        
-        // Update state after each content type generation
-        setUploadGeneratedContent([...results]);
       }
       
-      // Also generate video clips
+      // Generate video clips
       const clipsRes = await apiRequest("POST", "/api/generate-clips-from-upload", { transcript });
       const clips = await clipsRes.json();
-      setUploadGeneratedClips(clips);
       
-      return { content: results, clips };
+      return { content: allContent, clips };
     },
     onSuccess: (data) => {
-      // Content is already set incrementally in the mutation function
-      // Clips are set after generation
-    }
+      setUploadGeneratedContent(data.content);
+      setUploadGeneratedClips(data.clips);
+      toast({
+        title: "Content Generated",
+        description: `Generated ${data.content.length} LinkedIn posts and ${data.clips.length} video clips!`,
+      });
+    },
+    onError: (error) => {
+      console.error('Upload content generation error:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate content from upload. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -416,7 +412,22 @@ export default function ContentGeneration() {
           {uploadGeneratedClips.length > 0 && (
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Generated Video Clips</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Generated Video Clips</h3>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = `/api/upload-clips/download-all`;
+                      link.download = `video_clips_${Date.now()}.zip`;
+                      link.click();
+                    }}
+                    className="bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    <Download className="mr-1" size={12} />
+                    Download All Clips
+                  </Button>
+                </div>
                 <div className="grid gap-4">
                   {uploadGeneratedClips.map((clip, index) => (
                     <div key={index} className="border rounded-lg p-4">
@@ -425,14 +436,31 @@ export default function ContentGeneration() {
                           <Play className="mr-2" size={16} />
                           <span className="font-medium">{clip.title}</span>
                         </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => setViewingClip(clip)}
-                          className="bg-primary text-white hover:bg-primary/90"
-                        >
-                          <Eye className="mr-1" size={12} />
-                          View Details
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => setViewingClip(clip)}
+                            className="bg-primary text-white hover:bg-primary/90"
+                          >
+                            <Eye className="mr-1" size={12} />
+                            View Details
+                          </Button>
+                          {clip.videoPath && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `/api/clips/${clip.id}/download`;
+                                link.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+                                link.click();
+                              }}
+                              className="bg-green-600 text-white hover:bg-green-700"
+                            >
+                              <Download className="mr-1" size={12} />
+                              Download
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center text-sm text-neutral-600 mb-2">
                         <Clock className="mr-1" size={12} />

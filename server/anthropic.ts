@@ -176,26 +176,6 @@ export async function generateLinkedInContent(conversationText: string, contentT
     switch (contentType) {
       case 'carousel':
         if (generateAll) {
-          // This path is not used anymore, but keeping for compatibility
-          prompt = `Create a LinkedIn carousel post from this interview content.
-
-Interview Content: "${conversationText}"
-
-Create a professional carousel with 5-6 slides. Extract insights from the content provided.
-
-Generate in JSON format:
-{
-  "title": "Professional Insights",
-  "slides": [
-    {"icon": "🎯", "title": "Main Topic", "content": "Key insight from content"},
-    {"icon": "💡", "title": "Key Learning", "content": "Primary takeaway"},
-    {"icon": "📊", "title": "Analysis", "content": "Analytical insight"},
-    {"icon": "🚀", "title": "Implementation", "content": "Practical application"},
-    {"icon": "📈", "title": "Results", "content": "Expected outcomes"}
-  ],
-  "tags": ["#Business", "#Insights", "#Strategy"]
-}`;
-        } else {
           // Generate 3 carousel posts
           prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Focus on detailed, comprehensive slide content.
 
@@ -255,6 +235,28 @@ Generate in JSON format:
 }
 
 Each slide should provide substantial value with specific details from the interview content.`;
+        } else {
+          // Generate single carousel post
+          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided.
+
+Interview Content: "${conversationText}"
+
+Create a professional carousel with 6 slides and detailed caption:
+
+Generate in JSON format:
+{
+  "title": "Professional carousel title",
+  "detailed_caption": "Engaging caption that introduces the carousel content with hook and call-to-action",
+  "slides": [
+    {"icon": "🎯", "title": "Slide Title", "content": "40-60 words of substantive content for this slide"},
+    {"icon": "💡", "title": "Key Learning", "content": "40-60 words of detailed insight from the interview"},
+    {"icon": "📊", "title": "Analysis", "content": "40-60 words of analytical insight from the content"},
+    {"icon": "🚀", "title": "Implementation", "content": "40-60 words of practical application"},
+    {"icon": "📈", "title": "Results", "content": "40-60 words about outcomes or impact"},
+    {"icon": "🔑", "title": "Key Takeaway", "content": "40-60 words of actionable advice"}
+  ],
+  "tags": ["#Business", "#Insights", "#Strategy", "#Leadership"]
+}`;
         }
         break;
         
@@ -307,27 +309,25 @@ Generate in JSON format:
 
 Make each caption 150-300 words with clear structure and compelling storytelling.`;
         } else {
-          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+          // Generate single image post
+          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided.
 
 Interview Content: "${conversationText}"
 
-Requirements:
-- Use direct, educational voice
-- Stick strictly to facts and insights from the transcript
-- Extract one powerful real quote or insight
-- No fictional examples or fabricated statistics
-- Professional tone suitable for LinkedIn
+Create a detailed image post with comprehensive caption and visual direction:
 
 Generate in JSON format:
 {
-  "title": "Professional post title based on content",
-  "quote": "Actual quote or key statement from the interview",
-  "insight": "Real business insight shared in the conversation",
-  "statistic": "Only include if actual number/metric mentioned in transcript",
-  "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
+  "title": "Engaging image post title",
+  "detailed_caption": "Hook: Opening line that captures attention\\n\\nContext: Brief background from the interview\\n\\nInsight: Main lesson with specific details\\n\\nValue: What this means for the audience\\n\\nCall-to-Action: Question encouraging engagement",
+  "illustration_direction": "Professional image concept: Background style, main visual elements, text placement, color palette with hex codes, typography style, visual metaphors, layout composition",
+  "quote_overlay": "Most impactful quote or statistic to display prominently",
+  "visual_elements": ["Specific visual elements", "needed for designer"],
+  "color_scheme": "Primary and secondary colors with purpose",
+  "tags": ["#relevant", "#hashtags", "#from", "#content"]
 }
 
-Focus on one powerful authentic insight that would work well as an image post.`;
+Make the caption 150-300 words with clear structure.`;
         }
         break;
         
@@ -378,38 +378,20 @@ Generate in JSON format:
 
 Focus on authentic insights and real experiences shared in the interview.`;
         } else {
-          // Generate 3 text posts
-          prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each should focus on different aspects.
+          // Generate single text post
+          prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct text posts:
+Create a professional text post with detailed structure:
 
 Generate in JSON format:
 {
-  "posts": [
-    {
-      "title": "Story-Style Post",
-      "hook": "Engaging opening that captures attention with a story angle",
-      "body": "Main narrative sharing the experience and insights from interview. Use natural storytelling flow.",
-      "cta": "Call-to-action encouraging engagement or sharing experiences",
-      "tags": ["#story", "#insights", "#experience"]
-    },
-    {
-      "title": "Educational Post", 
-      "hook": "Educational hook focusing on lessons learned",
-      "body": "Teaching-focused content that breaks down key concepts and actionable insights from the conversation.",
-      "cta": "Encourage others to apply these learnings",
-      "tags": ["#education", "#tips", "#business"]
-    },
-    {
-      "title": "Contrarian Take",
-      "hook": "Thought-provoking angle that challenges common assumptions",
-      "body": "Content that presents a different perspective or challenges conventional thinking based on interview insights.",
-      "cta": "Ask for opinions or experiences from the audience",
-      "tags": ["#contrarian", "#perspective", "#discussion"]
-    }
-  ]
+  "title": "Professional text post title",
+  "hook": "Opening line that captures attention and introduces the topic",
+  "body": "Main educational content with insights and specific details from the interview",
+  "callToAction": "Question or prompt encouraging engagement",
+  "tags": ["#relevant", "#hashtags", "#from", "#content"]
 }`;
         }
         break;

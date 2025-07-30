@@ -647,6 +647,18 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
     }
   });
 
+  // Download all upload clips as ZIP
+  app.get("/api/upload-clips/download-all", async (req, res) => {
+    try {
+      // Get all upload clips from storage (you may need to modify storage to track upload clips)
+      // For now, this is a placeholder - you'd need to implement upload clip storage
+      res.status(404).json({ error: "Upload clip download not implemented yet" });
+    } catch (error) {
+      console.error('Upload clips download error:', error);
+      res.status(500).json({ error: "Failed to download upload clips" });
+    }
+  });
+
   // Create video clips from session video using generated timestamps
   app.post("/api/sessions/:sessionId/create-clips", async (req, res) => {
     try {
