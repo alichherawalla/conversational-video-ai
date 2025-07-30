@@ -218,3 +218,13 @@ Preferred communication style: Simple, everyday language.
 - **Simplified UI**: Updated interface to show "Manual transcription • Click 'Get Transcript' when ready"
 - **Better User Experience**: Users can speak naturally without interruption and transcript when they choose
 - **Code Cleanup**: Removed unused auto-transcription timers, refs, and logic for cleaner codebase
+
+### January 30, 2025 - Enhanced Streaming Video Upload for Large Files (100MB+)
+- **Streaming Multipart Uploads**: Replaced multer with busboy for proper streaming file handling of large video files
+- **Large File Support**: Increased limits to 500MB with 15-minute processing timeouts for video files over 100MB
+- **Progress Tracking**: Real-time upload progress logging every 10MB and audio extraction progress indicators
+- **Optimized FFmpeg Processing**: Using spawn instead of execSync for better memory management and progress tracking
+- **Enhanced Error Handling**: Comprehensive error messages for file size limits, upload failures, and processing errors
+- **Frontend Validation**: File size warnings and processing time estimates for users uploading large files
+- **Streaming Architecture**: Videos now stream directly to disk during upload rather than loading entirely in memory
+- **Word-Level Timing Integration**: Maintained OpenAI Whisper word-level transcription for precise video clip generation

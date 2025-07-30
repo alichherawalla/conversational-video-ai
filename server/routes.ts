@@ -6,6 +6,9 @@ import { generateAIQuestion, analyzeResponse, generateLinkedInContent, generateV
 import { transcribeAudioBuffer } from "./openai";
 import { z } from "zod";
 import multer from "multer";
+import busboy from "busboy";
+import { createWriteStream } from "fs";
+import { pipeline } from "stream/promises";
 
 // Configure multer for file uploads with larger limits for video files
 const upload = multer({ 
@@ -317,176 +320,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Video Upload with Transcription and Content Generation
-  app.post("/api/upload-video-generate-content", (req, res, next) => {
-    upload.single('video')(req, res, (err) => {
-      if (err) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(413).json({ 
-            message: "Video file too large. Maximum size is 500MB.",
-            suggestion: "Try compressing your video or use the transcript-only option"
-          });
-        }
-        return res.status(400).json({ 
-          message: "File upload error", 
-          error: err.message 
-        });
-      }
-      next();
-    });
-  }, async (req, res) => {
+  // Streaming Video Upload with Transcription and Content Generation
+  app.post("/api/upload-video-generate-content", async (req, res) => {
     // Set longer timeout for large video processing
     req.setTimeout(15 * 60 * 1000); // 15 minutes
     res.setTimeout(15 * 60 * 1000); // 15 minutes
     
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No video file provided" });
-      }
-
-      console.log(`Processing large video file: ${req.file.originalname} (${Math.round(req.file.size / 1024 / 1024)}MB)`);
-
       const fs = await import('fs');
       const path = await import('path');
       const { spawn } = await import('child_process');
       
-      // Extract audio from video using ffmpeg with optimized settings for large files
-      const audioPath = path.join('/tmp', `audio_${Date.now()}.wav`);
+      // Use busboy for streaming multipart uploads
+      const bb = busboy({ 
+        headers: req.headers,
+        limits: {
+          fileSize: 500 * 1024 * 1024, // 500MB limit
+          files: 1
+        }
+      });
       
-      try {
-        console.log('Extracting audio from large video file...');
+      let videoPath: string | null = null;
+      let originalName: string | null = null;
+      let fileSize = 0;
+      let uploadError: Error | null = null;
+
+      bb.on('file', (name, file, info) => {
+        const { filename, mimeType } = info;
         
-        // Use spawn instead of execSync for better memory handling and progress tracking
-        await new Promise((resolve, reject) => {
-          const ffmpeg = spawn('ffmpeg', [
-            '-i', req.file!.path,
-            '-vn', // No video
-            '-acodec', 'pcm_s16le',
-            '-ar', '16000', // Lower sample rate for transcription efficiency
-            '-ac', '1', // Mono audio for transcription
-            '-y', // Overwrite output
-            audioPath
-          ]);
+        if (!filename || !mimeType.startsWith('video/')) {
+          uploadError = new Error('Invalid file type. Please upload a video file.');
+          file.resume(); // Drain the file stream
+          return;
+        }
 
-          let errorOutput = '';
+        originalName = filename;
+        videoPath = path.join('/tmp', `video_${Date.now()}_${filename}`);
+        
+        console.log(`Streaming upload started: ${filename} (${mimeType})`);
+        
+        const writeStream = createWriteStream(videoPath);
+        
+        file.on('data', (data) => {
+          fileSize += data.length;
+          // Log progress every 10MB
+          if (fileSize % (10 * 1024 * 1024) < data.length) {
+            console.log(`Upload progress: ${Math.round(fileSize / 1024 / 1024)}MB`);
+          }
+        });
 
-          ffmpeg.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-            // Log progress for large files
-            if (data.toString().includes('time=')) {
-              const timeMatch = data.toString().match(/time=(\d{2}:\d{2}:\d{2})/);
-              if (timeMatch) {
-                console.log(`Audio extraction progress: ${timeMatch[1]}`);
+        file.on('limit', () => {
+          uploadError = new Error('File too large. Maximum size is 500MB.');
+        });
+
+        file.on('error', (err) => {
+          uploadError = err;
+        });
+
+        file.pipe(writeStream);
+        
+        writeStream.on('error', (err) => {
+          uploadError = err;
+        });
+      });
+
+      bb.on('finish', async () => {
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          return res.status(400).json({ 
+            message: uploadError.message,
+            suggestion: uploadError.message.includes('size') 
+              ? "Try compressing your video or use the transcript-only option"
+              : "Please try uploading a valid video file"
+          });
+        }
+
+        if (!videoPath || !originalName) {
+          return res.status(400).json({ message: "No video file provided" });
+        }
+
+        console.log(`Streaming upload completed: ${originalName} (${Math.round(fileSize / 1024 / 1024)}MB)`);
+
+        // Extract audio from video using ffmpeg with optimized settings for large files
+        const audioPath = path.join('/tmp', `audio_${Date.now()}.wav`);
+        
+        try {
+          console.log('Extracting audio from streamed video file...');
+          
+          // Use spawn for better memory handling and progress tracking
+          await new Promise((resolve, reject) => {
+            const ffmpeg = spawn('ffmpeg', [
+              '-i', videoPath!,
+              '-vn', // No video
+              '-acodec', 'pcm_s16le',
+              '-ar', '16000', // Lower sample rate for transcription efficiency
+              '-ac', '1', // Mono audio for transcription
+              '-y', // Overwrite output
+              audioPath
+            ]);
+
+            let errorOutput = '';
+
+            ffmpeg.stderr.on('data', (data) => {
+              errorOutput += data.toString();
+              // Log progress for large files
+              if (data.toString().includes('time=')) {
+                const timeMatch = data.toString().match(/time=(\d{2}:\d{2}:\d{2})/);
+                if (timeMatch) {
+                  console.log(`Audio extraction progress: ${timeMatch[1]}`);
+                }
               }
-            }
+            });
+
+            ffmpeg.on('close', (code) => {
+              if (code === 0) {
+                console.log('Audio extraction completed successfully');
+                resolve(void 0);
+              } else {
+                console.error('FFmpeg error output:', errorOutput);
+                reject(new Error(`FFmpeg failed with code ${code}: ${errorOutput}`));
+              }
+            });
+
+            ffmpeg.on('error', (err) => {
+              console.error('FFmpeg spawn error:', err);
+              reject(err);
+            });
           });
 
-          ffmpeg.on('close', (code) => {
-            if (code === 0) {
-              console.log('Audio extraction completed successfully');
-              resolve(void 0);
-            } else {
-              console.error('FFmpeg error output:', errorOutput);
-              reject(new Error(`FFmpeg failed with code ${code}: ${errorOutput}`));
-            }
+          // Check if audio file was created successfully
+          if (!fs.existsSync(audioPath)) {
+            throw new Error('Audio extraction failed - no output file created');
+          }
+          
+          const audioBuffer = fs.readFileSync(audioPath);
+          const audioSizeMB = Math.round(audioBuffer.length / 1024 / 1024);
+          console.log(`Transcribing extracted audio (${audioSizeMB}MB) with word-level timing...`);
+          
+          // Transcribe the extracted audio with word-level timing
+          const transcription = await transcribeAudioBuffer(audioBuffer, originalName);
+          
+          console.log(`Transcription completed (${transcription.text.length} chars). Generating content and clips...`);
+          
+          // Generate LinkedIn content using the transcript
+          const linkedInContent = await generateLinkedInContent(transcription.text, 'text', true);
+          
+          // Generate video clips using word-level timing data
+          const videoClips = await generateVideoClips(
+            transcription.text, 
+            transcription.duration || 0,
+            transcription.words
+          );
+          
+          // Clean up temp files
+          try {
+            fs.unlinkSync(videoPath!);
+            fs.unlinkSync(audioPath);
+          } catch (cleanupError) {
+            console.warn('File cleanup warning:', cleanupError);
+          }
+          
+          console.log(`Successfully processed ${originalName}: ${linkedInContent.posts?.length || 0} content pieces, ${videoClips.length} clips`);
+          
+          res.json({
+            transcript: {
+              text: transcription.text,
+              duration: transcription.duration,
+              words: transcription.words || []
+            },
+            content: linkedInContent.posts?.map((post: any, index: number) => ({
+              id: `video-upload-${Date.now()}-${index}`,
+              title: post.title,
+              content: post,
+              type: 'linkedin',
+              platform: "linkedin",
+              createdAt: new Date().toISOString()
+            })) || [],
+            clips: videoClips.map((clip: any, index: number) => ({
+              id: `video-clip-${Date.now()}-${index}`,
+              title: clip.title,
+              description: clip.description,
+              startTime: clip.startTime,
+              endTime: clip.endTime,
+              socialScore: clip.socialScore,
+              duration: clip.endTime - clip.startTime,
+              createdAt: new Date().toISOString()
+            }))
           });
-
-          ffmpeg.on('error', (err) => {
-            console.error('FFmpeg spawn error:', err);
-            reject(err);
+          
+        } catch (ffmpegError) {
+          console.error('Video processing error:', ffmpegError);
+          
+          // Clean up files on error
+          try {
+            if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+            if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+          } catch (cleanupError) {
+            console.warn('Error during cleanup:', cleanupError);
+          }
+          
+          res.status(500).json({ 
+            message: "Failed to process video file", 
+            error: ffmpegError instanceof Error ? ffmpegError.message : String(ffmpegError),
+            suggestion: "Try uploading a smaller video file or use the transcript-only option"
           });
-        });
+        }
+      });
 
-        // Check if audio file was created successfully
-        if (!fs.existsSync(audioPath)) {
-          throw new Error('Audio extraction failed - no output file created');
-        }
-        
-        const audioBuffer = fs.readFileSync(audioPath);
-        const audioSizeMB = Math.round(audioBuffer.length / 1024 / 1024);
-        console.log(`Transcribing extracted audio (${audioSizeMB}MB) with word-level timing...`);
-        
-        // Transcribe the extracted audio with word-level timing
-        const transcription = await transcribeAudioBuffer(audioBuffer, req.file.originalname);
-        
-        console.log(`Transcription completed (${transcription.text.length} chars). Generating content and clips...`);
-        
-        // Generate LinkedIn content using the transcript
-        const linkedInContent = await generateLinkedInContent(transcription.text, 'text', true);
-        
-        // Generate video clips using word-level timing data
-        const videoClips = await generateVideoClips(
-          transcription.text, 
-          transcription.duration || 0,
-          transcription.words
-        );
-        
-        // Clean up temp files
-        try {
-          fs.unlinkSync(req.file.path);
-          fs.unlinkSync(audioPath);
-        } catch (cleanupError) {
-          console.warn('File cleanup warning:', cleanupError);
-        }
-        
-        console.log(`Successfully processed ${req.file.originalname}: ${linkedInContent.posts?.length || 0} content pieces, ${videoClips.length} clips`);
-        
-        res.json({
-          transcript: {
-            text: transcription.text,
-            duration: transcription.duration,
-            words: transcription.words || []
-          },
-          content: linkedInContent.posts?.map((post: any, index: number) => ({
-            id: `video-upload-${Date.now()}-${index}`,
-            title: post.title,
-            content: post,
-            type: 'linkedin',
-            platform: "linkedin",
-            createdAt: new Date().toISOString()
-          })) || [],
-          clips: videoClips.map((clip: any, index: number) => ({
-            id: `video-clip-${Date.now()}-${index}`,
-            title: clip.title,
-            description: clip.description,
-            startTime: clip.startTime,
-            endTime: clip.endTime,
-            socialScore: clip.socialScore,
-            duration: clip.endTime - clip.startTime,
-            createdAt: new Date().toISOString()
-          }))
+      bb.on('error', (err: any) => {
+        console.error('Busboy error:', err);
+        res.status(400).json({ 
+          message: "Upload processing error",
+          error: err instanceof Error ? err.message : String(err)
         });
-        
-      } catch (ffmpegError) {
-        console.error('Video processing error:', ffmpegError);
-        
-        // Clean up files on error
-        try {
-          if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-          if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
-        } catch (cleanupError) {
-          console.warn('Error during cleanup:', cleanupError);
-        }
-        
-        res.status(500).json({ 
-          message: "Failed to process video file", 
-          error: ffmpegError instanceof Error ? ffmpegError.message : String(ffmpegError),
-          suggestion: "Try uploading a smaller video file or use the transcript-only option"
-        });
-      }
+      });
+
+      req.pipe(bb);
+      
     } catch (error) {
       console.error('Video upload content generation error:', error);
-      
-      // Clean up file if it exists
-      try {
-        if (req.file && req.file.path) {
-          const fs = await import('fs');
-          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        }
-      } catch (cleanupError) {
-        console.warn('Error during error cleanup:', cleanupError);
-      }
-      
       res.status(500).json({ 
         message: "Failed to generate content from video",
         error: error instanceof Error ? error.message : String(error),
