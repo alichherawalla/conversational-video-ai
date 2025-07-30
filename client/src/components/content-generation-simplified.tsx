@@ -17,6 +17,7 @@ export default function ContentGeneration() {
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [uploadedTranscript, setUploadedTranscript] = useState<string>("");
   const [uploadGeneratedContent, setUploadGeneratedContent] = useState<ContentPiece[]>([]);
+  const [uploadGeneratedClips, setUploadGeneratedClips] = useState<Clip[]>([]);
   
   const queryClient = useQueryClient();
 
@@ -56,20 +57,31 @@ export default function ContentGeneration() {
 
   const uploadContentMutation = useMutation({
     mutationFn: async ({ transcript }: { transcript: string }) => {
-      // Generate all content types sequentially
-      const contentTypes = ['carousel', 'image', 'text'];
       const results = [];
+      setUploadGeneratedContent([]); // Clear previous results
+      
+      // Generate content types one by one
+      const contentTypes = ['carousel', 'image', 'text'];
       
       for (const contentType of contentTypes) {
         const res = await apiRequest("POST", "/api/generate-content-from-upload", { transcript, contentType });
         const result = await res.json();
         results.push(result);
+        
+        // Update state after each generation to show progress
+        setUploadGeneratedContent([...results]);
       }
       
-      return results;
+      // Also generate video clips
+      const clipsRes = await apiRequest("POST", "/api/generate-clips-from-upload", { transcript });
+      const clips = await clipsRes.json();
+      setUploadGeneratedClips(clips);
+      
+      return { content: results, clips };
     },
-    onSuccess: (results) => {
-      setUploadGeneratedContent(results);
+    onSuccess: (data) => {
+      // Content is already set incrementally in the mutation function
+      // Clips are set after generation
     }
   });
 
@@ -175,6 +187,7 @@ export default function ContentGeneration() {
             setUploadedVideo(null);
             setUploadedTranscript("");
             setUploadGeneratedContent([]);
+            setUploadGeneratedClips([]);
           }}>
             Back to Sessions
           </Button>
@@ -242,11 +255,17 @@ export default function ContentGeneration() {
                   {uploadContentMutation.isPending ? "Generating All Content Types..." : "Generate LinkedIn Content (All Types)"}
                 </Button>
                 {uploadContentMutation.isPending && (
-                  <p className="text-sm text-neutral-600 mt-2">Creating carousel, image, and text posts...</p>
+                  <div className="text-sm text-neutral-600 mt-2">
+                    <p>Creating LinkedIn content and video clips...</p>
+                    <p className="text-xs mt-1">
+                      Generated {uploadGeneratedContent.length}/3 content pieces
+                      {uploadGeneratedClips.length > 0 && ` + ${uploadGeneratedClips.length} video clips`}
+                    </p>
+                  </div>
                 )}
                 {uploadContentMutation.isSuccess && (
                   <p className="text-sm text-green-600 mt-2">
-                    Generated {uploadGeneratedContent.length} content pieces! View them below.
+                    Generated {uploadGeneratedContent.length} LinkedIn posts and {uploadGeneratedClips.length} video clips! View them below.
                   </p>
                 )}
               </CardContent>
@@ -257,7 +276,7 @@ export default function ContentGeneration() {
           {uploadGeneratedContent.length > 0 && (
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Generated Content</h3>
+                <h3 className="font-semibold mb-4">Generated LinkedIn Content</h3>
                 <div className="grid gap-4">
                   {uploadGeneratedContent.map((content, index) => (
                     <div key={index} className="border rounded-lg p-4">
@@ -278,6 +297,44 @@ export default function ContentGeneration() {
                         </Button>
                       </div>
                       <p className="text-sm text-neutral-600">{content.title}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generated Video Clips Display */}
+          {uploadGeneratedClips.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Generated Video Clips</h3>
+                <div className="grid gap-4">
+                  {uploadGeneratedClips.map((clip, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          <Play className="mr-2" size={16} />
+                          <span className="font-medium">{clip.title}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => setViewingClip(clip)}
+                          className="bg-primary text-white hover:bg-primary/90"
+                        >
+                          <Eye className="mr-1" size={12} />
+                          View Details
+                        </Button>
+                      </div>
+                      <div className="flex items-center text-sm text-neutral-600 mb-2">
+                        <Clock className="mr-1" size={12} />
+                        {formatTime(clip.startTime)} - {formatTime(clip.endTime)} 
+                        ({formatTime(clip.endTime - clip.startTime)} duration)
+                      </div>
+                      <p className="text-sm text-neutral-600">{clip.description}</p>
+                      <div className="text-xs text-neutral-500 mt-2">
+                        Social Score: {clip.socialScore}/100
+                      </div>
                     </div>
                   ))}
                 </div>

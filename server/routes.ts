@@ -299,6 +299,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate clips from uploaded content
+  app.post("/api/generate-clips-from-upload", async (req, res) => {
+    try {
+      const { transcript } = req.body;
+      
+      if (!transcript) {
+        return res.status(400).json({ error: "Transcript is required" });
+      }
+
+      console.log('Generating clips from upload');
+      console.log('Transcript length:', transcript.length);
+      
+      // Generate video clips using the same function as sessions
+      // Estimate duration based on transcript length (roughly 150 words per minute)
+      const estimatedDuration = Math.max(60, Math.floor(transcript.split(' ').length / 2.5));
+      const clips = await generateVideoClips(transcript, estimatedDuration);
+      
+      res.json(clips);
+    } catch (error) {
+      console.error("Error generating clips from upload:", error);
+      res.status(500).json({ error: "Failed to generate clips" });
+    }
+  });
+
   // AI-Powered Content Generation with Claude
   app.post("/api/sessions/:sessionId/generate-content", async (req, res) => {
     try {
