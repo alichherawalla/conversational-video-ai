@@ -143,11 +143,20 @@ export default function RecordingStudio() {
       
       // Also download transcript if available
       const allTranscriptText = allTranscriptions.join('\n\n');
+      console.log("Building transcript from:", {
+        sessionTranscript: sessionTranscript.length,
+        allTranscriptText: allTranscriptText.length,
+        transcriptionText: transcriptionText.length,
+        allTranscriptions: allTranscriptions
+      });
+      
       const combinedTranscript = [
-        sessionTranscript, 
+        sessionTranscript ? `--- Conversation History ---\n${sessionTranscript}` : '', 
         allTranscriptText ? `\n\n--- Voice Transcriptions ---\n${allTranscriptText}` : '',
         transcriptionText ? `\n\n--- Latest Transcription ---\n${transcriptionText}` : ''
-      ].filter(Boolean).join('');
+      ].filter(Boolean).join('') || 'No transcript available. Please complete a conversation session first.';
+      
+      console.log("Final combined transcript:", combinedTranscript);
       if (combinedTranscript) {
         console.log("Starting transcript download...");
         const transcriptBlob = new Blob([combinedTranscript], { type: 'text/plain' });

@@ -73,11 +73,16 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     onAudioLevel: (level) => {
       setAudioLevel(level);
       
+      // Log audio levels for debugging
+      if (level > 0) {
+        console.log("Audio level:", level, "Recording:", isRecordingTranscript, "Session:", !!sessionId);
+      }
+      
       // Only do voice activity detection if we have a session and are recording
       if (!sessionId || !isRecordingTranscript) return;
       
-      // Detect voice activity (level > threshold indicates speaking)
-      const activityThreshold = 15; // Increased threshold for better detection
+      // Detect voice activity (lowered threshold for better detection)
+      const activityThreshold = 5; // Lowered threshold
       if (level > activityThreshold) {
         console.log("Voice activity detected, level:", level);
         setLastAudioActivityTime(Date.now());
@@ -97,7 +102,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
             onTranscriptionComplete("__AUTO_SUBMIT_SILENCE__");
           }
           setSilenceTimer(null);
-        }, 5000); // 5 seconds for testing (change back to 20000 when working)
+        }, 5000); // 5 seconds for testing
         
         setSilenceTimer(timer);
       }
