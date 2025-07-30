@@ -10,8 +10,8 @@ Follow these instructions when using this blueprint:
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Audio transcription using Whisper
-export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: string): Promise<{ text: string; duration: number }> {
+// Audio transcription using Whisper with word-level timestamps
+export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: string): Promise<{ text: string; duration: number; words?: Array<{word: string, start: number, end: number}> }> {
   try {
     const fs = await import('fs');
     const path = await import('path');
@@ -27,7 +27,8 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: strin
       file: audioReadStream,
       model: "whisper-1",
       language: "en", // Optimize for English language
-      response_format: "json", // Get structured response
+      response_format: "verbose_json", // Get detailed response with timestamps
+      timestamp_granularities: ["word"], // Get word-level timestamps
       temperature: 0.0, // More deterministic transcription
     });
 
@@ -36,11 +37,16 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: strin
 
     return {
       text: transcription.text,
-      duration: 0, // Duration estimation would need additional processing
+      duration: transcription.duration || 0,
+      words: transcription.words?.map(word => ({
+        word: word.word,
+        start: word.start,
+        end: word.end
+      })) || []
     };
   } catch (error) {
     console.error('Transcription error:', error);
-    throw new Error(`Failed to transcribe audio: ${error.message}`);
+    throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -64,6 +70,6 @@ export async function transcribeAudioFile(filePath: string): Promise<{ text: str
     };
   } catch (error) {
     console.error('Transcription error:', error);
-    throw new Error(`Failed to transcribe audio: ${error.message}`);
+    throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Square, Mic, Settings } from "lucide-react";
 import { useMediaRecorder } from "@/hooks/use-media-recorder";
-import { useAudioTranscription } from "@/hooks/use-audio-transcription";
+import { useEnhancedTranscription } from "@/hooks/use-enhanced-transcription";
 
 interface CameraPreviewProps {
   onRecordingComplete?: (blob: Blob) => void;
@@ -15,14 +15,34 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
-  const { transcribeAudio } = useAudioTranscription();
   
-  // Voice activity detection for auto-submission
-  const [lastAudioActivityTime, setLastAudioActivityTime] = useState<number | null>(null);
-  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
-  
-  // Continuous transcription timer
-  const transcriptionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Enhanced transcription system with word-level timing
+  const {
+    startEnhancedTranscription,
+    stopEnhancedTranscription,
+    forceSubmitCurrent,
+    clearTranscription,
+    isTranscribing,
+    currentText,
+    allWords,
+    lastActivityTime,
+    isAutoSubmitPending
+  } = useEnhancedTranscription({
+    onTranscriptionUpdate: (text, words, isPartial) => {
+      console.log("Transcription update:", text, "Words:", words.length, "Partial:", isPartial);
+      if (!isPartial && text.trim()) {
+        onTranscriptionComplete?.(text);
+      }
+    },
+    onAutoSubmit: (text, words) => {
+      console.log("Auto-submitting transcription:", text, "Words:", words.length);
+      if (text.trim()) {
+        onTranscriptionComplete?.(text);
+      }
+    },
+    chunkDuration: 5, // 5-second chunks
+    autoSubmitDelay: 5 // Auto-submit after 5 seconds of silence
+  });
   
   // Video recording with audio
   const {
@@ -39,81 +59,10 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       setIsRecordingAudio(false);
       setAudioLevel(0);
     },
-    audio: false, // This is for video recording (video + audio), not audio-only
-  });
-
-  // Audio-only recording for transcription
-  const {
-    isRecording: isRecordingTranscript,
-    startRecording: startTranscriptRecording,
-    stopRecording: stopTranscriptRecording,
-  } = useMediaRecorder({
-    onStop: async (blob) => {
-      try {
-        console.log("Audio transcription recording stopped, blob size:", blob.size, "type:", blob.type);
-        console.log("Current sessionId for transcription:", sessionId);
-        console.log("onTranscriptionComplete callback:", !!onTranscriptionComplete);
-        
-        if (blob.size > 0) {
-          console.log("Starting transcription...");
-          console.log("Sending audio for transcription:", blob.type, blob.size);
-          try {
-            const result = await transcribeAudio(blob);
-            console.log("Transcription API response:", result);
-            console.log("Transcription result:", result.text);
-            
-            if (result.text && result.text.trim()) {
-              // Check if transcription contains meaningful words
-              const cleanText = result.text.trim().toLowerCase();
-              const meaningfulWords = cleanText.split(/\s+/).filter(word => 
-                word.length > 2 && 
-                !['um', 'uh', 'hmm', 'ah', 'oh', 'the', 'and', 'but', 'subscribe'].includes(word)
-              );
-              
-              if (meaningfulWords.length > 0) {
-                console.log("Found meaningful transcription:", result.text);
-                onTranscriptionComplete?.(result.text);
-              } else {
-                console.log("No meaningful words found in transcription, checking for auto-submit");
-                // Check if we should auto-submit due to lack of meaningful content
-                if (lastAudioActivityTime && Date.now() - lastAudioActivityTime > 15000) {
-                  console.log("15+ seconds of non-meaningful audio, triggering auto-submission");
-                  onTranscriptionComplete?.("__AUTO_SUBMIT_SILENCE__");
-                  setLastAudioActivityTime(null);
-                } else if (!lastAudioActivityTime) {
-                  setLastAudioActivityTime(Date.now());
-                }
-              }
-            } else {
-              console.warn("Transcription result is empty");
-              // Track empty transcriptions for auto-submit logic
-              if (!lastAudioActivityTime) {
-                setLastAudioActivityTime(Date.now());
-              } else if (Date.now() - lastAudioActivityTime > 15000) {
-                console.log("15+ seconds of empty transcriptions, triggering auto-submission");
-                onTranscriptionComplete?.("__AUTO_SUBMIT_SILENCE__");
-                setLastAudioActivityTime(null);
-              }
-            }
-          } catch (error) {
-            console.error("Transcription failed:", error);
-          }
-        } else {
-          console.warn("Audio blob is empty, skipping transcription");
-        }
-      } catch (error) {
-        console.error('Audio transcription failed:', error);
-      }
-    },
+    audio: true, // Video with audio
     onAudioLevel: (level) => {
       setAudioLevel(level);
-      
-      // Log audio levels for debugging (reduced frequency)
-      if (level > 5) {
-        console.log("Audio level:", level, "Recording:", isRecordingTranscript, "Session:", !!sessionId);
-      }
     },
-    audio: true, // Audio-only for transcription
   });
 
   useEffect(() => {
@@ -132,35 +81,19 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
-      // Start both video and audio recording simultaneously
-      console.log("Starting video and audio recording...");
+      console.log("Starting video recording and enhanced transcription...");
       setIsRecordingAudio(true);
+      clearTranscription();
       
-      // Reset transcription tracking
-      setLastAudioActivityTime(null);
-      if (silenceTimer) {
-        clearTimeout(silenceTimer);
-        setSilenceTimer(null);
+      // Start video recording
+      await startVideoRecording();
+      
+      // Start enhanced transcription with the audio stream
+      if (stream) {
+        await startEnhancedTranscription(stream);
       }
       
-      await Promise.all([
-        startVideoRecording(),
-        startTranscriptRecording()
-      ]);
-      
-      // Start continuous transcription every 5 seconds
-      const timer = setInterval(() => {
-        // Only auto-transcribe if video recording is still active
-        if (isRecordingVideo) {
-          console.log("Auto-transcription: Getting transcript every 5 seconds");
-          handleManualTranscript();
-        } else {
-          console.log("Video recording stopped, skipping auto-transcription");
-        }
-      }, 5000);
-      transcriptionTimerRef.current = timer;
-      
-      console.log("Both video and audio transcription recording started with 5-second auto-transcription");
+      console.log("Video recording and enhanced transcription started");
     } catch (error) {
       console.error("Recording failed:", error);
       setIsRecordingAudio(false);
@@ -170,46 +103,22 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const handleStopRecording = async () => {
     console.log("Stopping recordings...");
     
-    // Clean up timers first to prevent further auto-transcription attempts
-    if (silenceTimer) {
-      clearTimeout(silenceTimer);
-      setSilenceTimer(null);
-    }
-    if (transcriptionTimerRef.current) {
-      console.log("Clearing continuous transcription timer");
-      clearInterval(transcriptionTimerRef.current);
-      transcriptionTimerRef.current = null;
-    }
+    // Stop enhanced transcription
+    await stopEnhancedTranscription();
     
+    // Stop video recording
     stopVideoRecording();
-    if (isRecordingTranscript) {
-      stopTranscriptRecording();
-    }
     
     setIsRecordingAudio(false);
-    setLastAudioActivityTime(null);
   };
 
   const handleManualTranscript = async () => {
     console.log("Manual transcript requested");
-    console.log("Current state - Recording:", isRecordingTranscript, "Session:", sessionId, "Video Recording:", isRecordingVideo);
-    
-    if (isRecordingTranscript && isRecordingVideo) {
-      // Stop current recording and process transcription immediately
-      console.log("Forcing transcription by stopping audio recording");
-      stopTranscriptRecording();
-      
-      // Start new recording immediately after stopping to continue capturing audio
-      setTimeout(() => {
-        if (isRecordingVideo) {
-          console.log("Restarting audio recording after manual transcription");
-          startTranscriptRecording();
-        }
-      }, 3000); // Wait 3 seconds for transcription to process
-    } else if (!isRecordingVideo) {
-      console.log("Video recording not active, cannot process transcript");
+    const result = forceSubmitCurrent();
+    if (result) {
+      console.log("Manually submitted transcript:", result.text);
     } else {
-      console.log("No active audio recording to transcribe");
+      console.log("No transcript available to submit");
     }
   };
 
@@ -277,27 +186,41 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
             <Button
               onClick={handleManualTranscript}
               className={`px-4 py-2 text-sm rounded-lg ${
-                isRecordingTranscript 
+                isTranscribing 
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
                   : "bg-gray-400 text-gray-200 cursor-not-allowed"
               }`}
-              disabled={!isRecordingTranscript}
+              disabled={!isTranscribing}
             >
-              {isRecordingTranscript ? "Get Transcript" : "Processing..."}
+              {isTranscribing ? "Get Transcript" : "Processing..."}
             </Button>
           </div>
         )}
         
-        {/* Voice activity indicator */}
-        {isRecordingVideo && lastAudioActivityTime && (
+        {/* Enhanced transcription status */}
+        {isRecordingVideo && (
           <div className="absolute top-16 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 text-white">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-green-300">Voice Detected - Recording</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  isTranscribing ? "bg-green-500" : "bg-yellow-500"
+                }`}></div>
+                <span className="text-xs font-medium text-green-300">
+                  {isTranscribing ? "Smart Transcription Active" : "Initializing..."}
+                </span>
+              </div>
+              {isAutoSubmitPending && (
+                <span className="text-xs text-yellow-300">Auto-submit in 5s</span>
+              )}
             </div>
             <p className="text-xs text-green-200">
-              Will auto-submit after 5 seconds of silence
+              Word-level timing • Auto-submit after 5 seconds of silence
             </p>
+            {currentText && (
+              <div className="mt-2 text-xs text-gray-300 max-h-20 overflow-y-auto">
+                <strong>Live:</strong> {currentText.slice(-100)}...
+              </div>
+            )}
           </div>
         )}
 

@@ -5,6 +5,11 @@ import { apiRequest } from "@/lib/queryClient";
 interface TranscriptionResult {
   text: string;
   duration?: number;
+  words?: Array<{
+    word: string;
+    start: number;
+    end: number;
+  }>;
 }
 
 export function useAudioTranscription() {
