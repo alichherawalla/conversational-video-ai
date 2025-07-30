@@ -710,7 +710,11 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
                               <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-3 rounded">
                                 <div className="text-xs mb-1">✍️ Text Post</div>
                                 <div className="text-xs">
-                                  Hook: "{(content.content as any)?.hook?.substring(0, 40)}..."
+                                  {(content.content as any)?.detailed_content 
+                                    ? `"${(content.content as any).detailed_content.substring(0, 60)}..."` 
+                                    : (content.content as any)?.hook 
+                                      ? `Hook: "${(content.content as any).hook.substring(0, 40)}..."` 
+                                      : "LinkedIn Text Post"}
                                 </div>
                               </div>
                             )}
@@ -899,18 +903,31 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
                     <div>
                       <h4 className="font-semibold mb-3">LinkedIn Text Post</h4>
                       <div className="bg-neutral-50 p-6 rounded-lg space-y-4">
-                        <div>
-                          <h5 className="font-medium mb-2 text-primary">Hook:</h5>
-                          <p className="text-neutral-700">{(viewingContent.content as any)?.hook}</p>
-                        </div>
-                        <div>
-                          <h5 className="font-medium mb-2 text-primary">Body:</h5>
-                          <div className="text-neutral-700 whitespace-pre-line">{(viewingContent.content as any)?.body}</div>
-                        </div>
-                        <div>
-                          <h5 className="font-medium mb-2 text-primary">Call to Action:</h5>
-                          <p className="text-neutral-700">{(viewingContent.content as any)?.callToAction}</p>
-                        </div>
+                        {/* Handle new detailed_content format */}
+                        {(viewingContent.content as any)?.detailed_content ? (
+                          <div>
+                            <h5 className="font-medium mb-2 text-primary">Complete Post:</h5>
+                            <div className="text-neutral-700 whitespace-pre-line p-4 bg-white rounded border">
+                              {(viewingContent.content as any).detailed_content}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Fallback for old format */
+                          <>
+                            <div>
+                              <h5 className="font-medium mb-2 text-primary">Hook:</h5>
+                              <p className="text-neutral-700">{(viewingContent.content as any)?.hook}</p>
+                            </div>
+                            <div>
+                              <h5 className="font-medium mb-2 text-primary">Body:</h5>
+                              <div className="text-neutral-700 whitespace-pre-line">{(viewingContent.content as any)?.body}</div>
+                            </div>
+                            <div>
+                              <h5 className="font-medium mb-2 text-primary">Call to Action:</h5>
+                              <p className="text-neutral-700">{(viewingContent.content as any)?.callToAction}</p>
+                            </div>
+                          </>
+                        )}
                         <div>
                           <h5 className="font-medium mb-2 text-primary">Hashtags:</h5>
                           <div className="flex flex-wrap gap-1">
