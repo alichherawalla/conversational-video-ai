@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Play, Download, Slice, Images, Image, AlignLeft, Clock, Eye, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Session, Clip, ContentPiece } from "@shared/schema";
 
 export default function ContentGeneration() {
@@ -20,6 +21,7 @@ export default function ContentGeneration() {
   const [uploadGeneratedClips, setUploadGeneratedClips] = useState<Clip[]>([]);
   
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: sessions = [] } = useQuery<Session[]>({
     queryKey: ["/api/sessions"],
@@ -58,10 +60,8 @@ export default function ContentGeneration() {
 
   const createVideoClipsMutation = useMutation({
     mutationFn: async (data: { sessionId: string }) => {
-      const response = await apiRequest(`/api/sessions/${data.sessionId}/create-clips`, {
-        method: "POST",
-      });
-      return response;
+      const response = await apiRequest("POST", `/api/sessions/${data.sessionId}/create-clips`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sessions', selectedSession, 'clips'] });
@@ -91,12 +91,26 @@ export default function ContentGeneration() {
         const res = await apiRequest("POST", "/api/generate-content-from-upload", { 
           transcript, 
           contentType,
-          generateAll: false // Generate single post per call
+          generateAll: true // Generate 3 posts per content type
         });
         const result = await res.json();
         
-        // Add the single result
-        results.push(result);
+        // Handle the result which now contains multiple posts
+        if (result.posts && Array.isArray(result.posts)) {
+          result.posts.forEach((post: any, index: number) => {
+            results.push({
+              id: `upload-${Date.now()}-${contentType}-${index}`,
+              title: post.title,
+              content: post,
+              type: contentType,
+              platform: "linkedin",
+              createdAt: new Date().toISOString()
+            });
+          });
+        } else {
+          // Fallback for single post response
+          results.push(result);
+        }
         
         // Update state after each content type generation
         setUploadGeneratedContent([...results]);

@@ -282,17 +282,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Sample content:', transcript.substring(0, 200) + '...');
       
       // Generate content using Claude with the uploaded transcript
-      const content = await generateLinkedInContent(transcript, contentType, false);
+      const content = await generateLinkedInContent(transcript, contentType, generateAll);
       
-      // Always return single post
-      res.json({
-        id: `upload-${Date.now()}`,
-        title: content.title,
-        content: content,
-        type: contentType,
-        platform: "linkedin",
-        createdAt: new Date().toISOString()
-      });
+      if (generateAll && content.posts) {
+        // Return multiple posts
+        res.json({
+          posts: content.posts.map((post: any, index: number) => ({
+            id: `upload-${Date.now()}-${index}`,
+            title: post.title,
+            content: post,
+            type: contentType,
+            platform: "linkedin",
+            createdAt: new Date().toISOString()
+          }))
+        });
+      } else {
+        // Return single post (legacy support)
+        res.json({
+          id: `upload-${Date.now()}`,
+          title: content.title,
+          content: content,
+          type: contentType,
+          platform: "linkedin",
+          createdAt: new Date().toISOString()
+        });
+      }
     } catch (error) {
       console.error('Content generation from upload error:', error);
       res.status(500).json({ message: "Failed to generate content from upload" });
@@ -659,10 +673,10 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
       
       const clipRequests = clips.map(clip => ({
         title: clip.title,
-        description: clip.description,
+        description: clip.description || "",
         startTime: clip.startTime,
         endTime: clip.endTime,
-        socialScore: clip.socialScore
+        socialScore: clip.socialScore || 0
       }));
 
       const clipResults = await createVideoClips(videoPath, clipRequests);
