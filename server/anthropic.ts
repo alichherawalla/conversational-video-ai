@@ -169,19 +169,59 @@ Be encouraging but honest. Flag responses that are too short (under 20 words), t
   }
 }
 
-export async function generateLinkedInContent(conversationText: string, contentType: 'carousel' | 'image' | 'text', variation: number = 1): Promise<any> {
+export async function generateLinkedInContent(conversationText: string, contentType: 'carousel' | 'image' | 'text', generateAll: boolean = false): Promise<any> {
   try {
     let prompt: string;
     
     switch (contentType) {
       case 'carousel':
-        const variationPrompts = [
-          "Create a LinkedIn carousel post focusing on the main insights and learnings",
-          "Create a LinkedIn carousel post highlighting the practical applications and outcomes", 
-          "Create a LinkedIn carousel post emphasizing the strategic decisions and thought process"
-        ];
-        
-        prompt = `${variationPrompts[variation - 1] || variationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        if (generateAll) {
+          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Each post should focus on different angles but use the same authentic content. Do not add fictional stories or made-up data points.
+
+Interview Content: "${conversationText}"
+
+Create 3 distinct carousel posts:
+1. Focus on insights and key learnings
+2. Focus on practical applications and outcomes  
+3. Focus on strategic decisions and thought process
+
+Requirements for each post:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Create 5-7 professional slides based on actual content
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
+
+Generate in JSON format:
+{
+  "posts": [
+    {
+      "title": "First carousel title focusing on insights",
+      "slides": [
+        {"icon": "📊", "title": "Slide title", "content": "Key insight from interview"},
+        {"icon": "💡", "title": "Another insight", "content": "Real learning shared"},
+        {"icon": "🎯", "title": "Practical takeaway", "content": "Actionable advice"},
+        {"icon": "📈", "title": "Results", "content": "Actual outcomes mentioned"},
+        {"icon": "🔑", "title": "Key lesson", "content": "Main insight"}
+      ],
+      "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
+    },
+    {
+      "title": "Second carousel title focusing on applications",
+      "slides": [similar structure with different focus],
+      "tags": ["#different", "#hashtags", "#for", "#variety"]
+    },
+    {
+      "title": "Third carousel title focusing on strategy",
+      "slides": [similar structure with strategic focus],
+      "tags": ["#strategic", "#hashtags", "#professional"]
+    }
+  ]
+}
+
+Focus on authentic insights and real experiences shared in the interview.`;
+        } else {
+          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -191,7 +231,6 @@ Requirements:
 - Create 5-7 professional slides based on actual content
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
-- Variation ${variation}: Focus on different angles or aspects of the same content
 
 Generate in JSON format:
 {
@@ -207,16 +246,57 @@ Generate in JSON format:
 }
 
 Focus on authentic insights and real experiences shared in the interview.`;
+        }
         break;
         
       case 'image':
-        const imageVariationPrompts = [
-          "Create a LinkedIn image post featuring the most impactful quote or insight",
-          "Create a LinkedIn image post highlighting a key statistic or breakthrough moment",
-          "Create a LinkedIn image post emphasizing the main challenge and solution discussed"
-        ];
-        
-        prompt = `${imageVariationPrompts[variation - 1] || imageVariationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        if (generateAll) {
+          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Each post should highlight different aspects but use authentic content. Do not add fictional stories or made-up data points.
+
+Interview Content: "${conversationText}"
+
+Create 3 distinct image posts:
+1. Feature the most impactful quote or insight
+2. Highlight a key statistic or breakthrough moment
+3. Emphasize the main challenge and solution discussed
+
+Requirements for each post:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Extract powerful real quotes or insights
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
+
+Generate in JSON format:
+{
+  "posts": [
+    {
+      "title": "First image post title featuring quote",
+      "quote": "Most impactful quote from interview",
+      "insight": "Real business insight from conversation",
+      "statistic": "Actual number/metric if mentioned",
+      "tags": ["#relevant", "#hashtags", "#quote"]
+    },
+    {
+      "title": "Second image post title with statistic",
+      "quote": "Another powerful quote or insight",
+      "insight": "Different business insight",
+      "statistic": "Another metric or breakthrough moment",
+      "tags": ["#data", "#insights", "#growth"]
+    },
+    {
+      "title": "Third image post about challenge/solution",
+      "quote": "Quote about challenge or solution",
+      "insight": "Insight about problem-solving approach",
+      "statistic": "Impact or result metric",
+      "tags": ["#problem", "#solution", "#results"]
+    }
+  ]
+}
+
+Focus on authentic insights and real experiences shared in the interview.`;
+        } else {
+          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -226,7 +306,6 @@ Requirements:
 - Extract one powerful real quote or insight
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
-- Variation ${variation}: Focus on different aspects or angles of the content
 
 Generate in JSON format:
 {
@@ -238,16 +317,57 @@ Generate in JSON format:
 }
 
 Focus on one powerful authentic insight that would work well as an image post.`;
+        }
         break;
         
       case 'text':
-        const textVariationPrompts = [
-          "Create a LinkedIn text post focusing on the key lessons learned and insights gained",
-          "Create a LinkedIn text post highlighting the process, methodology, or approach discussed",
-          "Create a LinkedIn text post emphasizing the results, outcomes, or impact achieved"
-        ];
-        
-        prompt = `${textVariationPrompts[variation - 1] || textVariationPrompts[0]} from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
+        if (generateAll) {
+          prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each post should focus on different aspects but use authentic content. Do not add fictional stories or made-up data points.
+
+Interview Content: "${conversationText}"
+
+Create 3 distinct text posts:
+1. Focus on key lessons learned and insights gained
+2. Focus on process, methodology, or approach discussed
+3. Focus on results, outcomes, or impact achieved
+
+Requirements for each post:
+- Use direct, educational voice
+- Stick strictly to facts and insights from the transcript
+- Share genuine learnings or perspectives mentioned
+- No fictional examples or fabricated statistics
+- Professional tone suitable for LinkedIn
+
+Generate in JSON format:
+{
+  "posts": [
+    {
+      "title": "First text post focusing on lessons",
+      "hook": "Opening line highlighting key insight",
+      "body": "Educational content about lessons learned",
+      "callToAction": "Question about insights or learnings",
+      "tags": ["#lessons", "#insights", "#learning"]
+    },
+    {
+      "title": "Second text post about process",
+      "hook": "Opening line about methodology",
+      "body": "Educational content about approach/process",
+      "callToAction": "Question about process or methodology",
+      "tags": ["#process", "#methodology", "#approach"]
+    },
+    {
+      "title": "Third text post about results",
+      "hook": "Opening line about outcomes",
+      "body": "Educational content about results/impact",
+      "callToAction": "Question about results or impact",
+      "tags": ["#results", "#impact", "#outcomes"]
+    }
+  ]
+}
+
+Focus on authentic insights and real experiences shared in the interview.`;
+        } else {
+          prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 
 Interview Content: "${conversationText}"
 
@@ -257,7 +377,6 @@ Requirements:
 - Share genuine learnings or perspectives mentioned
 - No fictional examples or fabricated statistics
 - Professional tone suitable for LinkedIn
-- Variation ${variation}: Focus on different perspectives or elements of the same content
 
 Generate in JSON format:
 {
@@ -269,6 +388,7 @@ Generate in JSON format:
 }
 
 Focus on authentic insights and real experiences shared in the interview.`;
+        }
         break;
     }
 
