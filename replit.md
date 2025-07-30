@@ -156,3 +156,11 @@ Preferred communication style: Simple, everyday language.
   - **Video Clips**: Detailed view with precise start/end timestamps, duration, description, and social scores
 - **Enhanced Video Clips**: Clips now provide accurate timestamps based on actual conversation moments using transcript timing data
 - **Transcript Storage**: Added fullTranscript field to sessions table for precise content generation and clip timing
+
+### January 30, 2025 - Upload Functionality for Content Generation
+- **Video & Transcript Upload**: Users can now upload existing video files and transcript text to generate LinkedIn content
+- **Flexible Input Options**: Support for transcript file uploads (.txt, .md, .doc, .docx) or direct text pasting
+- **Upload Interface**: Dedicated upload mode accessible from Content Generation tab with user-friendly file handling
+- **Same Content Engine**: Upload-generated content uses the same authentic data processing as session-based content
+- **Instant Generation**: Upload content generates LinkedIn posts (carousel, image, text) without requiring database storage
+- **Modal Integration**: Generated content from uploads displays in the same "View Full" modals as session content

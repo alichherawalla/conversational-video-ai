@@ -89,8 +89,9 @@ export default function ContentGeneration() {
         transcript: uploadedTranscript, 
         contentType 
       });
+      console.log("Upload result:", result);
       // Show the generated content in viewing modal
-      if (result && result.content) {
+      if (result) {
         setViewingContent(result);
       }
     } catch (error) {
@@ -249,6 +250,9 @@ export default function ContentGeneration() {
                 </div>
                 {uploadContentMutation.isPending && (
                   <p className="text-sm text-neutral-600 mt-2">Generating content...</p>
+                )}
+                {uploadContentMutation.isSuccess && (
+                  <p className="text-sm text-green-600 mt-2">Content generated successfully! Click to view above.</p>
                 )}
               </CardContent>
             </Card>
