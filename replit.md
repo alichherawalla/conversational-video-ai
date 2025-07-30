@@ -228,3 +228,12 @@ Preferred communication style: Simple, everyday language.
 - **Frontend Validation**: File size warnings and processing time estimates for users uploading large files
 - **Streaming Architecture**: Videos now stream directly to disk during upload rather than loading entirely in memory
 - **Word-Level Timing Integration**: Maintained OpenAI Whisper word-level transcription for precise video clip generation
+
+### January 30, 2025 - Separate Workflows for Content vs Video Processing
+- **Separate Processing Buttons**: Created distinct workflows for content generation (transcript-based) and video clip processing (video file-based)
+- **Three-Step Workflow**: 1) Extract transcript from video, 2a) Generate LinkedIn content from transcript, 2b) Generate video clips from video + transcript
+- **Independent Operations**: Content generation works with transcript only, video clipping requires both video file and transcript
+- **Enhanced User Experience**: Clear step-by-step workflow with color-coded buttons (blue for transcription, orange for content, green for video clips)
+- **Flexible Processing**: Users can choose to generate content only, video clips only, or both depending on their needs
+- **API Separation**: Three separate endpoints: `/api/upload-video-transcribe`, `/api/upload-content-generate`, `/api/upload-video-generate-clips`
+- **Memory Efficient**: Each process handles only its specific requirements, reducing memory usage and processing time

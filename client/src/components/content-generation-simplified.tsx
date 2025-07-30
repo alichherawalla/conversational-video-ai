@@ -179,54 +179,90 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
     },
   });
 
-  const videoUploadMutation = useMutation({
+  // Transcribe video only (extract transcript from video)
+  const videoTranscribeMutation = useMutation({
     mutationFn: async ({ videoFile }: { videoFile: File }) => {
       if (!videoFile) {
         throw new Error("No video file provided");
       }
       
-      setUploadGeneratedContent([]); // Clear previous results
-      setUploadGeneratedClips([]);
+      console.log('Starting video transcription:', videoFile.name, 'Size:', videoFile.size);
       
-      console.log('Starting streaming upload:', videoFile.name, 'Size:', videoFile.size);
-      
-      // Create a proper multipart form data with streaming support
       const formData = new FormData();
       formData.append('video', videoFile, videoFile.name);
       
-      const response = await fetch('/api/upload-video-generate-content', {
+      const response = await fetch('/api/upload-video-transcribe', {
         method: 'POST',
         body: formData,
-        // Don't set Content-Type header - let browser set it with boundary
-        headers: {
-          // Remove any default content-type to let FormData set the boundary
-        }
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Video upload error response:', errorText);
-        throw new Error(`Video upload failed: ${response.status} - ${errorText}`);
+        console.error('Video transcription error:', errorText);
+        throw new Error(`Video transcription failed: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('Video upload success:', result);
+      console.log('Video transcription success:', result);
       return result;
     },
     onSuccess: (data) => {
-      setUploadGeneratedContent(data.content || []);
-      setUploadGeneratedClips(data.clips || []);
       setUploadedTranscript(data.transcript?.text || '');
       toast({
-        title: "Video Processed Successfully",
-        description: `Generated ${data.content?.length || 0} LinkedIn posts and ${data.clips?.length || 0} video clips with precise timing!`,
+        title: "Video Transcribed Successfully",
+        description: `Extracted ${data.transcript?.text?.length || 0} characters of transcript. You can now generate content or video clips.`,
       });
     },
     onError: (error) => {
-      console.error('Video upload error:', error);
+      console.error('Video transcription error:', error);
       toast({
-        title: "Video Processing Failed",
-        description: "Failed to process video file. Please try again or upload a transcript instead.",
+        title: "Video Transcription Failed",
+        description: "Failed to transcribe video file. Please try a smaller file or paste transcript text instead.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Generate video clips from video + transcript
+  const videoClipMutation = useMutation({
+    mutationFn: async ({ videoFile, transcript }: { videoFile: File; transcript: string }) => {
+      if (!videoFile || !transcript.trim()) {
+        throw new Error("Both video file and transcript are required for video clipping");
+      }
+      
+      console.log('Starting video clip generation:', videoFile.name);
+      
+      const formData = new FormData();
+      formData.append('video', videoFile, videoFile.name);
+      formData.append('transcript', transcript);
+      
+      const response = await fetch('/api/upload-video-generate-clips', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Video clip generation error:', errorText);
+        throw new Error(`Video clip generation failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Video clip generation success:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      setUploadGeneratedClips(data.clips || []);
+      toast({
+        title: "Video Clips Generated Successfully",
+        description: `Generated ${data.clips?.length || 0} video clips with precise timing!`,
+      });
+    },
+    onError: (error) => {
+      console.error('Video clip generation error:', error);
+      toast({
+        title: "Video Clip Generation Failed",
+        description: "Failed to generate video clips. Check that transcript matches the video content.",
         variant: "destructive",
       });
     },
@@ -268,29 +304,49 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
     }
   };
 
-  const generateFromUpload = async () => {
-    if (uploadedVideo) {
-      // Process video file with OpenAI transcription and Claude content generation
-      try {
-        await videoUploadMutation.mutateAsync({ 
-          videoFile: uploadedVideo
-        });
-      } catch (error) {
-        console.error("Failed to process video:", error);
-        alert("Failed to process video. Please try again.");
-      }
-    } else if (uploadedTranscript.trim()) {
-      // Process transcript text with Claude content generation
-      try {
-        await uploadContentMutation.mutateAsync({ 
-          transcript: uploadedTranscript
-        });
-      } catch (error) {
-        console.error("Failed to generate content from upload:", error);
-        alert("Failed to generate content. Please try again.");
-      }
-    } else {
-      alert("Please provide either a video file or transcript (upload a file or paste text)");
+  const transcribeVideo = async () => {
+    if (!uploadedVideo) {
+      alert("Please select a video file first");
+      return;
+    }
+    
+    try {
+      await videoTranscribeMutation.mutateAsync({ 
+        videoFile: uploadedVideo
+      });
+    } catch (error) {
+      console.error("Failed to transcribe video:", error);
+    }
+  };
+
+  const generateContentFromTranscript = async () => {
+    if (!uploadedTranscript.trim()) {
+      alert("Please provide a transcript (transcribe a video or paste/upload text)");
+      return;
+    }
+    
+    try {
+      await uploadContentMutation.mutateAsync({ 
+        transcript: uploadedTranscript
+      });
+    } catch (error) {
+      console.error("Failed to generate content:", error);
+    }
+  };
+
+  const generateVideoClips = async () => {
+    if (!uploadedVideo || !uploadedTranscript.trim()) {
+      alert("Both video file and transcript are required for video clip generation");
+      return;
+    }
+    
+    try {
+      await videoClipMutation.mutateAsync({ 
+        videoFile: uploadedVideo,
+        transcript: uploadedTranscript
+      });
+    } catch (error) {
+      console.error("Failed to generate video clips:", error);
     }
   };
 
@@ -481,53 +537,124 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
             </CardContent>
           </Card>
 
-          {/* Content Generation */}
+          {/* Processing Workflow */}
           {(uploadedVideo || uploadedTranscript.trim()) && (
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Generate Content</h3>
-                <Button 
-                  onClick={generateFromUpload}
-                  disabled={uploadContentMutation.isPending || videoUploadMutation.isPending}
-                  className="w-full bg-primary text-white hover:bg-primary/90"
-                >
-                  {videoUploadMutation.isPending 
-                    ? "Processing Video & Generating Content..." 
-                    : uploadContentMutation.isPending 
-                      ? "Generating All Content Types..." 
-                      : uploadedVideo 
-                        ? "Process Video & Generate Content" 
-                        : "Generate LinkedIn Content (All Types)"}
-                </Button>
+                <h3 className="font-semibold mb-4">Processing Workflow</h3>
                 
-                {videoUploadMutation.isPending && (
-                  <div className="text-sm text-neutral-600 mt-2 space-y-1">
-                    <p>🎬 Processing large video file (this may take several minutes)...</p>
-                    <p>🎤 Extracting audio and transcribing with word-level timing...</p>
-                    <p>✨ Generating LinkedIn content and precise video clips...</p>
-                    <div className="text-xs text-neutral-500 mt-2 p-2 bg-neutral-50 rounded">
-                      <strong>Large file processing:</strong> Videos over 100MB may take 5-15 minutes to process completely. 
-                      Please be patient while we extract audio, transcribe with precise timing, and generate your content.
-                    </div>
+                {/* Step 1: Transcribe Video (if video uploaded) */}
+                {uploadedVideo && (
+                  <div className="space-y-2 mb-4">
+                    <h4 className="text-sm font-medium text-neutral-700">Step 1: Extract Transcript from Video</h4>
+                    <Button 
+                      onClick={transcribeVideo}
+                      disabled={videoTranscribeMutation.isPending}
+                      className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      {videoTranscribeMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2" size={16} />
+                          Transcribing Video (5-15 min for large files)...
+                        </>
+                      ) : (
+                        <>
+                          <AlignLeft className="mr-2" size={16} />
+                          Extract Transcript from Video
+                        </>
+                      )}
+                    </Button>
+                    {videoTranscribeMutation.isPending && (
+                      <div className="text-sm text-neutral-600 mt-2 space-y-1">
+                        <p>🎬 Processing video file (this may take several minutes)...</p>
+                        <p>🎤 Extracting audio and transcribing with word-level timing...</p>
+                      </div>
+                    )}
                   </div>
                 )}
-                
-                {uploadContentMutation.isPending && (
-                  <div className="text-sm text-neutral-600 mt-2">
-                    <p>Creating LinkedIn content and video clips...</p>
-                    <p className="text-xs mt-1">
-                      Generated {uploadGeneratedContent.length}/9 content pieces
-                      {uploadGeneratedClips.length > 0 && ` + ${uploadGeneratedClips.length} video clips`}
-                    </p>
+
+                {/* Step 2: Generate Content (if transcript available) */}
+                {uploadedTranscript.trim() && (
+                  <div className="space-y-2 mb-4">
+                    <h4 className="text-sm font-medium text-neutral-700">
+                      {uploadedVideo ? "Step 2a: Generate LinkedIn Content" : "Generate LinkedIn Content"}
+                    </h4>
+                    <Button 
+                      onClick={generateContentFromTranscript}
+                      disabled={uploadContentMutation.isPending}
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                    >
+                      {uploadContentMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2" size={16} />
+                          Generating Content...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2" size={16} />
+                          Generate LinkedIn Content
+                        </>
+                      )}
+                    </Button>
+                    {uploadContentMutation.isPending && (
+                      <div className="text-sm text-neutral-600 mt-2">
+                        <p>Creating LinkedIn content...</p>
+                        <p className="text-xs mt-1">
+                          Generated {uploadGeneratedContent.length}/9 content pieces
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
-                
-                {(uploadContentMutation.isSuccess || videoUploadMutation.isSuccess) && (
+
+                {/* Step 3: Generate Video Clips (if video + transcript available) */}
+                {uploadedVideo && uploadedTranscript.trim() && (
+                  <div className="space-y-2 mb-4">
+                    <h4 className="text-sm font-medium text-neutral-700">Step 2b: Generate Video Clips</h4>
+                    <Button 
+                      onClick={generateVideoClips}
+                      disabled={videoClipMutation.isPending}
+                      className="w-full bg-green-600 text-white hover:bg-green-700"
+                    >
+                      {videoClipMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2" size={16} />
+                          Generating Video Clips...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-2" size={16} />
+                          Generate Video Clips
+                        </>
+                      )}
+                    </Button>
+                    {videoClipMutation.isPending && (
+                      <div className="text-sm text-neutral-600 mt-2">
+                        <p>Creating video clips...</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Success Messages */}
+                {uploadContentMutation.isSuccess && (
                   <p className="text-sm text-green-600 mt-2">
-                    ✓ Generated {uploadGeneratedContent.length} LinkedIn posts and {uploadGeneratedClips.length} video clips! 
-                    {uploadedVideo && " (With precise word-level timing)"}
+                    ✓ Generated {uploadGeneratedContent.length} LinkedIn posts!
                   </p>
                 )}
+                {videoClipMutation.isSuccess && (
+                  <p className="text-sm text-green-600 mt-2">
+                    ✓ Generated {uploadGeneratedClips.length} video clips with precise timing!
+                  </p>
+                )}
+
+                {/* Help Text */}
+                <div className="text-xs text-neutral-500 mt-4 p-3 bg-neutral-50 rounded-lg">
+                  <strong>Workflow Options:</strong><br />
+                  • <strong>Content only:</strong> Upload/paste transcript → Generate content<br />
+                  • <strong>Video clips:</strong> Upload video → Extract transcript → Generate clips<br />
+                  • <strong>Both:</strong> Upload video → Extract transcript → Generate content + clips
+                </div>
               </CardContent>
             </Card>
           )}

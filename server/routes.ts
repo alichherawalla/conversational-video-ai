@@ -320,8 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Streaming Video Upload with Transcription and Content Generation
-  app.post("/api/upload-video-generate-content", async (req, res) => {
+  // Extract transcript from video only (no content generation)
+  app.post("/api/upload-video-transcribe", async (req, res) => {
     // Set longer timeout for large video processing
     req.setTimeout(15 * 60 * 1000); // 15 minutes
     res.setTimeout(15 * 60 * 1000); // 15 minutes
@@ -464,17 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Transcribe the extracted audio with word-level timing
           const transcription = await transcribeAudioBuffer(audioBuffer, originalName);
           
-          console.log(`Transcription completed (${transcription.text.length} chars). Generating content and clips...`);
-          
-          // Generate LinkedIn content using the transcript
-          const linkedInContent = await generateLinkedInContent(transcription.text, 'text', true);
-          
-          // Generate video clips using word-level timing data
-          const videoClips = await generateVideoClips(
-            transcription.text, 
-            transcription.duration || 0,
-            transcription.words
-          );
+          console.log(`Transcription completed (${transcription.text.length} chars).`);
           
           // Clean up temp files
           try {
@@ -484,32 +474,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn('File cleanup warning:', cleanupError);
           }
           
-          console.log(`Successfully processed ${originalName}: ${linkedInContent.posts?.length || 0} content pieces, ${videoClips.length} clips`);
+          console.log(`Successfully transcribed ${originalName}: ${transcription.text.length} characters`);
           
           res.json({
             transcript: {
               text: transcription.text,
               duration: transcription.duration,
               words: transcription.words || []
-            },
-            content: linkedInContent.posts?.map((post: any, index: number) => ({
-              id: `video-upload-${Date.now()}-${index}`,
-              title: post.title,
-              content: post,
-              type: 'linkedin',
-              platform: "linkedin",
-              createdAt: new Date().toISOString()
-            })) || [],
-            clips: videoClips.map((clip: any, index: number) => ({
-              id: `video-clip-${Date.now()}-${index}`,
-              title: clip.title,
-              description: clip.description,
-              startTime: clip.startTime,
-              endTime: clip.endTime,
-              socialScore: clip.socialScore,
-              duration: clip.endTime - clip.startTime,
-              createdAt: new Date().toISOString()
-            }))
+            }
           });
           
         } catch (ffmpegError) {
@@ -524,9 +496,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           res.status(500).json({ 
-            message: "Failed to process video file", 
+            message: "Failed to transcribe video file", 
             error: ffmpegError instanceof Error ? ffmpegError.message : String(ffmpegError),
-            suggestion: "Try uploading a smaller video file or use the transcript-only option"
+            suggestion: "Try uploading a smaller video file or paste transcript text instead"
           });
         }
       });
@@ -542,11 +514,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.pipe(bb);
       
     } catch (error) {
-      console.error('Video upload content generation error:', error);
+      console.error('Video upload transcription error:', error);
       res.status(500).json({ 
-        message: "Failed to generate content from video",
+        message: "Failed to transcribe video",
         error: error instanceof Error ? error.message : String(error),
-        suggestion: "Try uploading a smaller video file or use the transcript-only option"
+        suggestion: "Try uploading a smaller video file or paste transcript text instead"
+      });
+    }
+  });
+
+  // Generate video clips from uploaded video + transcript
+  app.post("/api/upload-video-generate-clips", async (req, res) => {
+    // Set longer timeout for large video processing
+    req.setTimeout(15 * 60 * 1000); // 15 minutes
+    res.setTimeout(15 * 60 * 1000); // 15 minutes
+    
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const { spawn } = await import('child_process');
+      
+      // Use busboy for streaming multipart uploads
+      const bb = busboy({ 
+        headers: req.headers,
+        limits: {
+          fileSize: 500 * 1024 * 1024, // 500MB limit
+          files: 1
+        }
+      });
+      
+      let videoPath: string | null = null;
+      let originalName: string | null = null;
+      let fileSize = 0;
+      let uploadError: Error | null = null;
+      let transcript: string = '';
+
+      bb.on('field', (name, val) => {
+        if (name === 'transcript') {
+          transcript = val;
+        }
+      });
+
+      bb.on('file', (name, file, info) => {
+        const { filename, mimeType } = info;
+        
+        if (!filename || !mimeType.startsWith('video/')) {
+          uploadError = new Error('Invalid file type. Please upload a video file.');
+          file.resume(); // Drain the file stream
+          return;
+        }
+
+        originalName = filename;
+        videoPath = path.join('/tmp', `video_${Date.now()}_${filename}`);
+        
+        console.log(`Streaming video upload for clipping: ${filename}`);
+        
+        const writeStream = createWriteStream(videoPath);
+        
+        file.on('data', (data) => {
+          fileSize += data.length;
+          if (fileSize % (10 * 1024 * 1024) < data.length) {
+            console.log(`Upload progress: ${Math.round(fileSize / 1024 / 1024)}MB`);
+          }
+        });
+
+        file.on('limit', () => {
+          uploadError = new Error('File too large. Maximum size is 500MB.');
+        });
+
+        file.on('error', (err) => {
+          uploadError = err;
+        });
+
+        file.pipe(writeStream);
+        
+        writeStream.on('error', (err) => {
+          uploadError = err;
+        });
+      });
+
+      bb.on('finish', async () => {
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          return res.status(400).json({ 
+            message: uploadError.message,
+            suggestion: uploadError.message.includes('size') 
+              ? "Try compressing your video"
+              : "Please try uploading a valid video file"
+          });
+        }
+
+        if (!videoPath || !originalName || !transcript.trim()) {
+          return res.status(400).json({ message: "Video file and transcript are both required for video clipping" });
+        }
+
+        console.log(`Processing video clips for: ${originalName} (${Math.round(fileSize / 1024 / 1024)}MB)`);
+
+        try {
+          // Generate video clips using the provided transcript
+          const videoClips = await generateVideoClips(
+            transcript, 
+            120, // Estimated duration, will be calculated from transcript
+            [] // No word-level timing for uploaded transcripts
+          );
+          
+          // Clean up temp files
+          try {
+            fs.unlinkSync(videoPath!);
+          } catch (cleanupError) {
+            console.warn('File cleanup warning:', cleanupError);
+          }
+          
+          console.log(`Successfully generated ${videoClips.length} clips for ${originalName}`);
+          
+          res.json({
+            clips: videoClips.map((clip: any, index: number) => ({
+              id: `video-clip-${Date.now()}-${index}`,
+              title: clip.title,
+              description: clip.description,
+              startTime: clip.startTime,
+              endTime: clip.endTime,
+              socialScore: clip.socialScore,
+              duration: clip.endTime - clip.startTime,
+              createdAt: new Date().toISOString()
+            }))
+          });
+          
+        } catch (processingError) {
+          console.error('Video clipping error:', processingError);
+          
+          // Clean up files on error
+          try {
+            if (videoPath && fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+          } catch (cleanupError) {
+            console.warn('Error during cleanup:', cleanupError);
+          }
+          
+          res.status(500).json({ 
+            message: "Failed to generate video clips", 
+            error: processingError instanceof Error ? processingError.message : String(processingError),
+            suggestion: "Check that transcript matches the video content"
+          });
+        }
+      });
+
+      bb.on('error', (err: any) => {
+        console.error('Busboy error:', err);
+        res.status(400).json({ 
+          message: "Upload processing error",
+          error: err instanceof Error ? err.message : String(err)
+        });
+      });
+
+      req.pipe(bb);
+      
+    } catch (error) {
+      console.error('Video clipping error:', error);
+      res.status(500).json({ 
+        message: "Failed to generate video clips",
+        error: error instanceof Error ? error.message : String(error),
+        suggestion: "Try uploading a smaller video file"
       });
     }
   });
