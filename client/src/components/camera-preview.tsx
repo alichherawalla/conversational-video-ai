@@ -25,6 +25,8 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const transcriptionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptionChunksRef = useRef<string[]>([]);
   const lastSubmissionTimeRef = useRef<number>(0);
+  const lastTranscriptTimeRef = useRef<number>(Date.now());
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Video recording with audio
   const {
@@ -68,6 +70,15 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
               const currentTime = Date.now();
               const timeSinceLastSubmission = currentTime - lastSubmissionTimeRef.current;
               
+              // Update last transcript time when we get new words
+              lastTranscriptTimeRef.current = currentTime;
+              
+              // Clear any existing silence timeout since we got new words
+              if (silenceTimeoutRef.current) {
+                clearTimeout(silenceTimeoutRef.current);
+                silenceTimeoutRef.current = null;
+              }
+              
               // Update accumulated transcript immediately for real-time display
               setAccumulatedTranscript(prev => {
                 const updated = prev ? `${prev} ${newChunk}` : newChunk;
@@ -75,12 +86,28 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
                 return updated;
               });
               
-              // Submit to conversation flow only after 5+ seconds have passed
-              if (timeSinceLastSubmission > 5000) {
+              // Start silence detection timer - auto-submit after 10 seconds of no new words
+              silenceTimeoutRef.current = setTimeout(() => {
+                if (transcriptionChunksRef.current.length > 0) {
+                  const fullTranscript = transcriptionChunksRef.current.join(' ');
+                  console.log("Auto-submitting transcript after 10 seconds of silence:", fullTranscript);
+                  onTranscriptionComplete?.(fullTranscript);
+                  lastSubmissionTimeRef.current = Date.now();
+                  
+                  // Reset accumulation after successful submission
+                  transcriptionChunksRef.current = [];
+                  setAccumulatedTranscript("");
+                }
+              }, 10000); // 10 seconds
+              
+            } else {
+              // No new words detected - check if we should auto-submit due to silence
+              const timeSinceLast = Date.now() - lastTranscriptTimeRef.current;
+              if (timeSinceLast >= 10000 && transcriptionChunksRef.current.length > 0) {
                 const fullTranscript = transcriptionChunksRef.current.join(' ');
-                console.log("Submitting accumulated transcript after 5 seconds:", fullTranscript);
+                console.log("Auto-submitting transcript due to extended silence:", fullTranscript);
                 onTranscriptionComplete?.(fullTranscript);
-                lastSubmissionTimeRef.current = currentTime;
+                lastSubmissionTimeRef.current = Date.now();
                 
                 // Reset accumulation after successful submission
                 transcriptionChunksRef.current = [];
@@ -123,9 +150,16 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       setAccumulatedTranscript("");
       transcriptionChunksRef.current = [];
       lastSubmissionTimeRef.current = Date.now();
+      lastTranscriptTimeRef.current = Date.now();
+      
+      // Clear any existing timers
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         setSilenceTimer(null);
+      }
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+        silenceTimeoutRef.current = null;
       }
       
       await Promise.all([
@@ -133,13 +167,13 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         startTranscriptRecording()
       ]);
       
-      // Start continuous transcription every 3 seconds
+      // Start continuous transcription every 5 seconds
       const timer = setInterval(() => {
         if (isRecordingVideo) {
-          console.log("Auto-transcription: Getting transcript every 3 seconds");
+          console.log("Auto-transcription: Getting transcript every 5 seconds");
           handleManualTranscript();
         }
-      }, 3000);
+      }, 5000);
       transcriptionTimerRef.current = timer;
       
       console.log("Video and audio transcription recording started with 5-second auto-transcription");
@@ -152,6 +186,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const handleStopRecording = async () => {
     console.log("Stopping recordings...");
     
+    // Clear all timers
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       setSilenceTimer(null);
@@ -159,6 +194,17 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     if (transcriptionTimerRef.current) {
       clearInterval(transcriptionTimerRef.current);
       transcriptionTimerRef.current = null;
+    }
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    
+    // Submit any remaining transcription before stopping
+    if (transcriptionChunksRef.current.length > 0) {
+      const fullTranscript = transcriptionChunksRef.current.join(' ');
+      console.log("Submitting final transcript on stop:", fullTranscript);
+      onTranscriptionComplete?.(fullTranscript);
     }
     
     stopVideoRecording();
@@ -170,6 +216,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     setAccumulatedTranscript("");
     transcriptionChunksRef.current = [];
     lastSubmissionTimeRef.current = 0;
+    lastTranscriptTimeRef.current = Date.now();
   };
 
   const handleManualTranscript = async () => {
@@ -273,7 +320,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
               {accumulatedTranscript}
             </p>
             <p className="text-xs text-green-200 mt-2">
-              Auto-submits every 5 seconds • Word-level timing
+              Auto-submits after 10s silence • Transcripts every 5s
             </p>
           </div>
         )}
