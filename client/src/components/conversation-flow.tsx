@@ -86,16 +86,17 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
       // Handle special auto-submit signal for silence detection
       if (transcribedText === "__AUTO_SUBMIT_SILENCE__") {
         if (userResponse.trim()) {
-          console.log("Auto-submitting due to 20 seconds of silence");
+          console.log("Auto-submitting due to silence");
           handleSubmitResponse();
         }
         return;
       }
       
+      // For continuous transcription, update the text area with the current transcription
       setUserResponse(transcribedText);
       // Don't auto-submit, let user review first
     }
-  }, [transcribedText, currentQuestionId, userResponse]);
+  }, [transcribedText, currentQuestionId]);
 
   const handleSubmitTranscribedResponse = async (text: string) => {
     if (!text.trim()) return;
@@ -313,7 +314,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         {/* Note about voice recording */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Voice Recording Tips:</strong> After you finish speaking, either wait 5 seconds for auto-submission OR click the blue "Get Transcript" button while recording to manually process your speech. You can also submit manually using the button below.
+            💡 <strong>Voice Recording Tips:</strong> Text is automatically transcribed every 5 seconds while recording. Watch the text area below fill up with your speech. Submit when ready or use the "Get Transcript" button for immediate processing.
           </p>
         </div>
         

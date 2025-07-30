@@ -226,7 +226,17 @@ export default function RecordingStudio() {
             }
             
             console.log("Setting transcriptionText to:", text);
-            setTranscriptionText(text);
+            
+            // For continuous transcription, append to existing text
+            setTranscriptionText(prev => {
+              if (prev && !prev.includes(text)) {
+                // Add space if there's existing text and the new text doesn't start with punctuation
+                const separator = prev.trim() && !text.match(/^[.!?]/) ? ' ' : '';
+                return prev + separator + text;
+              }
+              return text;
+            });
+            
             setAllTranscriptions(prev => [...prev, text]);
           }}
 

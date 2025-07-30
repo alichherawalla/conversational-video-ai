@@ -21,6 +21,9 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   const [lastAudioActivityTime, setLastAudioActivityTime] = useState<number | null>(null);
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   
+  // Continuous transcription timer
+  const [transcriptionTimer, setTranscriptionTimer] = useState<NodeJS.Timeout | null>(null);
+  
   // Video recording with audio
   const {
     isRecording: isRecordingVideo,
@@ -147,7 +150,16 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         startTranscriptRecording()
       ]);
       
-      console.log("Both video and audio transcription recording started");
+      // Start continuous transcription every 5 seconds
+      const timer = setInterval(() => {
+        if (isRecordingTranscript) {
+          console.log("Auto-transcription: Getting transcript every 5 seconds");
+          handleManualTranscript();
+        }
+      }, 5000);
+      setTranscriptionTimer(timer);
+      
+      console.log("Both video and audio transcription recording started with 5-second auto-transcription");
     } catch (error) {
       console.error("Recording failed:", error);
       setIsRecordingAudio(false);
@@ -161,10 +173,14 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       stopTranscriptRecording();
     }
     
-    // Clean up silence timer
+    // Clean up timers
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       setSilenceTimer(null);
+    }
+    if (transcriptionTimer) {
+      clearInterval(transcriptionTimer);
+      setTranscriptionTimer(null);
     }
     
     setIsRecordingAudio(false);
