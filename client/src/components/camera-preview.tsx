@@ -40,11 +40,14 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
   } = useMediaRecorder({
     onStop: async (blob) => {
       try {
-        console.log("Audio transcription recording stopped");
-        if (sessionId) {
+        console.log("Audio transcription recording stopped, blob size:", blob.size, "type:", blob.type);
+        if (sessionId && blob.size > 0) {
+          console.log("Starting transcription...");
           const result = await transcribeAudio(blob);
           console.log("Transcription result:", result.text);
           // You could emit this to parent component or store it
+        } else if (blob.size === 0) {
+          console.warn("Audio blob is empty, skipping transcription");
         }
       } catch (error) {
         console.error('Audio transcription failed:', error);

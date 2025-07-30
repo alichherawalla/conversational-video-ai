@@ -13,7 +13,11 @@ export function useAudioTranscription() {
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob): Promise<TranscriptionResult> => {
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      // Use appropriate file extension based on blob type
+      const fileExtension = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+      formData.append('audio', audioBlob, `recording.${fileExtension}`);
+      
+      console.log("Sending audio for transcription:", audioBlob.type, audioBlob.size);
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -21,10 +25,14 @@ export function useAudioTranscription() {
       });
 
       if (!response.ok) {
-        throw new Error('Transcription failed');
+        const errorText = await response.text();
+        console.error('Transcription API error:', response.status, errorText);
+        throw new Error(`Transcription failed: ${response.status}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log("Transcription API response:", result);
+      return result;
     },
     onMutate: () => {
       setIsTranscribing(true);
