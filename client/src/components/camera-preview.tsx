@@ -241,19 +241,29 @@ export default function CameraPreview({
     setIsProcessingTranscript(true);
     
     try {
+      // If we have accumulated transcript chunks, submit them immediately
+      if (transcriptionChunksRef.current.length > 0) {
+        const existingTranscript = transcriptionChunksRef.current.join(" ");
+        console.log("Submitting existing accumulated transcript immediately:", existingTranscript);
+        onTranscriptionComplete?.(existingTranscript);
+        
+        // Clear accumulation after submission
+        transcriptionChunksRef.current = [];
+        setAccumulatedTranscript("");
+        lastSubmissionTimeRef.current = Date.now();
+      }
+
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
 
-      // Wait for transcription to complete before restarting
+      // Restart audio recording quickly if still video recording
       setTimeout(() => {
         if (isRecordingVideo) {
           console.log("Restarting audio recording after manual transcription");
           startTranscriptRecording();
-          setIsProcessingTranscript(false);
-        } else {
-          setIsProcessingTranscript(false);
         }
-      }, 3000);
+        setIsProcessingTranscript(false);
+      }, 500);
     } catch (error) {
       console.error("Error during manual transcription:", error);
       setIsProcessingTranscript(false);
@@ -372,13 +382,15 @@ export default function CameraPreview({
             disabled={!isRecordingTranscript || isProcessingTranscript}
           >
             {isProcessingTranscript 
-              ? "Processing..." 
+              ? "Processing Transcript..." 
               : isRecordingTranscript 
                 ? "Get Transcript" 
                 : "Not Recording"}
           </Button>
           <div className="ml-3 text-sm text-gray-600 self-center">
-            Manual transcription • Click when ready
+            {isProcessingTranscript 
+              ? "Transcribing audio..." 
+              : "Manual transcription • Click when ready"}
           </div>
         </div>
       )}
