@@ -518,6 +518,264 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
     }
   });
 
+  // Download session package (video, transcript, content)
+  app.get("/api/download-session-package/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const archiver = await import('archiver');
+      const archive = archiver.default('zip', { zlib: { level: 9 } });
+      
+      res.attachment(`${session.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_package.zip`);
+      archive.pipe(res);
+
+      // Add video file if exists
+      if (session.videoUrl) {
+        const videoPath = session.videoUrl.replace('/uploads/', 'uploads/');
+        try {
+          const fs = await import('fs');
+          if (fs.existsSync(videoPath)) {
+            archive.file(videoPath, { name: 'video.mp4' });
+          }
+        } catch (e) {
+          console.log('Video file not found:', videoPath);
+        }
+      }
+
+      // Add transcript
+      if (session.fullTranscript) {
+        archive.append(session.fullTranscript, { name: 'transcript.txt' });
+      }
+
+      // Generate and add LinkedIn content markdown
+      const [contentPieces, clips] = await Promise.all([
+        storage.getContentPiecesBySession(sessionId),
+        storage.getClipsBySession(sessionId)
+      ]);
+
+      const markdownContent = generateContentMarkdown(session, contentPieces, clips);
+      archive.append(markdownContent, { name: 'linkedin_content.md' });
+
+      archive.finalize();
+    } catch (error) {
+      console.error('Download session package error:', error);
+      res.status(500).json({ error: "Failed to create download package" });
+    }
+  });
+
+  // Download upload package (transcript, content)
+  app.post("/api/download-upload-package", async (req, res) => {
+    try {
+      const { transcript, content, clips } = req.body;
+      
+      const archiver = await import('archiver');
+      const archive = archiver.default('zip', { zlib: { level: 9 } });
+      
+      res.attachment(`upload_content_package_${Date.now()}.zip`);
+      archive.pipe(res);
+
+      // Add transcript
+      if (transcript) {
+        archive.append(transcript, { name: 'transcript.txt' });
+      }
+
+      // Generate and add LinkedIn content markdown
+      const markdownContent = generateUploadContentMarkdown(transcript, content, clips);
+      archive.append(markdownContent, { name: 'linkedin_content.md' });
+
+      archive.finalize();
+    } catch (error) {
+      console.error('Download upload package error:', error);
+      res.status(500).json({ error: "Failed to create download package" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to generate markdown content for sessions
+function generateContentMarkdown(session: any, contentPieces: any[], clips: any[]): string {
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  let markdown = `# ${session.title}\n\n`;
+  markdown += `**Topic:** ${session.topic}\n`;
+  markdown += `**Duration:** ${formatTime(session.duration || 0)}\n`;
+  markdown += `**Created:** ${new Date(session.createdAt).toLocaleDateString()}\n\n`;
+
+  markdown += `## LinkedIn Content\n\n`;
+
+  // Group content by type
+  const carouselPosts = contentPieces.filter(c => c.type === 'carousel');
+  const imagePosts = contentPieces.filter(c => c.type === 'image');
+  const textPosts = contentPieces.filter(c => c.type === 'text');
+
+  if (carouselPosts.length > 0) {
+    markdown += `### Carousel Posts\n\n`;
+    carouselPosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.slides) {
+        post.content.slides.forEach((slide: any, slideIndex: number) => {
+          markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
+          markdown += `${slide.content}\n\n`;
+        });
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (imagePosts.length > 0) {
+    markdown += `### Image Posts\n\n`;
+    imagePosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.quote) {
+        markdown += `**Quote:** "${post.content.quote}"\n\n`;
+      }
+      if (post.content.insight) {
+        markdown += `**Insight:** ${post.content.insight}\n\n`;
+      }
+      if (post.content.statistic) {
+        markdown += `**Statistic:** ${post.content.statistic}\n\n`;
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (textPosts.length > 0) {
+    markdown += `### Text Posts\n\n`;
+    textPosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.hook) {
+        markdown += `**Hook:** ${post.content.hook}\n\n`;
+      }
+      if (post.content.body) {
+        markdown += `**Body:**\n${post.content.body}\n\n`;
+      }
+      if (post.content.callToAction) {
+        markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (clips.length > 0) {
+    markdown += `## Video Clips\n\n`;
+    clips.forEach((clip, index) => {
+      markdown += `### ${index + 1}. ${clip.title}\n\n`;
+      markdown += `**Time:** ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)} (${formatTime(clip.endTime - clip.startTime)} duration)\n`;
+      markdown += `**Description:** ${clip.description}\n`;
+      markdown += `**Social Score:** ${clip.socialScore}/100\n\n`;
+      markdown += `---\n\n`;
+    });
+  }
+
+  return markdown;
+}
+
+// Helper function to generate markdown content for uploads
+function generateUploadContentMarkdown(transcript: string, content: any[], clips: any[]): string {
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  let markdown = `# Upload Content Package\n\n`;
+  markdown += `**Generated:** ${new Date().toLocaleDateString()}\n`;
+  markdown += `**Transcript Length:** ${transcript.length} characters\n\n`;
+
+  markdown += `## LinkedIn Content\n\n`;
+
+  // Group content by type
+  const carouselPosts = content.filter(c => c.type === 'carousel');
+  const imagePosts = content.filter(c => c.type === 'image');
+  const textPosts = content.filter(c => c.type === 'text');
+
+  if (carouselPosts.length > 0) {
+    markdown += `### Carousel Posts\n\n`;
+    carouselPosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.slides) {
+        post.content.slides.forEach((slide: any, slideIndex: number) => {
+          markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
+          markdown += `${slide.content}\n\n`;
+        });
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (imagePosts.length > 0) {
+    markdown += `### Image Posts\n\n`;
+    imagePosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.quote) {
+        markdown += `**Quote:** "${post.content.quote}"\n\n`;
+      }
+      if (post.content.insight) {
+        markdown += `**Insight:** ${post.content.insight}\n\n`;
+      }
+      if (post.content.statistic) {
+        markdown += `**Statistic:** ${post.content.statistic}\n\n`;
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (textPosts.length > 0) {
+    markdown += `### Text Posts\n\n`;
+    textPosts.forEach((post, index) => {
+      markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      if (post.content.hook) {
+        markdown += `**Hook:** ${post.content.hook}\n\n`;
+      }
+      if (post.content.body) {
+        markdown += `**Body:**\n${post.content.body}\n\n`;
+      }
+      if (post.content.callToAction) {
+        markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
+      }
+      if (post.content.tags) {
+        markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
+      }
+      markdown += `---\n\n`;
+    });
+  }
+
+  if (clips && clips.length > 0) {
+    markdown += `## Video Clips\n\n`;
+    clips.forEach((clip: any, index: number) => {
+      markdown += `### ${index + 1}. ${clip.title}\n\n`;
+      markdown += `**Time:** ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)} (${formatTime(clip.endTime - clip.startTime)} duration)\n`;
+      markdown += `**Description:** ${clip.description}\n`;
+      markdown += `**Social Score:** ${clip.socialScore}/100\n\n`;
+      markdown += `---\n\n`;
+    });
+  }
+
+  return markdown;
 }

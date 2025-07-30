@@ -147,6 +147,40 @@ export default function ContentGeneration() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const downloadContentPackage = async (sessionData?: any, uploadData?: { transcript: string, content: any[], clips: any[] }) => {
+    try {
+      if (sessionData) {
+        // Download session-based content
+        const response = await apiRequest("GET", `/api/download-session-package/${sessionData.id}`);
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${sessionData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_package.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else if (uploadData) {
+        // Download upload-based content package
+        const response = await apiRequest("POST", "/api/download-upload-package", uploadData);
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `upload_content_package_${Date.now()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
   if (!selectedSession && !uploadMode) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -202,15 +236,29 @@ export default function ContentGeneration() {
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-neutral-800">Upload Content</h2>
-          <Button variant="outline" onClick={() => {
-            setUploadMode(false);
-            setUploadedVideo(null);
-            setUploadedTranscript("");
-            setUploadGeneratedContent([]);
-            setUploadGeneratedClips([]);
-          }}>
-            Back to Sessions
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => downloadContentPackage(undefined, { 
+                transcript: uploadedTranscript, 
+                content: uploadGeneratedContent, 
+                clips: uploadGeneratedClips 
+              })}
+              disabled={uploadGeneratedContent.length === 0 && uploadGeneratedClips.length === 0}
+              className="bg-primary text-white hover:bg-primary/90"
+            >
+              <Download className="mr-2" size={16} />
+              Download Package
+            </Button>
+            <Button variant="outline" onClick={() => {
+              setUploadMode(false);
+              setUploadedVideo(null);
+              setUploadedTranscript("");
+              setUploadGeneratedContent([]);
+              setUploadGeneratedClips([]);
+            }}>
+              Back to Sessions
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -546,20 +594,30 @@ export default function ContentGeneration() {
             Topic: {selectedSessionData?.topic}
           </p>
         </div>
-        <Select value={selectedSession} onValueChange={setSelectedSession}>
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="Select a session" />
-          </SelectTrigger>
-          <SelectContent>
-            {sessions
-              .filter(session => session.status === "completed")
-              .map((session) => (
-                <SelectItem key={session.id} value={session.id}>
-                  {session.title} - {formatTime(session.duration || 0)}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => downloadContentPackage(selectedSessionData)}
+            disabled={!selectedSession}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
+            <Download className="mr-2" size={16} />
+            Download Package
+          </Button>
+          <Select value={selectedSession} onValueChange={setSelectedSession}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Select a session" />
+            </SelectTrigger>
+            <SelectContent>
+              {sessions
+                .filter(session => session.status === "completed")
+                .map((session) => (
+                  <SelectItem key={session.id} value={session.id}>
+                    {session.title} - {formatTime(session.duration || 0)}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Video Clips Section */}
