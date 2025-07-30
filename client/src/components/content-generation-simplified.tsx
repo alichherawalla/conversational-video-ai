@@ -179,6 +179,54 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
     },
   });
 
+  const videoUploadMutation = useMutation({
+    mutationFn: async ({ videoFile }: { videoFile: File }) => {
+      if (!videoFile) {
+        throw new Error("No video file provided");
+      }
+      
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      
+      setUploadGeneratedContent([]); // Clear previous results
+      setUploadGeneratedClips([]);
+      
+      console.log('Uploading video file:', videoFile.name, 'Size:', videoFile.size);
+      
+      const response = await fetch('/api/upload-video-generate-content', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Video upload error response:', errorText);
+        throw new Error(`Video upload failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Video upload success:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      setUploadGeneratedContent(data.content || []);
+      setUploadGeneratedClips(data.clips || []);
+      setUploadedTranscript(data.transcript?.text || '');
+      toast({
+        title: "Video Processed Successfully",
+        description: `Generated ${data.content?.length || 0} LinkedIn posts and ${data.clips?.length || 0} video clips with precise timing!`,
+      });
+    },
+    onError: (error) => {
+      console.error('Video upload error:', error);
+      toast({
+        title: "Video Processing Failed",
+        description: "Failed to process video file. Please try again or upload a transcript instead.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -198,18 +246,28 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
   };
 
   const generateFromUpload = async () => {
-    if (!uploadedTranscript.trim()) {
-      alert("Please provide a transcript (either upload a file or paste text)");
-      return;
-    }
-    
-    try {
-      await uploadContentMutation.mutateAsync({ 
-        transcript: uploadedTranscript
-      });
-    } catch (error) {
-      console.error("Failed to generate content from upload:", error);
-      alert("Failed to generate content. Please try again.");
+    if (uploadedVideo) {
+      // Process video file with OpenAI transcription and Claude content generation
+      try {
+        await videoUploadMutation.mutateAsync({ 
+          videoFile: uploadedVideo
+        });
+      } catch (error) {
+        console.error("Failed to process video:", error);
+        alert("Failed to process video. Please try again.");
+      }
+    } else if (uploadedTranscript.trim()) {
+      // Process transcript text with Claude content generation
+      try {
+        await uploadContentMutation.mutateAsync({ 
+          transcript: uploadedTranscript
+        });
+      } catch (error) {
+        console.error("Failed to generate content from upload:", error);
+        alert("Failed to generate content. Please try again.");
+      }
+    } else {
+      alert("Please provide either a video file or transcript (upload a file or paste text)");
     }
   };
 
@@ -336,66 +394,97 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
         </div>
 
         <div className="space-y-6">
-          {/* Video Upload */}
+          {/* Upload Options */}
           <Card>
             <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">Video Upload (Optional)</h3>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoUpload}
-                className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
-              />
-              {uploadedVideo && (
-                <p className="text-sm text-green-600 mt-2">
-                  Video uploaded: {uploadedVideo.name}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Transcript Upload */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">Transcript (Required)</h3>
+              <h3 className="font-semibold mb-4">Choose Upload Method</h3>
+              
+              {/* Video Upload Option */}
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Upload Transcript File</label>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center">
+                    <Play className="mr-2" size={16} />
+                    Video Upload (Recommended)
+                  </h4>
+                  <p className="text-sm text-neutral-600 mb-3">Upload a video file - we'll automatically extract audio and generate precise word-level timestamps for accurate video clips</p>
                   <input
                     type="file"
-                    accept=".txt,.md,.doc,.docx"
-                    onChange={handleTranscriptUpload}
-                    className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200"
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                    className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
                   />
+                  {uploadedVideo && (
+                    <p className="text-sm text-green-600 mt-2 flex items-center">
+                      ✓ Video ready: {uploadedVideo.name}
+                    </p>
+                  )}
                 </div>
-                
-                <div className="text-center text-neutral-500 text-sm">or</div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-2">Paste Transcript Text</label>
-                  <textarea
-                    value={uploadedTranscript}
-                    onChange={(e) => setUploadedTranscript(e.target.value)}
-                    placeholder="Paste your interview transcript here..."
-                    className="w-full h-48 p-3 border border-neutral-300 rounded-lg resize-none"
-                  />
+
+                <div className="text-center text-neutral-500 text-sm py-2">or</div>
+
+                {/* Transcript Upload Option */}
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center">
+                    <AlignLeft className="mr-2" size={16} />
+                    Transcript Only
+                  </h4>
+                  <p className="text-sm text-neutral-600 mb-3">Upload or paste transcript text (video clips will use estimated timing)</p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Upload Transcript File</label>
+                      <input
+                        type="file"
+                        accept=".txt,.md,.doc,.docx"
+                        onChange={handleTranscriptUpload}
+                        className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200"
+                      />
+                    </div>
+                    
+                    <div className="text-center text-neutral-400 text-xs">or</div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Paste Transcript Text</label>
+                      <textarea
+                        value={uploadedTranscript}
+                        onChange={(e) => setUploadedTranscript(e.target.value)}
+                        placeholder="Paste your interview transcript here..."
+                        className="w-full h-32 p-3 border border-neutral-300 rounded-lg resize-none text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Content Generation */}
-          {uploadedTranscript && (
+          {(uploadedVideo || uploadedTranscript.trim()) && (
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4">Generate Content</h3>
                 <Button 
                   onClick={generateFromUpload}
-                  disabled={uploadContentMutation.isPending}
+                  disabled={uploadContentMutation.isPending || videoUploadMutation.isPending}
                   className="w-full bg-primary text-white hover:bg-primary/90"
                 >
-                  {uploadContentMutation.isPending ? "Generating All Content Types..." : "Generate LinkedIn Content (All Types)"}
+                  {videoUploadMutation.isPending 
+                    ? "Processing Video & Generating Content..." 
+                    : uploadContentMutation.isPending 
+                      ? "Generating All Content Types..." 
+                      : uploadedVideo 
+                        ? "Process Video & Generate Content" 
+                        : "Generate LinkedIn Content (All Types)"}
                 </Button>
+                
+                {videoUploadMutation.isPending && (
+                  <div className="text-sm text-neutral-600 mt-2">
+                    <p>🎬 Extracting audio from video...</p>
+                    <p>🎤 Transcribing with word-level timing...</p>
+                    <p>✨ Generating LinkedIn content and precise video clips...</p>
+                  </div>
+                )}
+                
                 {uploadContentMutation.isPending && (
                   <div className="text-sm text-neutral-600 mt-2">
                     <p>Creating LinkedIn content and video clips...</p>
@@ -405,9 +494,11 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
                     </p>
                   </div>
                 )}
-                {uploadContentMutation.isSuccess && (
+                
+                {(uploadContentMutation.isSuccess || videoUploadMutation.isSuccess) && (
                   <p className="text-sm text-green-600 mt-2">
-                    Generated {uploadGeneratedContent.length} LinkedIn posts and {uploadGeneratedClips.length} video clips! View them below.
+                    ✓ Generated {uploadGeneratedContent.length} LinkedIn posts and {uploadGeneratedClips.length} video clips! 
+                    {uploadedVideo && " (With precise word-level timing)"}
                   </p>
                 )}
               </CardContent>

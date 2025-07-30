@@ -457,6 +457,7 @@ Make the content 200-400 words with clear educative structure, practical value, 
 export async function generateVideoClips(
   conversationText: string,
   sessionDuration: number,
+  wordTimingData?: Array<{word: string, start: number, end: number}>
 ): Promise<
   Array<{
     title: string;
@@ -467,7 +468,43 @@ export async function generateVideoClips(
   }>
 > {
   try {
-    const prompt = `Analyze this interview content and suggest 3-5 video clips optimized for social media using ONLY the actual content provided:
+    let prompt: string;
+    
+    if (wordTimingData && wordTimingData.length > 0) {
+      // Enhanced prompt with word-level timing data
+      const wordsText = wordTimingData.map(w => `${w.word}(${w.start.toFixed(1)}s)`).join(' ');
+      
+      prompt = `Analyze this interview content with precise word-level timing and suggest 3-5 video clips optimized for social media:
+
+Interview Content: "${conversationText}"
+Total Duration: ${sessionDuration} seconds
+Word-Level Timing: ${wordsText}
+
+Requirements:
+- Use EXACT word-level timestamps to create precise clip boundaries
+- Each clip should be 15-90 seconds long
+- Find natural speech boundaries for clean cuts
+- Focus on complete thoughts or key insights
+- Match clip boundaries to actual word timings for seamless editing
+- Provide accurate start/end times based on word timestamps
+
+Generate clips in JSON format:
+{
+  "clips": [
+    {
+      "title": "Specific topic from interview",
+      "description": "Description based on actual content discussed",
+      "startTime": number (exact word start time),
+      "endTime": number (exact word end time),
+      "socialScore": number (1-100 based on authentic value)
+    }
+  ]
+}
+
+Use the word timing data to ensure clips start and end at natural word boundaries.`;
+    } else {
+      // Fallback prompt without word timing
+      prompt = `Analyze this interview content and suggest 3-5 video clips optimized for social media using ONLY the actual content provided:
 
 Interview Content: "${conversationText}"
 Total Duration: ${sessionDuration} seconds
@@ -494,9 +531,10 @@ Generate clips in JSON format:
 }
 
 Base timestamps on logical conversation flow and actual content segments.`;
+    }
 
     const response = await anthropic.messages.create({
-      max_tokens: 600,
+      max_tokens: 800,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -519,7 +557,37 @@ Base timestamps on logical conversation flow and actual content segments.`;
         }
       }
 
-      // Fallback clips based on conversation analysis
+      // Enhanced fallback using word timing data if available
+      if (wordTimingData && wordTimingData.length > 0) {
+        const segments = [];
+        const segmentLength = Math.floor(wordTimingData.length / 3);
+        
+        for (let i = 0; i < 3; i++) {
+          const startIndex = i * segmentLength;
+          const endIndex = Math.min((i + 1) * segmentLength, wordTimingData.length - 1);
+          
+          if (startIndex < wordTimingData.length && endIndex < wordTimingData.length) {
+            const startTime = wordTimingData[startIndex].start;
+            const endTime = wordTimingData[endIndex].end;
+            const duration = endTime - startTime;
+            
+            // Ensure clip is within 15-90 second range
+            if (duration >= 15 && duration <= 90) {
+              segments.push({
+                title: `Key Insight ${i + 1}`,
+                description: `Clip from ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s`,
+                startTime: Math.floor(startTime),
+                endTime: Math.ceil(endTime),
+                socialScore: 70 + i * 5,
+              });
+            }
+          }
+        }
+        
+        return segments;
+      }
+
+      // Standard fallback clips based on conversation analysis
       const segments = conversationText
         .split("\n")
         .filter((line) => line.trim().length > 50);

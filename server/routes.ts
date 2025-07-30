@@ -266,6 +266,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Video Transcription with OpenAI Whisper (extracts audio first)
+  app.post("/api/transcribe-video", upload.single('video'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No video file provided" });
+      }
+
+      const fs = await import('fs');
+      const path = await import('path');
+      const { execSync } = await import('child_process');
+      
+      // Extract audio from video using ffmpeg
+      const audioPath = path.join('/tmp', `audio_${Date.now()}.wav`);
+      
+      try {
+        console.log('Extracting audio from video file:', req.file.originalname);
+        execSync(`ffmpeg -i "${req.file.path}" -vn -acodec pcm_s16le -ar 44100 -ac 2 "${audioPath}"`);
+        
+        // Transcribe the extracted audio
+        const audioBuffer = fs.readFileSync(audioPath);
+        const transcription = await transcribeAudioBuffer(audioBuffer, 'extracted_audio.wav');
+        
+        // Clean up temp files
+        fs.unlinkSync(req.file.path);
+        fs.unlinkSync(audioPath);
+        
+        res.json({
+          text: transcription.text,
+          duration: transcription.duration,
+          words: transcription.words || []
+        });
+      } catch (ffmpegError) {
+        console.error('FFmpeg error:', ffmpegError);
+        // Clean up files on error
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+        
+        res.status(500).json({ message: "Failed to extract audio from video" });
+      }
+    } catch (error) {
+      console.error('Video transcription error:', error);
+      res.status(500).json({ message: "Failed to transcribe video" });
+    }
+  });
+
+  // Video Upload with Transcription and Content Generation
+  app.post("/api/upload-video-generate-content", upload.single('video'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No video file provided" });
+      }
+
+      const fs = await import('fs');
+      const path = await import('path');
+      const { execSync } = await import('child_process');
+      
+      // Extract audio from video using ffmpeg
+      const audioPath = path.join('/tmp', `audio_${Date.now()}.wav`);
+      
+      try {
+        console.log('Extracting audio from video for content generation:', req.file.originalname);
+        execSync(`ffmpeg -i "${req.file.path}" -vn -acodec pcm_s16le -ar 44100 -ac 2 "${audioPath}"`);
+        
+        // Transcribe the extracted audio with word-level timing
+        const audioBuffer = fs.readFileSync(audioPath);
+        const transcription = await transcribeAudioBuffer(audioBuffer, 'extracted_audio.wav');
+        
+        console.log('Video transcription completed, generating content and clips...');
+        
+        // Generate LinkedIn content using the transcript
+        const linkedInContent = await generateLinkedInContent(transcription.text, 'text', true);
+        
+        // Generate video clips using word-level timing data
+        const videoClips = await generateVideoClips(
+          transcription.text, 
+          transcription.duration || 0,
+          transcription.words
+        );
+        
+        // Clean up temp files
+        fs.unlinkSync(req.file.path);
+        fs.unlinkSync(audioPath);
+        
+        res.json({
+          transcript: {
+            text: transcription.text,
+            duration: transcription.duration,
+            words: transcription.words || []
+          },
+          content: linkedInContent.posts?.map((post: any, index: number) => ({
+            id: `video-upload-${Date.now()}-${index}`,
+            title: post.title,
+            content: post,
+            type: 'linkedin',
+            platform: "linkedin",
+            createdAt: new Date().toISOString()
+          })) || [],
+          clips: videoClips.map((clip: any, index: number) => ({
+            id: `video-clip-${Date.now()}-${index}`,
+            title: clip.title,
+            description: clip.description,
+            startTime: clip.startTime,
+            endTime: clip.endTime,
+            socialScore: clip.socialScore,
+            duration: clip.endTime - clip.startTime,
+            createdAt: new Date().toISOString()
+          }))
+        });
+        
+      } catch (ffmpegError) {
+        console.error('FFmpeg error:', ffmpegError);
+        // Clean up files on error
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+        
+        res.status(500).json({ message: "Failed to process video file" });
+      }
+    } catch (error) {
+      console.error('Video upload content generation error:', error);
+      res.status(500).json({ message: "Failed to generate content from video" });
+    }
+  });
+
   // Content Generation from Uploaded Transcript
   app.post("/api/generate-content-from-upload", async (req, res) => {
     try {
