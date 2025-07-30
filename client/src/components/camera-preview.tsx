@@ -46,10 +46,17 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
         console.log("Audio transcription recording stopped, blob size:", blob.size, "type:", blob.type);
         if (sessionId && blob.size > 0) {
           console.log("Starting transcription...");
-          const result = await transcribeAudio(blob);
-          console.log("Transcription result:", result.text);
-          if (result.text && result.text.trim()) {
-            onTranscriptionComplete?.(result.text);
+          try {
+            const result = await transcribeAudio(blob);
+            console.log("Transcription result:", result.text);
+            if (result.text && result.text.trim()) {
+              console.log("Calling onTranscriptionComplete with:", result.text);
+              onTranscriptionComplete?.(result.text);
+            } else {
+              console.warn("Transcription result is empty or invalid");
+            }
+          } catch (error) {
+            console.error("Transcription failed:", error);
           }
         } else if (blob.size === 0) {
           console.warn("Audio blob is empty, skipping transcription");

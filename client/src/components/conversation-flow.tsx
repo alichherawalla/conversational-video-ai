@@ -9,9 +9,10 @@ import type { Conversation } from "@shared/schema";
 interface ConversationFlowProps {
   sessionId: string;
   transcribedText?: string;
+  onTranscriptionProcessed?: () => void;
 }
 
-export default function ConversationFlow({ sessionId, transcribedText }: ConversationFlowProps) {
+export default function ConversationFlow({ sessionId, transcribedText, onTranscriptionProcessed }: ConversationFlowProps) {
   const [userResponse, setUserResponse] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
@@ -81,10 +82,7 @@ export default function ConversationFlow({ sessionId, transcribedText }: Convers
   useEffect(() => {
     if (transcribedText && transcribedText.trim() && currentQuestionId) {
       setUserResponse(transcribedText);
-      // Auto-submit the transcribed response
-      setTimeout(() => {
-        handleSubmitResponse();
-      }, 1000);
+      // Don't auto-submit, let user review first
     }
   }, [transcribedText]);
 
@@ -157,6 +155,7 @@ export default function ConversationFlow({ sessionId, transcribedText }: Convers
     if (!userResponse.trim()) return;
     await handleSubmitTranscribedResponse(userResponse);
     setUserResponse("");
+    onTranscriptionProcessed?.();
   };
 
   const formatTimestamp = (timestamp: number) => {
@@ -186,6 +185,28 @@ export default function ConversationFlow({ sessionId, transcribedText }: Convers
               {followUpIndex > 0 && (
                 <p className="text-xs text-blue-600 mt-1">Follow-up question {followUpIndex} of 2</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Live Transcription Display */}
+      {transcribedText && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="text-white" size={16} />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-green-900 mb-1">Voice Transcription</h4>
+              <p className="text-green-800 text-sm">{transcribedText}</p>
+              <Button
+                onClick={handleSubmitResponse}
+                className="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+                disabled={!userResponse.trim()}
+              >
+                Submit Response
+              </Button>
             </div>
           </div>
         </div>

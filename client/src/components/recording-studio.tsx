@@ -16,6 +16,7 @@ export default function RecordingStudio() {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
   const [transcriptionText, setTranscriptionText] = useState<string>("");
+  const [allTranscriptions, setAllTranscriptions] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState<any>(null);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [sessionSettings, setSessionSettings] = useState({
@@ -140,7 +141,12 @@ export default function RecordingStudio() {
       console.log("Video download triggered");
       
       // Also download transcript if available
-      const combinedTranscript = [sessionTranscript, transcriptionText ? `\n\n--- Voice Transcription ---\n${transcriptionText}` : ''].filter(Boolean).join('');
+      const allTranscriptText = allTranscriptions.join('\n\n');
+      const combinedTranscript = [
+        sessionTranscript, 
+        allTranscriptText ? `\n\n--- Voice Transcriptions ---\n${allTranscriptText}` : '',
+        transcriptionText ? `\n\n--- Latest Transcription ---\n${transcriptionText}` : ''
+      ].filter(Boolean).join('');
       if (combinedTranscript) {
         console.log("Starting transcript download...");
         const transcriptBlob = new Blob([combinedTranscript], { type: 'text/plain' });
@@ -200,13 +206,18 @@ export default function RecordingStudio() {
           onRecordingComplete={handleRecordingComplete} 
           sessionId={currentSession}
           onStartSession={handleStartSession}
-          onTranscriptionComplete={(text) => setTranscriptionText(text)}
+          onTranscriptionComplete={(text) => {
+            console.log("Transcription completed in recording studio:", text);
+            setTranscriptionText(text);
+            setAllTranscriptions(prev => [...prev, text]);
+          }}
         />
         
         {currentSession && (
           <ConversationFlow 
             sessionId={currentSession} 
             transcribedText={transcriptionText}
+            onTranscriptionProcessed={() => setTranscriptionText("")}
           />
         )}
         
