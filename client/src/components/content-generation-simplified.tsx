@@ -661,14 +661,26 @@ export default function ContentGeneration() {
                 {generateClipsMutation.isPending ? "Analyzing..." : "Generate Clips"}
               </Button>
               {clips.length > 0 && (
-                <Button
-                  onClick={() => createVideoClipsMutation.mutate({ sessionId: selectedSession })}
-                  disabled={createVideoClipsMutation.isPending}
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10"
-                >
-                  {createVideoClipsMutation.isPending ? "Cutting..." : "Create Video Files"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => createVideoClipsMutation.mutate({ sessionId: selectedSession })}
+                    disabled={createVideoClipsMutation.isPending}
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary/10"
+                  >
+                    {createVideoClipsMutation.isPending ? "Cutting..." : "Create Video Files"}
+                  </Button>
+                  {clips.some(clip => clip.videoPath) && (
+                    <Button
+                      onClick={() => window.open(`/api/sessions/${selectedSession}/download-clips`, '_blank')}
+                      variant="outline"
+                      className="border-secondary text-secondary hover:bg-secondary/10"
+                    >
+                      <Download className="mr-1" size={16} />
+                      Download All Clips
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -704,14 +716,25 @@ export default function ContentGeneration() {
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                       Score: {clip.socialScore}/100
                     </span>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setViewingClip(clip)}
-                    >
-                      <Eye className="mr-1" size={12} />
-                      View Details
-                    </Button>
+                    <div className="flex gap-1">
+                      {clip.videoPath && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`/api/clips/${clip.id}/download`, '_blank')}
+                          title="Download video clip"
+                        >
+                          <Download className="mr-1" size={12} />
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setViewingClip(clip)}
+                      >
+                        <Eye className="mr-1" size={12} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

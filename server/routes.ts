@@ -733,6 +733,90 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
     }
   });
 
+  // Download individual video clip
+  app.get("/api/clips/:clipId/download", async (req, res) => {
+    try {
+      const { clipId } = req.params;
+      
+      const clip = await storage.getClip(clipId);
+      if (!clip || !clip.videoPath) {
+        return res.status(404).json({ error: "Clip or video file not found" });
+      }
+
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      if (!fs.existsSync(clip.videoPath)) {
+        return res.status(404).json({ error: "Video file not found on disk" });
+      }
+
+      const fileName = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+      const stat = fs.statSync(clip.videoPath);
+      
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Content-Length', stat.size);
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      const readStream = fs.createReadStream(clip.videoPath);
+      readStream.pipe(res);
+    } catch (error) {
+      console.error('Clip download error:', error);
+      res.status(500).json({ error: "Failed to download clip" });
+    }
+  });
+
+  // Download all clips from a session as ZIP
+  app.get("/api/sessions/:sessionId/download-clips", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const clips = await storage.getClips(sessionId);
+      const clipsWithVideos = clips.filter(clip => clip.videoPath);
+      
+      if (clipsWithVideos.length === 0) {
+        return res.status(404).json({ error: "No video clips found for this session" });
+      }
+
+      const archiver = await import('archiver');
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const archive = archiver.default('zip', { zlib: { level: 9 } });
+      
+      const session = await storage.getSession(sessionId);
+      const sessionTitle = session?.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'session';
+      
+      res.attachment(`${sessionTitle}_video_clips.zip`);
+      archive.pipe(res);
+
+      // Add each video clip to the archive
+      for (const clip of clipsWithVideos) {
+        if (fs.existsSync(clip.videoPath!)) {
+          const fileName = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+          archive.file(clip.videoPath!, { name: fileName });
+        }
+      }
+
+      // Add a metadata file with clip information
+      const metadata = clipsWithVideos.map(clip => ({
+        filename: `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`,
+        title: clip.title,
+        description: clip.description,
+        startTime: clip.startTime,
+        endTime: clip.endTime,
+        duration: clip.endTime - clip.startTime,
+        socialScore: clip.socialScore
+      }));
+      
+      archive.append(JSON.stringify(metadata, null, 2), { name: 'clips_metadata.json' });
+      
+      archive.finalize();
+    } catch (error) {
+      console.error('Clips download error:', error);
+      res.status(500).json({ error: "Failed to download clips" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

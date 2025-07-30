@@ -146,6 +146,15 @@ Preferred communication style: Simple, everyday language.
 - **Schema Migration**: Database tables created for sessions, questions, conversations, clips, and content pieces
 - **Data Persistence**: All video sessions, conversations, and generated content now persist between app restarts
 
+### January 30, 2025 - Video Clipping and Download Functionality
+- **Actual Video Clipping**: Implemented FFmpeg integration to cut actual video files at generated timestamps
+- **Individual Clip Downloads**: Added download buttons for individual video clips with proper file naming
+- **Bulk Clip Downloads**: "Download All Clips" button creates ZIP package with all session clips and metadata
+- **Video File Management**: Updated database schema to track video file paths for clipped segments
+- **Enhanced User Interface**: Added "Create Video Files" button that processes timestamps into actual video clips
+- **Error Handling**: Comprehensive error handling for video processing and file management
+- **Metadata Export**: Clip downloads include JSON metadata with timestamps, descriptions, and social scores
+
 ### January 30, 2025 - Enhanced Content Generation with Full-View Modals
 - **Authentic Data Usage**: All LinkedIn content generation now uses only real transcript data, no fictional stories or fabricated statistics
 - **Simplified Content Page**: Removed video library and other content types, focusing solely on LinkedIn content and video clips
