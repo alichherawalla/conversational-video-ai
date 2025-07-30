@@ -166,6 +166,17 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     setLastAudioActivityTime(null);
   };
 
+  const handleManualTranscript = () => {
+    console.log("Manual transcript requested");
+    if (isRecordingTranscript) {
+      // Stop current recording and process transcription immediately
+      console.log("Forcing transcription by stopping audio recording");
+      stopTranscriptRecording();
+    } else {
+      console.log("No active audio recording to transcribe");
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -223,6 +234,18 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
             <Settings className="text-white" size={16} />
           </Button>
         </div>
+
+        {/* Manual transcript button - only show when recording */}
+        {isRecordingVideo && isRecordingTranscript && (
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
+            <Button
+              onClick={handleManualTranscript}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm rounded-lg"
+            >
+              Get Transcript
+            </Button>
+          </div>
+        )}
         
         {/* Voice activity indicator */}
         {isRecordingVideo && lastAudioActivityTime && (

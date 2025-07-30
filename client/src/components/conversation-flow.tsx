@@ -313,7 +313,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         {/* Note about voice recording */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>Voice Recording Tips:</strong> After you finish speaking, wait 5 seconds of silence and the system will automatically submit your response. You can also submit manually using the button below.
+            💡 <strong>Voice Recording Tips:</strong> After you finish speaking, either wait 5 seconds for auto-submission OR click the blue "Get Transcript" button while recording to manually process your speech. You can also submit manually using the button below.
           </p>
         </div>
         
