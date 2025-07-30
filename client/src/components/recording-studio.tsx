@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { OctagonMinus, Pause, RotateCcw, CheckCircle, AlertTriangle, Download } from "lucide-react";
+import { OctagonMinus, Pause, RotateCcw, CheckCircle, AlertTriangle, Download, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import CameraPreview from "./camera-preview";
 import ConversationFlow from "./conversation-flow";
@@ -60,15 +60,17 @@ export default function RecordingStudio() {
         data: { status: "completed" },
       });
       setCurrentSession(null);
+      // Note: Keep videoBlob for download even after session ends
     }
   };
 
   const handleRecordingComplete = (blob: Blob) => {
-    console.log("Recording completed:", blob);
+    console.log("Recording completed:", blob, "Size:", blob.size, "Type:", blob.type);
     
     // Store video blob for download
     setVideoBlob(blob);
     const videoUrl = URL.createObjectURL(blob);
+    console.log("Video blob stored, download should now be available");
     
     if (currentSession) {
       updateSessionMutation.mutate({
@@ -83,7 +85,9 @@ export default function RecordingStudio() {
   };
 
   const handleDownloadVideo = () => {
+    console.log("Download clicked, videoBlob:", videoBlob);
     if (videoBlob) {
+      console.log("Starting download...");
       const url = URL.createObjectURL(videoBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -92,7 +96,15 @@ export default function RecordingStudio() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      console.log("Download triggered");
+    } else {
+      console.log("No video blob available for download");
     }
+  };
+
+  const handleClearVideo = () => {
+    setVideoBlob(null);
+    console.log("Video blob cleared");
   };
 
   return (
@@ -226,16 +238,40 @@ export default function RecordingStudio() {
                     <OctagonMinus className="mr-2" size={16} />
                     End Session
                   </Button>
-                  {videoBlob && (
+                </div>
+              )}
+              
+              {/* Video Management - always show if video is available */}
+              {videoBlob && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-800">Video Ready</p>
+                        <p className="text-xs text-green-600">
+                          Size: {Math.round(videoBlob.size / 1024 / 1024 * 100) / 100} MB • Type: {videoBlob.type}
+                        </p>
+                      </div>
+                      <CheckCircle className="text-green-600" size={20} />
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2">
                     <Button
                       onClick={handleDownloadVideo}
-                      variant="outline"
-                      className="w-full"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Download className="mr-2" size={16} />
-                      Download Full Video
+                      Download Video
                     </Button>
-                  )}
+                    <Button
+                      onClick={handleClearVideo}
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
                 </div>
               )}
               
