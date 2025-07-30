@@ -152,10 +152,8 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       
       // Start continuous transcription every 5 seconds
       const timer = setInterval(() => {
-        if (isRecordingTranscript) {
-          console.log("Auto-transcription: Getting transcript every 5 seconds");
-          handleManualTranscript();
-        }
+        console.log("Auto-transcription: Getting transcript every 5 seconds");
+        handleManualTranscript();
       }, 5000);
       setTranscriptionTimer(timer);
       
@@ -266,14 +264,19 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           </Button>
         </div>
 
-        {/* Manual transcript button - only show when recording */}
-        {isRecordingVideo && isRecordingTranscript && (
+        {/* Manual transcript button - always show when video recording */}
+        {isRecordingVideo && (
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
             <Button
               onClick={handleManualTranscript}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm rounded-lg"
+              className={`px-4 py-2 text-sm rounded-lg ${
+                isRecordingTranscript 
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              }`}
+              disabled={!isRecordingTranscript}
             >
-              Get Transcript
+              {isRecordingTranscript ? "Get Transcript" : "Processing..."}
             </Button>
           </div>
         )}
