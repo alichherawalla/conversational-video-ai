@@ -176,55 +176,24 @@ export async function generateLinkedInContent(conversationText: string, contentT
     switch (contentType) {
       case 'carousel':
         if (generateAll) {
-          prompt = `Create 3 LinkedIn carousel posts from this interview content. Extract value from any content available and create educational posts.
+          // This path is not used anymore, but keeping for compatibility
+          prompt = `Create a LinkedIn carousel post from this interview content.
 
 Interview Content: "${conversationText}"
 
-Create 3 carousel posts with distinct focuses. If content is limited, create educational value around the topics mentioned:
-
-Requirements:
-- Use professional icons and clear structure
-- Each post should have 5-6 slides
-- Make content valuable for LinkedIn business audience
-- Extract insights from questions and responses available
+Create a professional carousel with 5-6 slides. Extract insights from the content provided.
 
 Generate in JSON format:
 {
-  "posts": [
-    {
-      "title": "Strategic Business Insights",
-      "slides": [
-        {"icon": "🎯", "title": "The Challenge", "content": "Main business challenge or topic discussed"},
-        {"icon": "💡", "title": "Key Insight", "content": "Primary learning or insight available"},
-        {"icon": "📊", "title": "Data Analysis", "content": "Analytical approach or method mentioned"},
-        {"icon": "🚀", "title": "Implementation", "content": "Practical application or next steps"},
-        {"icon": "📈", "title": "Expected Results", "content": "Outcomes or impact discussed"}
-      ],
-      "tags": ["#Strategy", "#Business", "#Insights"]
-    },
-    {
-      "title": "Market Analysis Framework",
-      "slides": [
-        {"icon": "🔍", "title": "Research Phase", "content": "How to analyze market data and feedback"},
-        {"icon": "⚡", "title": "AI Integration", "content": "Using AI for competitive analysis"},
-        {"icon": "🎯", "title": "Target Insights", "content": "What manual analysis might miss"},
-        {"icon": "📋", "title": "Process Framework", "content": "Systematic approach to data analysis"},
-        {"icon": "✅", "title": "Validation", "content": "How to verify and act on insights"}
-      ],
-      "tags": ["#MarketAnalysis", "#AI", "#DataInsights"]
-    },
-    {
-      "title": "Product Direction Decisions",
-      "slides": [
-        {"icon": "📚", "title": "Background Context", "content": "Initial assumptions and market understanding"},
-        {"icon": "⚠️", "title": "Hidden Challenges", "content": "What traditional analysis misses"},
-        {"icon": "🔧", "title": "AI-Powered Solutions", "content": "How technology reveals new opportunities"},
-        {"icon": "💪", "title": "Strategic Pivot", "content": "Making data-driven direction changes"},
-        {"icon": "🌟", "title": "Success Factors", "content": "Key elements for implementation"}
-      ],
-      "tags": ["#ProductStrategy", "#Innovation", "#Leadership"]
-    }
-  ]
+  "title": "Professional Insights",
+  "slides": [
+    {"icon": "🎯", "title": "Main Topic", "content": "Key insight from content"},
+    {"icon": "💡", "title": "Key Learning", "content": "Primary takeaway"},
+    {"icon": "📊", "title": "Analysis", "content": "Analytical insight"},
+    {"icon": "🚀", "title": "Implementation", "content": "Practical application"},
+    {"icon": "📈", "title": "Results", "content": "Expected outcomes"}
+  ],
+  "tags": ["#Business", "#Insights", "#Strategy"]
 }`;
         } else {
           prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.

@@ -84,33 +84,19 @@ export default function ContentGeneration() {
       const results = [];
       setUploadGeneratedContent([]); // Clear previous results
       
-      // Generate all 3 posts of each content type in one API call
+      // Generate one post per content type 
       const contentTypes = ['carousel', 'image', 'text'];
       
       for (const contentType of contentTypes) {
         const res = await apiRequest("POST", "/api/generate-content-from-upload", { 
           transcript, 
           contentType,
-          generateAll: true // Generate all 3 variations at once
+          generateAll: false // Generate single post per call
         });
         const result = await res.json();
         
-        // The result now contains multiple posts
-        if (result.posts && Array.isArray(result.posts)) {
-          result.posts.forEach((post: any, index: number) => {
-            results.push({
-              id: `upload-${Date.now()}-${contentType}-${index}`,
-              title: post.title,
-              content: post,
-              type: contentType,
-              platform: "linkedin",
-              createdAt: new Date().toISOString()
-            });
-          });
-        } else {
-          // Fallback for single post response
-          results.push(result);
-        }
+        // Add the single result
+        results.push(result);
         
         // Update state after each content type generation
         setUploadGeneratedContent([...results]);
