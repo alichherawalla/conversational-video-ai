@@ -331,6 +331,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const path = await import('path');
       const { spawn } = await import('child_process');
       
+      // Debug headers and content type
+      console.log('Request headers:', req.headers);
+      console.log('Content-Type:', req.headers['content-type']);
+      
       // Use busboy for streaming multipart uploads
       const bb = busboy({ 
         headers: req.headers,

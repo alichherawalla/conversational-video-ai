@@ -185,17 +185,22 @@ export default function ContentGeneration({ selectedSessionId }: ContentGenerati
         throw new Error("No video file provided");
       }
       
-      const formData = new FormData();
-      formData.append('video', videoFile);
-      
       setUploadGeneratedContent([]); // Clear previous results
       setUploadGeneratedClips([]);
       
-      console.log('Uploading video file:', videoFile.name, 'Size:', videoFile.size);
+      console.log('Starting streaming upload:', videoFile.name, 'Size:', videoFile.size);
+      
+      // Create a proper multipart form data with streaming support
+      const formData = new FormData();
+      formData.append('video', videoFile, videoFile.name);
       
       const response = await fetch('/api/upload-video-generate-content', {
         method: 'POST',
         body: formData,
+        // Don't set Content-Type header - let browser set it with boundary
+        headers: {
+          // Remove any default content-type to let FormData set the boundary
+        }
       });
 
       if (!response.ok) {
