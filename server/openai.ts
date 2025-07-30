@@ -26,6 +26,9 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, filename: strin
     const transcription = await openai.audio.transcriptions.create({
       file: audioReadStream,
       model: "whisper-1",
+      language: "en", // Optimize for English language
+      response_format: "json", // Get structured response
+      temperature: 0.0, // More deterministic transcription
     });
 
     // Clean up temp file
@@ -50,6 +53,9 @@ export async function transcribeAudioFile(filePath: string): Promise<{ text: str
     const transcription = await openai.audio.transcriptions.create({
       file: audioReadStream,
       model: "whisper-1",
+      language: "en", // Optimize for English language
+      response_format: "json", // Get structured response
+      temperature: 0.0, // More deterministic transcription
     });
 
     return {
