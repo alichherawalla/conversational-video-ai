@@ -32,7 +32,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       setIsRecordingAudio(false);
       setAudioLevel(0);
     },
-    audio: false, // This is for video with audio recording (not audio-only)
+    audio: false, // This is for video recording (video + audio), not audio-only
   });
 
   // Audio-only recording for transcription
