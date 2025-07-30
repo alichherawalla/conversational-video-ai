@@ -48,10 +48,15 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     onStop: async (blob) => {
       try {
         console.log("Audio transcription recording stopped, blob size:", blob.size, "type:", blob.type);
-        if (sessionId && blob.size > 0) {
+        console.log("Current sessionId for transcription:", sessionId);
+        console.log("onTranscriptionComplete callback:", !!onTranscriptionComplete);
+        
+        if (blob.size > 0) {
           console.log("Starting transcription...");
+          console.log("Sending audio for transcription:", blob.type, blob.size);
           try {
             const result = await transcribeAudio(blob);
+            console.log("Transcription API response:", result);
             console.log("Transcription result:", result.text);
             if (result.text && result.text.trim()) {
               console.log("Calling onTranscriptionComplete with:", result.text);
@@ -63,7 +68,7 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
           } catch (error) {
             console.error("Transcription failed:", error);
           }
-        } else if (blob.size === 0) {
+        } else {
           console.warn("Audio blob is empty, skipping transcription");
         }
       } catch (error) {
@@ -166,12 +171,22 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
     setLastAudioActivityTime(null);
   };
 
-  const handleManualTranscript = () => {
+  const handleManualTranscript = async () => {
     console.log("Manual transcript requested");
+    console.log("Current state - Recording:", isRecordingTranscript, "Session:", sessionId);
+    
     if (isRecordingTranscript) {
       // Stop current recording and process transcription immediately
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
+      
+      // Start new recording immediately after stopping to continue capturing audio
+      setTimeout(() => {
+        if (isRecordingVideo && !isRecordingTranscript) {
+          console.log("Restarting audio recording after manual transcription");
+          startTranscriptRecording();
+        }
+      }, 2000); // Wait 2 seconds for transcription to process
     } else {
       console.log("No active audio recording to transcribe");
     }
