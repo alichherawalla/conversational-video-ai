@@ -176,50 +176,56 @@ export async function generateLinkedInContent(conversationText: string, contentT
     switch (contentType) {
       case 'carousel':
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Each post should focus on different angles but use the same authentic content. Do not add fictional stories or made-up data points.
+          prompt = `Create 3 LinkedIn carousel posts from this interview content. Extract value from any content available and create educational posts.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct carousel posts:
-1. Focus on insights and key learnings
-2. Focus on practical applications and outcomes  
-3. Focus on strategic decisions and thought process
+Create 3 carousel posts with distinct focuses. If content is limited, create educational value around the topics mentioned:
 
-Requirements for each post:
-- Use direct, educational voice
-- Stick strictly to facts and insights from the transcript
-- Create 5-7 professional slides based on actual content
-- No fictional examples or fabricated statistics
-- Professional tone suitable for LinkedIn
+Requirements:
+- Use professional icons and clear structure
+- Each post should have 5-6 slides
+- Make content valuable for LinkedIn business audience
+- Extract insights from questions and responses available
 
 Generate in JSON format:
 {
   "posts": [
     {
-      "title": "First carousel title focusing on insights",
+      "title": "Strategic Business Insights",
       "slides": [
-        {"icon": "📊", "title": "Slide title", "content": "Key insight from interview"},
-        {"icon": "💡", "title": "Another insight", "content": "Real learning shared"},
-        {"icon": "🎯", "title": "Practical takeaway", "content": "Actionable advice"},
-        {"icon": "📈", "title": "Results", "content": "Actual outcomes mentioned"},
-        {"icon": "🔑", "title": "Key lesson", "content": "Main insight"}
+        {"icon": "🎯", "title": "The Challenge", "content": "Main business challenge or topic discussed"},
+        {"icon": "💡", "title": "Key Insight", "content": "Primary learning or insight available"},
+        {"icon": "📊", "title": "Data Analysis", "content": "Analytical approach or method mentioned"},
+        {"icon": "🚀", "title": "Implementation", "content": "Practical application or next steps"},
+        {"icon": "📈", "title": "Expected Results", "content": "Outcomes or impact discussed"}
       ],
-      "tags": ["#relevant", "#hashtags", "#based", "#on", "#content"]
+      "tags": ["#Strategy", "#Business", "#Insights"]
     },
     {
-      "title": "Second carousel title focusing on applications",
-      "slides": [similar structure with different focus],
-      "tags": ["#different", "#hashtags", "#for", "#variety"]
+      "title": "Market Analysis Framework",
+      "slides": [
+        {"icon": "🔍", "title": "Research Phase", "content": "How to analyze market data and feedback"},
+        {"icon": "⚡", "title": "AI Integration", "content": "Using AI for competitive analysis"},
+        {"icon": "🎯", "title": "Target Insights", "content": "What manual analysis might miss"},
+        {"icon": "📋", "title": "Process Framework", "content": "Systematic approach to data analysis"},
+        {"icon": "✅", "title": "Validation", "content": "How to verify and act on insights"}
+      ],
+      "tags": ["#MarketAnalysis", "#AI", "#DataInsights"]
     },
     {
-      "title": "Third carousel title focusing on strategy",
-      "slides": [similar structure with strategic focus],
-      "tags": ["#strategic", "#hashtags", "#professional"]
+      "title": "Product Direction Decisions",
+      "slides": [
+        {"icon": "📚", "title": "Background Context", "content": "Initial assumptions and market understanding"},
+        {"icon": "⚠️", "title": "Hidden Challenges", "content": "What traditional analysis misses"},
+        {"icon": "🔧", "title": "AI-Powered Solutions", "content": "How technology reveals new opportunities"},
+        {"icon": "💪", "title": "Strategic Pivot", "content": "Making data-driven direction changes"},
+        {"icon": "🌟", "title": "Success Factors", "content": "Key elements for implementation"}
+      ],
+      "tags": ["#ProductStrategy", "#Innovation", "#Leadership"]
     }
   ]
-}
-
-Focus on authentic insights and real experiences shared in the interview.`;
+}`;
         } else {
           prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Do not add fictional stories or made-up data points.
 

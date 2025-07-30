@@ -46,6 +46,7 @@ export const clips = pgTable("clips", {
   socialScore: integer("social_score").default(0),
   platform: varchar("platform").notNull(), // tiktok, instagram, youtube
   videoUrl: text("video_url"),
+  videoPath: text("video_path"), // Path to the clipped video file
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -647,6 +647,92 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
     }
   });
 
+  // Create video clips from session video using generated timestamps
+  app.post("/api/sessions/:sessionId/create-clips", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const session = await storage.getSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      const clips = await storage.getClips(sessionId);
+      if (!clips || clips.length === 0) {
+        return res.status(400).json({ error: "No clips found for this session. Generate clips first." });
+      }
+
+      // Check if video file exists
+      const videoPath = `uploads/${sessionId}.mp4`;
+      const fs = await import('fs');
+      if (!fs.existsSync(videoPath)) {
+        return res.status(400).json({ error: "Video file not found for this session" });
+      }
+
+      const { createVideoClips } = await import('./video-clipper');
+      
+      const clipRequests = clips.map(clip => ({
+        title: clip.title,
+        description: clip.description,
+        startTime: clip.startTime,
+        endTime: clip.endTime,
+        socialScore: clip.socialScore
+      }));
+
+      const clipResults = await createVideoClips(videoPath, clipRequests);
+      
+      // Update clips in storage with video file paths
+      for (let i = 0; i < clipResults.length; i++) {
+        const clipResult = clipResults[i];
+        const originalClip = clips[i];
+        
+        await storage.updateClip(originalClip.id, {
+          ...originalClip,
+          videoPath: clipResult.videoPath
+        });
+      }
+      
+      res.json({ 
+        message: `Successfully created ${clipResults.length} video clips`,
+        clips: clipResults 
+      });
+    } catch (error) {
+      console.error('Video clipping error:', error);
+      res.status(500).json({ error: "Failed to create video clips" });
+    }
+  });
+
+  // Create video clips from uploaded video and timestamps
+  app.post("/api/create-video-clips", upload.single('video'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Video file is required" });
+      }
+
+      const { clips: clipsData } = req.body;
+      if (!clipsData) {
+        return res.status(400).json({ error: "Clips data is required" });
+      }
+
+      const clips = JSON.parse(clipsData);
+      const { createVideoClips } = await import('./video-clipper');
+      
+      const clipResults = await createVideoClips(req.file.path, clips);
+      
+      // Clean up uploaded file
+      const fs = await import('fs');
+      fs.unlinkSync(req.file.path);
+      
+      res.json({ 
+        message: `Successfully created ${clipResults.length} video clips`,
+        clips: clipResults 
+      });
+    } catch (error) {
+      console.error('Video clipping error:', error);
+      res.status(500).json({ error: "Failed to create video clips" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

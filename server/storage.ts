@@ -26,8 +26,10 @@ export interface IStorage {
 
   // Clips
   getClip(id: string): Promise<Clip | undefined>;
+  getClips(sessionId: string): Promise<Clip[]>;
   getClipsBySession(sessionId: string): Promise<Clip[]>;
   createClip(clip: InsertClip): Promise<Clip>;
+  updateClip(id: string, clip: Partial<InsertClip>): Promise<Clip | undefined>;
   deleteClip(id: string): Promise<boolean>;
 
   // Content Pieces
@@ -136,7 +138,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSession(id: string): Promise<boolean> {
     const result = await db.delete(sessions).where(eq(sessions.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Questions
@@ -179,7 +181,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuestion(id: string): Promise<boolean> {
     const result = await db.delete(questions).where(eq(questions.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Conversations
@@ -210,6 +212,10 @@ export class DatabaseStorage implements IStorage {
     return clip || undefined;
   }
 
+  async getClips(sessionId: string): Promise<Clip[]> {
+    return await db.select().from(clips).where(eq(clips.sessionId, sessionId));
+  }
+
   async getClipsBySession(sessionId: string): Promise<Clip[]> {
     return await db.select().from(clips).where(eq(clips.sessionId, sessionId));
   }
@@ -222,6 +228,7 @@ export class DatabaseStorage implements IStorage {
         ...insertClip,
         description: insertClip.description ?? null,
         videoUrl: insertClip.videoUrl ?? null,
+        videoPath: insertClip.videoPath ?? null,
         socialScore: insertClip.socialScore ?? null,
         createdAt: new Date()
       })
@@ -229,9 +236,18 @@ export class DatabaseStorage implements IStorage {
     return newClip;
   }
 
+  async updateClip(id: string, clip: Partial<InsertClip>): Promise<Clip | undefined> {
+    const [updatedClip] = await db
+      .update(clips)
+      .set(clip)
+      .where(eq(clips.id, id))
+      .returning();
+    return updatedClip || undefined;
+  }
+
   async deleteClip(id: string): Promise<boolean> {
     const result = await db.delete(clips).where(eq(clips.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Content Pieces
@@ -259,7 +275,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContentPiece(id: string): Promise<boolean> {
     const result = await db.delete(contentPieces).where(eq(contentPieces.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

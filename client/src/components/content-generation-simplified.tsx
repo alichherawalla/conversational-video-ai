@@ -56,6 +56,29 @@ export default function ContentGeneration() {
     },
   });
 
+  const createVideoClipsMutation = useMutation({
+    mutationFn: async (data: { sessionId: string }) => {
+      const response = await apiRequest(`/api/sessions/${data.sessionId}/create-clips`, {
+        method: "POST",
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sessions', selectedSession, 'clips'] });
+      toast({
+        title: "Video Clips Created",
+        description: "Actual video files have been cut and created successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Video Clipping Failed",
+        description: error.message || "Failed to create video clips",
+        variant: "destructive"
+      });
+    }
+  });
+
   const uploadContentMutation = useMutation({
     mutationFn: async ({ transcript }: { transcript: string }) => {
       const results = [];
@@ -629,13 +652,25 @@ export default function ContentGeneration() {
               <Slice className="text-primary mr-2 inline" size={20} />
               Video Clips with Timestamps
             </h3>
-            <Button
-              onClick={() => generateClipsMutation.mutate(selectedSession)}
-              disabled={generateClipsMutation.isPending}
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              {generateClipsMutation.isPending ? "Analyzing..." : "Generate Clips"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => generateClipsMutation.mutate(selectedSession)}
+                disabled={generateClipsMutation.isPending}
+                className="bg-primary text-white hover:bg-primary/90"
+              >
+                {generateClipsMutation.isPending ? "Analyzing..." : "Generate Clips"}
+              </Button>
+              {clips.length > 0 && (
+                <Button
+                  onClick={() => createVideoClipsMutation.mutate({ sessionId: selectedSession })}
+                  disabled={createVideoClipsMutation.isPending}
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  {createVideoClipsMutation.isPending ? "Cutting..." : "Create Video Files"}
+                </Button>
+              )}
+            </div>
           </div>
           
           {clips.length === 0 && !generateClipsMutation.isPending && (
