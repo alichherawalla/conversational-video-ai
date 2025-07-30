@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { OctagonMinus, Pause, RotateCcw, CheckCircle, AlertTriangle } from "lucide-react";
+import { OctagonMinus, Pause, RotateCcw, CheckCircle, AlertTriangle, Download } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import CameraPreview from "./camera-preview";
 import ConversationFlow from "./conversation-flow";
@@ -13,6 +13,7 @@ import type { InsertSession } from "@shared/schema";
 
 export default function RecordingStudio() {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionSettings, setSessionSettings] = useState({
     title: "Entrepreneurial Journey",
     topic: "Entrepreneurial Journey",
@@ -63,17 +64,34 @@ export default function RecordingStudio() {
   };
 
   const handleRecordingComplete = (blob: Blob) => {
-    // Here you would upload the video blob to your storage
     console.log("Recording completed:", blob);
+    
+    // Store video blob for download
+    setVideoBlob(blob);
+    const videoUrl = URL.createObjectURL(blob);
     
     if (currentSession) {
       updateSessionMutation.mutate({
         id: currentSession,
         data: { 
           status: "completed",
-          videoUrl: URL.createObjectURL(blob) // In production, this would be a real URL
+          videoUrl: videoUrl,
+          duration: Math.floor(blob.size / 100000) // Rough duration estimate
         },
       });
+    }
+  };
+
+  const handleDownloadVideo = () => {
+    if (videoBlob) {
+      const url = URL.createObjectURL(videoBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${sessionSettings.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -199,14 +217,26 @@ export default function RecordingStudio() {
                   Start Session
                 </Button>
               ) : (
-                <Button
-                  onClick={handleEndSession}
-                  className="w-full bg-primary text-white hover:bg-primary/90"
-                  disabled={updateSessionMutation.isPending}
-                >
-                  <OctagonMinus className="mr-2" size={16} />
-                  End Session
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleEndSession}
+                    className="w-full bg-primary text-white hover:bg-primary/90"
+                    disabled={updateSessionMutation.isPending}
+                  >
+                    <OctagonMinus className="mr-2" size={16} />
+                    End Session
+                  </Button>
+                  {videoBlob && (
+                    <Button
+                      onClick={handleDownloadVideo}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Download className="mr-2" size={16} />
+                      Download Full Video
+                    </Button>
+                  )}
+                </div>
               )}
               
               <Button className="w-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200">

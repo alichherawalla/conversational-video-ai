@@ -46,6 +46,36 @@ export default function ContentGeneration() {
     },
   });
 
+  const downloadClip = (clip: Clip) => {
+    // Create a mock video blob for demonstration - in production this would fetch the actual video segment
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 360;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Clip: ${clip.title}`, canvas.width/2, canvas.height/2);
+      ctx.fillText(`Duration: ${clip.duration}s`, canvas.width/2, canvas.height/2 + 40);
+    }
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${clip.title.replace(/\s+/g, '_')}_clip.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    });
+  };
+
   const completedSessions = sessions.filter(s => s.status === "completed");
   const selectedSessionData = sessions.find(s => s.id === selectedSession);
 
@@ -168,7 +198,11 @@ export default function ContentGeneration() {
                           <h4 className="font-medium text-neutral-800 mb-1">{clip.title}</h4>
                           <p className="text-sm text-neutral-600 mb-2">{clip.description}</p>
                           <div className="flex items-center space-x-2">
-                            <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
+                            <Button 
+                              size="sm" 
+                              className="bg-primary text-white hover:bg-primary/90"
+                              onClick={() => downloadClip(clip)}
+                            >
                               <Download className="mr-1" size={12} />
                               Download
                             </Button>
