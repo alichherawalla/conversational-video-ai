@@ -393,11 +393,28 @@ export default function ContentGeneration() {
                                 View Full
                               </Button>
                             </div>
-                            <p className="text-sm text-neutral-600">
-                              {contentType === 'carousel' && `${(content.content as any)?.slides?.length || 0} slides`}
-                              {contentType === 'image' && `Quote: "${(content.content as any)?.quote?.substring(0, 50)}..."`}
-                              {contentType === 'text' && `Hook: "${(content.content as any)?.hook?.substring(0, 50)}..."`}
-                            </p>
+                            {contentType === 'carousel' && (
+                              <div className="bg-gradient-to-br from-primary to-secondary text-white p-3 rounded text-center">
+                                <div className="text-xs">📊 Carousel Post</div>
+                                <div className="text-sm font-medium">{(content.content as any)?.slides?.length || 0} slides</div>
+                              </div>
+                            )}
+                            {contentType === 'image' && (
+                              <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-3 rounded text-center">
+                                <div className="text-lg mb-1">💡</div>
+                                <div className="text-xs font-medium">
+                                  {content.title.substring(0, 40)}...
+                                </div>
+                              </div>
+                            )}
+                            {contentType === 'text' && (
+                              <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-3 rounded">
+                                <div className="text-xs mb-1">✍️ Text Post</div>
+                                <div className="text-xs">
+                                  Hook: "{(content.content as any)?.hook?.substring(0, 40)}..."
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

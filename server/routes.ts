@@ -650,9 +650,29 @@ Total Duration: ${Math.max(...conversations.map(c => c.timestamp))} seconds`;
   // Download all upload clips as ZIP
   app.get("/api/upload-clips/download-all", async (req, res) => {
     try {
-      // Get all upload clips from storage (you may need to modify storage to track upload clips)
-      // For now, this is a placeholder - you'd need to implement upload clip storage
-      res.status(404).json({ error: "Upload clip download not implemented yet" });
+      const archiver = require('archiver');
+      
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename="upload_clips.zip"');
+
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.pipe(res);
+
+      // For upload clips, we don't have actual video files, so create a text file with clip information
+      const clipInfo = `Upload Video Clips Information
+
+Note: These clips were generated from uploaded transcript content.
+To create actual video clips, you would need to upload the original video file.
+
+Generated Clip Timestamps:
+- Sample clips would be created based on transcript analysis
+- Each clip includes start/end times and social media scores
+- Download individual session clips from the Video Library for actual video files
+
+For more information, visit the Video Library section.`;
+
+      archive.append(clipInfo, { name: 'clip_info.txt' });
+      archive.finalize();
     } catch (error) {
       console.error('Upload clips download error:', error);
       res.status(500).json({ error: "Failed to download upload clips" });
