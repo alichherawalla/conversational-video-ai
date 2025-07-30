@@ -519,32 +519,61 @@ export default function ContentGeneration() {
                   {viewingContent.type === "image" && (
                     <div>
                       <h4 className="font-semibold mb-3">LinkedIn Image Post</h4>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-gradient-to-br from-primary to-secondary text-white p-8 rounded-lg text-center min-h-[300px] flex flex-col justify-center">
-                          <blockquote className="text-lg font-medium mb-4">
-                            "{(viewingContent.content as any)?.quote || 'Key insight from interview'}"
-                          </blockquote>
-                          <div className="text-sm opacity-90">
-                            - {(viewingContent.content as any)?.attribution || 'Interview Insight'}
-                          </div>
+                      
+                      {/* Image Mock-up */}
+                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-lg mb-4 min-h-[250px] flex flex-col justify-center items-center text-center relative">
+                        <div className="text-4xl mb-3">💡</div>
+                        <div className="text-xl font-bold mb-3 max-w-md">
+                          {(viewingContent.content as any)?.quote_overlay || (viewingContent.content as any)?.quote || "Key Insight"}
                         </div>
-                        <div className="space-y-4">
-                          <div>
-                            <h5 className="font-medium mb-2">Post Content:</h5>
-                            <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.insight}</p>
-                          </div>
-                          <div>
-                            <h5 className="font-medium mb-2">Statistics:</h5>
-                            <p className="text-sm text-neutral-700">{(viewingContent.content as any)?.statistic || 'Based on interview insights'}</p>
-                          </div>
-                          <div>
-                            <h5 className="font-medium mb-2">Hashtags:</h5>
-                            <div className="flex flex-wrap gap-1">
-                              {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
-                                <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
-                              ))}
-                            </div>
-                          </div>
+                        <div className="text-sm opacity-75 absolute bottom-4 right-4">
+                          LinkedIn Image Post
+                        </div>
+                      </div>
+
+                      {/* Detailed Caption */}
+                      <div className="bg-neutral-50 p-4 rounded-lg mb-4">
+                        <h5 className="font-medium mb-2">Post Caption:</h5>
+                        <div className="text-sm text-neutral-700 whitespace-pre-wrap mb-3">
+                          {(viewingContent.content as any)?.detailed_caption || (viewingContent.content as any)?.insight || "Professional insight from the interview"}
+                        </div>
+                      </div>
+
+                      {/* Visual Direction for Designers */}
+                      {(viewingContent.content as any)?.illustration_direction && (
+                        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-yellow-800">Visual Direction for Designers:</h5>
+                          <p className="text-sm text-yellow-700">{(viewingContent.content as any).illustration_direction}</p>
+                        </div>
+                      )}
+
+                      {/* Visual Elements */}
+                      {(viewingContent.content as any)?.visual_elements && (
+                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-blue-800">Visual Elements Needed:</h5>
+                          <ul className="text-sm text-blue-700 list-disc pl-4">
+                            {(viewingContent.content as any).visual_elements.map((element: string, idx: number) => (
+                              <li key={idx}>{element}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Color Scheme */}
+                      {(viewingContent.content as any)?.color_scheme && (
+                        <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-purple-800">Color Scheme:</h5>
+                          <p className="text-sm text-purple-700">{(viewingContent.content as any).color_scheme}</p>
+                        </div>
+                      )}
+
+                      {/* Hashtags */}
+                      <div className="bg-neutral-50 p-4 rounded-lg">
+                        <h5 className="font-medium mb-2">Hashtags:</h5>
+                        <div className="flex flex-wrap gap-1">
+                          {(viewingContent.content as any)?.tags?.map((tag: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                          ))}
                         </div>
                       </div>
                     </div>
