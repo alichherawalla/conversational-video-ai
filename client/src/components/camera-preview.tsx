@@ -7,9 +7,10 @@ import { useAudioTranscription } from "@/hooks/use-audio-transcription";
 interface CameraPreviewProps {
   onRecordingComplete?: (blob: Blob) => void;
   sessionId?: string | null;
+  onStartSession?: () => Promise<void>;
 }
 
-export default function CameraPreview({ onRecordingComplete, sessionId }: CameraPreviewProps) {
+export default function CameraPreview({ onRecordingComplete, sessionId, onStartSession }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const { transcribeAudio } = useAudioTranscription();
@@ -60,12 +61,20 @@ export default function CameraPreview({ onRecordingComplete, sessionId }: Camera
 
   const handleStartRecording = async () => {
     try {
+      // If no session exists, start one first
+      if (!sessionId && onStartSession) {
+        console.log("No session found, starting new session...");
+        await onStartSession();
+        // Wait a moment for session to be created
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       // Start both video and audio recording simultaneously
       console.log("Starting video and audio recording...");
       await startVideoRecording();
       
       // Start audio transcription recording if we have a session
-      if (sessionId) {
+      if (sessionId || onStartSession) {
         setIsRecordingAudio(true);
         await startTranscriptRecording();
         console.log("Both video and audio transcription recording started");
@@ -128,7 +137,6 @@ export default function CameraPreview({ onRecordingComplete, sessionId }: Camera
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-red-600 hover:bg-red-700"
             }`}
-            disabled={!sessionId}
           >
             {isRecordingVideo ? (
               <Square className="text-white" size={16} />

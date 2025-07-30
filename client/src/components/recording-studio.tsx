@@ -45,13 +45,27 @@ export default function RecordingStudio() {
     },
   });
 
-  const handleStartSession = () => {
-    if (!currentSession) {
-      createSessionMutation.mutate({
-        ...sessionSettings,
-        status: "recording",
-      });
-    }
+  const handleStartSession = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!currentSession) {
+        createSessionMutation.mutate({
+          ...sessionSettings,
+          status: "recording",
+        }, {
+          onSuccess: (data) => {
+            setCurrentSession(data.id);
+            console.log("Session started:", data.id);
+            resolve();
+          },
+          onError: (error) => {
+            console.error("Failed to start session:", error);
+            reject(error);
+          }
+        });
+      } else {
+        resolve();
+      }
+    });
   };
 
   const handleEndSession = () => {
@@ -153,6 +167,7 @@ export default function RecordingStudio() {
         <CameraPreview 
           onRecordingComplete={handleRecordingComplete} 
           sessionId={currentSession}
+          onStartSession={handleStartSession}
         />
         
         {currentSession && (
