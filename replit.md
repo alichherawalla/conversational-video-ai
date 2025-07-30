@@ -203,6 +203,14 @@ Preferred communication style: Simple, everyday language.
 - **Generate All Content Feature**: Added bulk content generation for sessions creating 9 LinkedIn posts plus video clips in one click
 - **Session Navigation Integration**: "Generate Social Media Content" button seamlessly navigates from Recording Studio to Content Generation
 
+### January 30, 2025 - Enhanced Bold and Educative Content Generation
+- **Bold Content Revolution**: Transformed all LinkedIn content to use provocative, contrarian viewpoints that challenge conventional thinking
+- **Scroll-Stopping Captions**: Enhanced all content types with 350-600 word bold, educative captions that demand attention
+- **Provocative Messaging**: Added power words, controversial hooks, and thought-provoking statements throughout all content
+- **Contrarian Positioning**: Content now challenges industry norms and presents unconventional wisdom from interview insights
+- **Enhanced Token Limits**: Increased Anthropic API max tokens to 2000 to support much more detailed content generation
+- **Revolutionary Templates**: Updated carousel, image, and text post templates with bold, disruptive messaging frameworks
+
 ### January 30, 2025 - Reverted to Manual-Only Transcription
 - **Removed Auto-Transcription**: Eliminated all automatic transcription functionality due to transcript quality issues
 - **Manual Control Only**: Users now control when to generate transcripts by clicking "Get Transcript" button

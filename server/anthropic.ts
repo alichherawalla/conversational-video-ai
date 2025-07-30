@@ -177,26 +177,27 @@ export async function generateLinkedInContent(conversationText: string, contentT
       case 'carousel':
         if (generateAll) {
           // Generate 3 carousel posts
-          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use an educative and direct tone throughout.
+          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use a BOLD, educative, and direct tone throughout.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct carousel posts with detailed slides and comprehensive captions:
+Create 3 distinct carousel posts with detailed slides and highly engaging, comprehensive captions:
 
 Requirements:
-- Each slide should have 40-60 words of substantive, educative content
-- Include engaging introduction slide and compelling conclusion
-- Create detailed, comprehensive caption (200-400 words) with educative and direct tone
-- Break down complex concepts into clear, actionable insights
+- Each slide should have 50-70 words of substantive, educative content that teaches something valuable
+- Create VERY DETAILED, comprehensive captions (300-500 words) with bold, educative tone
+- Use power words, contrarian viewpoints, and thought-provoking statements
+- Break down complex concepts into clear, actionable insights that challenge conventional thinking
 - Use authentic information from the transcript only
-- Structure captions with: Hook → Context → Key Lessons → Practical Value → Call-to-Action
+- Structure captions with: BOLD Hook → Deep Context → Revolutionary Insights → Transformative Value → Compelling Call-to-Action
+- Make captions that stop the scroll and demand attention
 
 Generate in JSON format:
 {
   "posts": [
     {
       "title": "Strategic Business Insights Carousel",
-      "detailed_caption": "Behind-the-scenes look at how [main topic from interview] transformed [specific outcome]. Swipe through for the complete breakdown of the strategy, insights, and results that led to [specific achievement]. ➡️\\n\\n#Strategy #BusinessInsights #Leadership",
+      "detailed_caption": "🚨 STOP SCROLLING: This isn't another generic business post.\\n\\nEveryone talks about [main topic], but here's what nobody tells you about the REALITY behind [specific outcome from interview].\\n\\nI just broke down the exact blueprint that led to [specific achievement] - and it's nothing like what the 'experts' teach.\\n\\nWhile everyone else was doing X, we discovered that Y was the game-changer. Here's the brutal truth about what actually works:\\n\\n→ The conventional wisdom is WRONG about [specific point]\\n→ The real breakthrough came from [unexpected insight]\\n→ The one metric that actually mattered was [key data point]\\n\\nThis isn't theory from a business school case study. This is the raw, unfiltered reality of what it takes to [achieve specific result].\\n\\nSwipe through to see the complete strategy that 99% of people get backwards. Each slide contains insights that took us [time period] to learn the hard way.\\n\\nThe last slide alone could save you months of wasted effort.\\n\\nQuestion: What conventional business advice have you found to be completely wrong? Drop it in the comments - let's challenge some myths together. 👇\\n\\n#Strategy #BusinessInsights #Leadership #TruthBomb",
       "slides": [
         {"icon": "🎯", "title": "The Challenge", "content": "Detailed description of the main business challenge or situation discussed in the interview, including context and initial assumptions that were made"},
         {"icon": "💡", "title": "The Breakthrough", "content": "Specific insight or realization that changed everything, including how it was discovered and what made it different from previous approaches"},
@@ -209,7 +210,7 @@ Generate in JSON format:
     },
     {
       "title": "Practical Implementation Framework",
-      "detailed_caption": "The exact framework that led to [specific result from interview]. This isn't theory – it's the proven process that delivered [outcome]. Save this for your next [relevant situation]. 🔖\\n\\n#Framework #Implementation #BusinessStrategy", 
+      "detailed_caption": "💣 FRAMEWORK BREAKDOWN: The 6-step system that generated [specific result from interview]\\n\\nI'm about to share something most business 'gurus' charge $5,000 for in their masterclasses.\\n\\nBut here's the thing - I learned this the hard way through [specific experience from interview], not from some theoretical playbook.\\n\\nWhile competitors were following the same tired playbook, we built a completely different approach. The results? [specific outcome].\\n\\nHere's what makes this framework different:\\n\\n🔥 It's battle-tested in real market conditions\\n🔥 It works even when resources are limited\\n🔥 It's designed to scale without breaking\\n\\nMost people think success comes from working harder. That's backwards thinking.\\n\\nSuccess comes from working SMARTER with proven systems.\\n\\nThis framework took us [time period] to perfect. Each step was refined through trial, error, and real market feedback.\\n\\nThe beauty? Once you understand the logic, you can adapt it to any industry or situation.\\n\\nSwipe through each slide. Take notes. This isn't content to scroll past - it's a blueprint to bookmark.\\n\\nImplement even ONE of these steps, and you'll see why systematic thinking beats random action every single time.\\n\\nWhich step resonates most with your current challenges? Tell me in the comments - I read every single one. 👇\\n\\n#Framework #Implementation #BusinessStrategy #SystemicThinking", 
       "slides": [
         {"icon": "🔍", "title": "Discovery Phase", "content": "Comprehensive approach to research and initial analysis, including specific tools, methods, and sources used to gather insights"},
         {"icon": "⚡", "title": "Core Methodology", "content": "Detailed explanation of the main approach or framework used, including why this method was chosen over alternatives"},
@@ -222,7 +223,7 @@ Generate in JSON format:
     },
     {
       "title": "Lessons from Experience",
-      "detailed_caption": "What [specific experience from interview] taught us about [main lesson]. These insights came from real challenges and real solutions. Thread below 👇\\n\\n#Experience #Lessons #BusinessLearning",
+      "detailed_caption": "⚡ HARD-EARNED LESSONS: What [specific experience from interview] taught me about [main lesson]\\n\\nThis post might make some people uncomfortable. Good. Comfort zones are where growth goes to die.\\n\\nLet me be brutally honest about what really happened during [specific situation from interview].\\n\\nEveryone loves success stories, but nobody talks about the messy middle - the part where everything feels impossible and you question every decision.\\n\\nHere's what the business books don't prepare you for:\\n\\n⚠️ The moment when your assumptions crumble\\n⚠️ The pivot that feels like giving up (but isn't)\\n⚠️ The breakthrough that comes from embracing failure\\n\\nI used to think [original belief]. I was completely wrong.\\n\\nThe real lesson? [key insight from interview] - something that goes against everything I'd been taught.\\n\\nThis experience cost us [specific cost/time], but taught us something worth 10x that investment.\\n\\nNow, when I see other entrepreneurs making the same mistakes, I want to save them from learning this the hard way.\\n\\nSwipe through to see the complete breakdown. Each slide represents a lesson that fundamentally changed how we approach [relevant area].\\n\\nThe last slide contains the one insight that I wish someone had told me before we started this journey.\\n\\nWhat's the most expensive lesson you've learned in business? Share it below - your failure might be someone else's breakthrough. 👇\\n\\n#Experience #Lessons #BusinessLearning #HardTruths",
       "slides": [
         {"icon": "📚", "title": "The Starting Point", "content": "Initial situation and context that led to this experience, including original goals, assumptions, and market conditions"},
         {"icon": "⚠️", "title": "Unexpected Challenges", "content": "Specific obstacles encountered that weren't anticipated, including how they were identified and initial impact on plans"},
@@ -264,25 +265,25 @@ Generate in JSON format:
         
       case 'image':
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use an educative and direct tone with comprehensive captions.
+          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use a BOLD, educative, and provocative tone with highly engaging captions.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct image posts with detailed captions and comprehensive visual specifications:
+Create 3 distinct image posts with VERY detailed, attention-grabbing captions and comprehensive visual specifications:
 
 Requirements:
-- Detailed, educative captions (200-400 words) with clear structure: Hook → Context → Key Insight → Practical Value → Call-to-Action
-- Direct, educational tone that breaks down complex concepts
-- Comprehensive visual direction for graphic designers with specific design elements
-- Use only authentic content from the transcript
-- Professional LinkedIn tone
+- VERY DETAILED, bold captions (350-500 words) with structure: BOLD Hook → Deep Context → Revolutionary Insight → Transformative Value → Compelling Call-to-Action
+- Use contrarian viewpoints, provocative statements, and challenge conventional thinking
+- COMPREHENSIVE visual direction for graphic designers with specific design elements, colors, typography
+- Use only authentic content from the transcript but present it in a bold, thought-provoking way
+- Scroll-stopping, engaging tone that demands attention
 
 Generate in JSON format:
 {
   "posts": [
     {
       "title": "Quote-Focused Image Post",
-      "detailed_caption": "Hook: Opening line that captures attention and introduces the topic\\n\\nContext: Brief background setting up the situation from the interview\\n\\nInsight: Main lesson or breakthrough moment with specific details\\n\\nValue: What this means for the audience and why it matters\\n\\nCall-to-Action: Question or prompt encouraging engagement\\n\\nExample structure:\\n'The moment everything changed was when...\\n\\nWe thought we were building for X, but the data revealed Y.\\n\\nThis insight led to: [specific results from transcript]\\n\\nThe lesson? [key takeaway]\\n\\nWhat assumptions have you challenged in your business?'",
+      "detailed_caption": "🚨 BRUTAL TRUTH: [Controversial statement from interview that challenges common belief]\\n\\nEveryone says [common advice], but after [specific experience from interview], I realized this advice is killing businesses.\\n\\nHere's what actually happened: [detailed context from interview]\\n\\nThe conventional wisdom tells you to [standard approach]. We tried that. It failed spectacularly.\\n\\nThen we discovered something that goes against everything the 'experts' teach: [key insight from interview].\\n\\nThe results were immediate: [specific outcomes from transcript]\\n\\nThis isn't motivational fluff or theoretical nonsense. This is what happens when you stop following the crowd and start thinking for yourself.\\n\\nMost people won't apply this because it requires [specific challenge/change]. They'll keep doing what's comfortable and wondering why nothing changes.\\n\\nBut if you're ready to challenge your assumptions, here's the reality: [key lesson from interview]\\n\\nThe data doesn't lie: [specific metric or result if mentioned]\\n\\nStop doing what everyone else is doing. Start doing what actually works.\\n\\nWhich 'standard' business advice do you think is completely wrong? Call it out in the comments - let's start a revolution against mediocrity. 👇",
       "illustration_direction": "Professional image concept: Background style (gradient, solid, pattern), main visual elements (icons, graphics, charts), text placement and hierarchy, color palette with specific hex codes, typography style (bold, clean, modern), visual metaphors or symbols, layout composition (centered, split-screen, layered), size specifications for key text elements",
       "quote_overlay": "Most impactful quote or statistic from the interview to display prominently on the image",
       "visual_elements": ["List of specific", "visual elements needed", "for the designer"],
@@ -291,7 +292,7 @@ Generate in JSON format:
     },
     {
       "title": "Data-Driven Results Post", 
-      "detailed_caption": "Hook: Statistical or numerical opening that grabs attention\\n\\nStory: The journey from problem to solution with specific timeline\\n\\nProcess: How the breakthrough was achieved with actionable steps\\n\\nResults: Concrete outcomes with numbers and impact\\n\\nApplication: How others can apply this learning\\n\\nEngagement: Question asking for similar experiences or results",
+      "detailed_caption": "💥 THE NUMBERS DON'T LIE: [Specific statistic or result from interview]\\n\\nWhile everyone else was obsessing over vanity metrics, we focused on [specific metric from interview]. The difference? [dramatic result].\\n\\nHere's the uncomfortable truth about [relevant business area]: Most companies are measuring the wrong things entirely.\\n\\nLet me break down exactly what happened during [time period from interview]:\\n\\n📊 Starting point: [baseline metric]\\n📊 The shift: [specific change made]\\n📊 The outcome: [final result]\\n\\nBut here's what the spreadsheets don't show - the real breakthrough came from [insight from interview].\\n\\nThis goes against everything business schools teach about [relevant topic]. They say focus on [conventional metric], but the data proves that [contrarian approach] delivers [X times better results].\\n\\nMost leaders won't make this change because it requires [specific challenge]. They prefer comfortable metrics over uncomfortable truths.\\n\\nThe reality? [key insight about measurement/data from interview]\\n\\nIf you're still tracking [common but wrong metric] instead of [better metric], you're optimizing for mediocrity.\\n\\nData is only powerful when you're measuring what actually matters.\\n\\nWhat metric did you discover was completely worthless? Share your data disasters below - let's learn from each other's expensive lessons. 📊",
       "illustration_direction": "Data visualization focused design: Chart or graph style needed, key metrics to highlight visually, infographic elements, before/after comparison layout, progress indicators, numerical callouts, professional business aesthetic, clean data presentation style",
       "quote_overlay": "Key statistic or result to feature prominently (e.g., '300% revenue growth' or specific metric from interview)",
       "visual_elements": ["Specific data points", "to visualize", "graphical elements needed"],
@@ -300,7 +301,7 @@ Generate in JSON format:
     },
     {
       "title": "Process/Framework Post",
-      "detailed_caption": "Hook: Challenge or problem introduction\\n\\nFramework: Step-by-step breakdown of the approach used\\n\\nImplementation: How it was executed with specific examples\\n\\nOutcome: What changed as a result\\n\\nActionable advice: Clear next steps for the audience\\n\\nCommunity question: Invite others to share their approaches",
+      "detailed_caption": "🔥 PROCESS REVOLUTION: Why [specific methodology from interview] destroys traditional approaches\\n\\nForget everything you've been taught about [relevant process area]. The 'best practices' everyone follows are actually worst practices in disguise.\\n\\nHere's what happened when we threw out the playbook during [specific situation from interview]:\\n\\nTraditional approach would have us [conventional method]. Instead, we did [contrarian approach from interview].\\n\\nThe establishment said this was 'risky' and 'unconventional.' They were right - and that's exactly why it worked.\\n\\nStep-by-step breakdown of our process revolution:\\n\\n⚡ Phase 1: [First step with specific details]\\n⚡ Phase 2: [Second step with specific details]\\n⚡ Phase 3: [Third step with specific details]\\n⚡ Result: [Specific outcome from interview]\\n\\nThis approach challenges [specific industry norm]. Most people won't try it because it requires [specific change/courage].\\n\\nBut here's the brutal reality: Following everyone else's process guarantees you'll get everyone else's mediocre results.\\n\\nThe breakthrough insight? [Key process insight from interview]\\n\\nThis isn't about being different for the sake of it. This is about being effective when everyone else is just being busy.\\n\\nWhat 'standard' process have you completely reimagined? Share your process rebellion stories below - let's collect some unconventional wisdom. 🚀",
       "illustration_direction": "Process-focused visual design: Step-by-step layout, numbered sequence, flowchart elements, process arrows or connectors, before/after states, clear hierarchy for each step, professional framework presentation, clean structured layout",
       "quote_overlay": "Key insight about the process or methodology that worked",
       "visual_elements": ["Process steps", "connecting elements", "outcome indicators"],
@@ -336,39 +337,39 @@ Make the caption 200-350 words with clear educative structure and direct tone.`;
         
       case 'text':
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each post should focus on different aspects but use authentic content. Do not add fictional stories or made-up data points.
+          prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each post should be BOLD, provocative, and challenge conventional thinking. Use authentic content only.
 
 Interview Content: "${conversationText}"
 
-Create 3 distinct text posts:
-1. Focus on key lessons learned and insights gained
-2. Focus on process, methodology, or approach discussed
-3. Focus on results, outcomes, or impact achieved
+Create 3 distinct BOLD text posts:
+1. Focus on contrarian lessons and unconventional insights that challenge industry norms
+2. Focus on revolutionary processes or methodologies that go against standard practices
+3. Focus on surprising results and outcomes that defy expectations
 
 Requirements for each post:
-- Use direct, educational voice with detailed, comprehensive content
-- Create detailed posts (200-400 words) with clear structure and practical value
-- Stick strictly to facts and insights from the transcript
-- Share genuine learnings or perspectives mentioned with specific examples
-- No fictional examples or fabricated statistics
-- Professional but educative tone suitable for LinkedIn
+- Use BOLD, provocative voice that stops the scroll and demands attention
+- Create VERY detailed posts (400-600 words) with controversial hooks and thought-provoking content
+- Challenge conventional wisdom and present contrarian viewpoints
+- Use power words, contrarian statements, and provocative language
+- Stick strictly to facts and insights from the transcript but present them boldly
+- Professional but disruptive tone that sparks conversation and debate
 
 Generate in JSON format:
 {
   "posts": [
     {
       "title": "Key Lessons from [Specific Topic]",
-      "detailed_content": "🎯 [Main lesson from interview]\\n\\nThe situation: [Context from interview]\\n\\nHere's what I learned:\\n\\n→ [First specific lesson with details from interview]\\n→ [Second insight with practical examples]\\n→ [Third actionable takeaway]\\n\\nWhy this matters: [Direct explanation of practical value]\\n\\nThe bottom line: [Clear summary of main insight]\\n\\nWhat's been your experience with [relevant topic]? Share your thoughts.",
+      "detailed_content": "🚨 UNCOMFORTABLE TRUTH: [Contrarian lesson from interview that challenges common beliefs]\\n\\nEveryone in [industry/field] believes [common assumption]. I used to believe this too. I was wrong.\\n\\nHere's what actually happened during [specific situation from interview]:\\n\\n[Detailed context and background]\\n\\nThe conventional wisdom says [standard advice]. We followed it religiously. The result? [Failure or suboptimal outcome].\\n\\nThen we discovered something that goes against everything the 'experts' teach:\\n\\n💥 [First contrarian insight with specific details]\\n💥 [Second provocative lesson with examples]\\n💥 [Third disruptive takeaway]\\n\\nThis isn't another feel-good LinkedIn post. This is the brutal reality of [relevant area].\\n\\nMost people won't accept this because it challenges their entire worldview. They'll keep following the same failed playbook and wondering why they get the same mediocre results.\\n\\nBut if you're ready to think differently: [Key insight from interview]\\n\\nThe data is clear: [Supporting evidence if available]\\n\\nStop doing what everyone else does. Start doing what actually works.\\n\\nWhich 'sacred' business principle do you think is complete nonsense? Let's challenge some assumptions together. 👇",
       "tags": ["#lessons", "#insights", "#learning", "#experience"]
     },
     {
       "title": "The Process That Worked",
-      "detailed_content": "💡 Here's the approach that led to [specific outcome from interview]\\n\\nThe challenge: [Problem statement from interview]\\n\\nOur process:\\n\\n1. [First step with details]\\n2. [Second step with specifics]\\n3. [Third step with results]\\n\\nWhat made this work: [Key success factors from interview]\\n\\nThe results: [Specific outcomes mentioned]\\n\\nYour situation might be different, but these principles apply: [Actionable advice]\\n\\nHow do you approach [relevant process question]?",
+      "detailed_content": "🔥 PROCESS REBELLION: Why we threw out the 'best practices' playbook\\n\\nEvery consultant, guru, and business school teaches the same cookie-cutter approach to [relevant process area]. It's killing innovation.\\n\\nHere's what happened when we decided to ignore the experts during [specific situation from interview]:\\n\\nThe 'standard' process would have us [conventional approach]. Instead, we did something radical: [contrarian approach from interview].\\n\\nPeople said we were crazy. They were right - and that's exactly why it worked.\\n\\nOur 'dangerous' process:\\n\\n⚡ Step 1: [Unconventional first step with rationale]\\n⚡ Step 2: [Disruptive second step with specific details]\\n⚡ Step 3: [Revolutionary third step with outcomes]\\n\\nThe results? [Specific outcome that defied expectations]\\n\\nThis approach challenges everything [industry] considers 'professional.' Most people won't try it because it requires [specific courage/change needed].\\n\\nBut here's the uncomfortable truth: Following everyone else's process guarantees you'll get everyone else's average results.\\n\\nWhile competitors were busy following the rulebook, we were rewriting it.\\n\\nThe key insight: [Core process philosophy from interview]\\n\\nThis isn't about being different for the sake of it. This is about being effective when everyone else is just being compliant.\\n\\nWhat 'industry standard' process have you completely ignored? Share your rebellion stories - let's inspire some productive chaos. 🚀",
       "tags": ["#process", "#methodology", "#strategy", "#implementation"]
     },
     {
       "title": "Real Results from [Specific Approach]",
-      "detailed_content": "📈 [Specific result or outcome from interview]\\n\\nThe journey: [Timeline or process from interview]\\n\\nWhat we achieved:\\n\\n✓ [First specific result with details]\\n✓ [Second measurable outcome]\\n✓ [Third concrete achievement]\\n\\nThe key factors: [What made the difference based on interview]\\n\\nLessons for you: [Practical applications for audience]\\n\\nMost importantly: [Main takeaway or insight]\\n\\nWhat results are you working toward? Let's discuss.",
+      "detailed_content": "💥 RESULTS THAT BREAK THE RULES: [Specific surprising outcome from interview]\\n\\nWhen we started [situation from interview], every expert predicted [conventional expectation]. They were spectacularly wrong.\\n\\nHere's what actually happened: [Detailed timeline and context from interview]\\n\\nWhile our competitors were playing it safe with [conventional approach], we took a completely different path: [unconventional approach from interview].\\n\\nThe 'smart money' said this would never work. The results tell a different story:\\n\\n🔥 [First shocking result with specific numbers/details]\\n🔥 [Second unexpected outcome with context]\\n🔥 [Third game-changing achievement]\\n\\nBut here's what the spreadsheets don't show: [Deeper insight about the success from interview]\\n\\nThis success wasn't luck. It wasn't timing. It was the result of [key factor from interview that others ignore].\\n\\nMost companies won't attempt this approach because it requires [specific change/courage]. They prefer predictable mediocrity over uncertain greatness.\\n\\nThe uncomfortable truth: Extraordinary results require extraordinary approaches.\\n\\nWhile everyone else was optimizing for [common focus], we optimized for [contrarian focus from interview].\\n\\nThe lesson? [Key insight about achieving unconventional results]\\n\\nWhat 'impossible' result are you working toward? Share your moonshot goals below - let's normalize ambitious thinking. 🚀",
       "tags": ["#results", "#impact", "#outcomes", "#success"]
     }
   ]
@@ -400,7 +401,7 @@ Make the content 200-400 words with clear educative structure, practical value, 
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 1200,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
