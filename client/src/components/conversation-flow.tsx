@@ -135,7 +135,7 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
 
     // Determine next action based on feedback
     if (feedback.needsCorrection) {
-      // If correction needed, ask for clarification/improvement
+      // If correction needed, ask for clarification/improvement (doesn't count as follow-up)
       setTimeout(async () => {
         await createConversationMutation.mutateAsync({
           sessionId,
@@ -146,7 +146,8 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         setIsTyping(false);
       }, 1500);
     } else if (currentQuestionId && followUpIndex < 2) {
-      // Ask contextual follow-up question based on user's response
+      // Ask contextual follow-up question based on user's response (max 2 follow-ups)
+      console.log(`Asking follow-up question ${followUpIndex + 1} of 2`);
       setTimeout(async () => {
         await getAIQuestionMutation.mutateAsync({ 
           sessionId, 
@@ -159,10 +160,13 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
         setIsTyping(false);
       }, 2000);
     } else {
-      // Move to next primary question
+      // Move to next primary question after 2 follow-ups or no more questions
+      console.log(`Moving to next question. Follow-ups completed: ${followUpIndex}`);
       setTimeout(async () => {
         await getAIQuestionMutation.mutateAsync({ sessionId });
-        setFollowUpIndex(0);
+        setFollowUpIndex(0); // Reset follow-up counter for new question
+        setCurrentQuestionId(null); // Clear current question context
+        setCurrentBaseQuestion(null);
         setIsTyping(false);
       }, 2000);
     }
@@ -200,7 +204,19 @@ export default function ConversationFlow({ sessionId, transcribedText, onTranscr
               <h4 className="font-medium text-blue-900 mb-1">Current Question</h4>
               <p className="text-blue-800">{currentQuestion}</p>
               {followUpIndex > 0 && (
-                <p className="text-xs text-blue-600 mt-1">Follow-up question {followUpIndex} of 2</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <p className="text-xs text-blue-600">Follow-up question {followUpIndex} of 2</p>
+                  <div className="flex space-x-1">
+                    {[1, 2].map((num) => (
+                      <div
+                        key={num}
+                        className={`w-2 h-2 rounded-full ${
+                          num <= followUpIndex ? "bg-blue-500" : "bg-blue-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
