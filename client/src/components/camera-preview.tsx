@@ -71,14 +71,12 @@ export default function CameraPreview({ onRecordingComplete, sessionId, onStartS
       
       // Start both video and audio recording simultaneously
       console.log("Starting video and audio recording...");
-      await startVideoRecording();
-      
-      // Start audio transcription recording if we have a session
-      if (sessionId || onStartSession) {
-        setIsRecordingAudio(true);
-        await startTranscriptRecording();
-        console.log("Both video and audio transcription recording started");
-      }
+      setIsRecordingAudio(true);
+      await Promise.all([
+        startVideoRecording(),
+        startTranscriptRecording()
+      ]);
+      console.log("Both video and audio transcription recording started");
     } catch (error) {
       console.error("Recording failed:", error);
       setIsRecordingAudio(false);

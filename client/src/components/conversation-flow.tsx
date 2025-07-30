@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, User, Send, Mic, MicOff, Volume2, Settings } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Bot, User, Send } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useAudioTranscription } from "@/hooks/use-audio-transcription";
-import { useMediaRecorder } from "@/hooks/use-media-recorder";
 import type { Conversation } from "@shared/schema";
 
 interface ConversationFlowProps {
@@ -21,54 +18,7 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [needsCorrection, setNeedsCorrection] = useState(false);
   const [currentBaseQuestion, setCurrentBaseQuestion] = useState<string>("");
   const [currentQuestion, setCurrentQuestion] = useState<string>("");
-  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
-  const [transcribedText, setTranscribedText] = useState("");
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedMicrophone, setSelectedMicrophone] = useState<string>("");
   const queryClient = useQueryClient();
-
-  // Audio transcription hook
-  const { transcribeAudio, isTranscribing } = useAudioTranscription();
-
-  // Load available microphones on component mount
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices()
-      .then(devices => {
-        const audioInputs = devices.filter(device => device.kind === 'audioinput');
-        setAvailableDevices(audioInputs);
-        if (audioInputs.length > 0 && !selectedMicrophone) {
-          setSelectedMicrophone(audioInputs[0].deviceId);
-        }
-      })
-      .catch(err => console.error('Error enumerating devices:', err));
-  }, []);
-
-  // Voice recording hook with microphone selection and audio monitoring
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-  } = useMediaRecorder({
-    onStop: async (blob) => {
-      try {
-        const result = await transcribeAudio(blob);
-        setTranscribedText(result.text);
-        setUserResponse(result.text);
-        setIsRecordingVoice(false);
-        setAudioLevel(0);
-      } catch (error) {
-        console.error('Transcription failed:', error);
-        setIsRecordingVoice(false);
-        setAudioLevel(0);
-      }
-    },
-    onAudioLevel: (level) => {
-      setAudioLevel(level);
-    },
-    audio: true, // Audio only for transcription
-    deviceId: selectedMicrophone,
-  });
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ["/api/sessions", sessionId, "conversations"],
@@ -125,20 +75,6 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
       getAIQuestionMutation.mutate({ sessionId });
     }
   }, [sessionId, conversations.length]);
-
-  const handleVoiceRecording = async () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      setIsRecordingVoice(true);
-      try {
-        await startRecording();
-      } catch (error) {
-        console.error('Failed to start recording:', error);
-        setIsRecordingVoice(false);
-      }
-    }
-  };
 
   const handleSubmitResponse = async () => {
     if (!userResponse.trim()) return;
@@ -223,14 +159,14 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
       
       {/* Current Question Display */}
       {currentQuestion && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
               <Bot className="text-white" size={16} />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900 mb-1">Current Question:</p>
-              <p className="text-blue-800 font-medium">{currentQuestion}</p>
+              <h4 className="font-medium text-blue-900 mb-1">Current Question</h4>
+              <p className="text-blue-800">{currentQuestion}</p>
               {followUpIndex > 0 && (
                 <p className="text-xs text-blue-600 mt-1">Follow-up question {followUpIndex} of 2</p>
               )}
@@ -324,119 +260,28 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
         )}
       </div>
 
-      {/* Voice Recording Interface */}
+      {/* Response Input Section */}
       <div className="space-y-4">
-        {/* Microphone Settings */}
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-gray-700 flex items-center">
-              <Settings className="mr-2" size={16} />
-              Microphone Settings
-            </h4>
-          </div>
-          
-          <div className="space-y-3">
-            {/* Microphone Selection */}
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">Select Microphone:</label>
-              <Select value={selectedMicrophone} onValueChange={setSelectedMicrophone}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose microphone..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDevices.map((device) => (
-                    <SelectItem key={device.deviceId} value={device.deviceId}>
-                      {device.label || `Microphone ${device.deviceId.slice(0, 8)}...`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Audio Level Indicator */}
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">Audio Level:</label>
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-100 ${
-                      audioLevel > 50 ? 'bg-green-500' : 
-                      audioLevel > 20 ? 'bg-yellow-500' : 
-                      'bg-red-500'
-                    }`}
-                    style={{ width: `${Math.min(audioLevel * 2, 100)}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-gray-600 w-8">{Math.round(audioLevel)}</span>
-              </div>
-            </div>
-          </div>
+        {/* Note about voice recording */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Voice-first interview:</strong> Start video recording to automatically capture and transcribe your spoken responses.
+          </p>
         </div>
 
-        {/* Recording Status */}
-        {(isRecording || isTranscribing) && (
-          <div className="flex items-center justify-center p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center space-x-3">
-              {isRecording && (
-                <>
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-red-800 font-medium">Recording your response...</span>
-                </>
-              )}
-              {isTranscribing && (
-                <>
-                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="text-blue-800 font-medium">Transcribing audio...</span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Transcribed Text Display */}
-        {transcribedText && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800"><strong>Transcribed:</strong> {transcribedText}</p>
-          </div>
-        )}
-
-        {/* Voice Controls */}
-        <div className="flex items-center space-x-3">
+        {/* Response Submission */}
+        {userResponse.trim() && (
           <Button
-            onClick={handleVoiceRecording}
-            disabled={isTranscribing}
-            className={`flex-1 ${
-              isRecording 
-                ? "bg-red-600 hover:bg-red-700 text-white" 
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
+            onClick={handleSubmitResponse}
+            disabled={createConversationMutation.isPending}
+            className="w-full bg-primary hover:bg-primary/90"
           >
-            {isRecording ? (
-              <>
-                <MicOff className="mr-2" size={16} />
-                Stop Recording
-              </>
-            ) : (
-              <>
-                <Mic className="mr-2" size={16} />
-                Start Voice Response
-              </>
-            )}
+            <Send className="mr-2" size={16} />
+            Submit Response
           </Button>
+        )}
 
-          {userResponse.trim() && (
-            <Button
-              onClick={handleSubmitResponse}
-              disabled={createConversationMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Send className="mr-2" size={16} />
-              Submit Response
-            </Button>
-          )}
-        </div>
-
-        {/* Fallback text input */}
+        {/* Text input fallback */}
         <details className="text-sm">
           <summary className="text-neutral-600 cursor-pointer hover:text-neutral-800">
             Or type your response instead
