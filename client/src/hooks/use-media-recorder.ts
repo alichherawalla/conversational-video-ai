@@ -3,6 +3,7 @@ import { useState, useRef, useCallback } from "react";
 interface UseMediaRecorderOptions {
   onDataAvailable?: (data: Blob) => void;
   onStop?: (blob: Blob) => void;
+  audio?: boolean; // Add audio-only option
 }
 
 export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
@@ -15,15 +16,17 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
 
   const startRecording = useCallback(async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 },
-        audio: true,
-      });
+      const constraints = options.audio 
+        ? { audio: true } 
+        : { video: { width: 1280, height: 720 }, audio: true };
+        
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
       setStream(mediaStream);
       
+      const mimeType = options.audio ? "audio/webm" : "video/webm;codecs=vp9";
       const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: "video/webm;codecs=vp9",
+        mimeType: mimeType,
       });
       
       mediaRecorderRef.current = mediaRecorder;
@@ -37,7 +40,8 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}) {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        const blobType = options.audio ? "audio/webm" : "video/webm";
+        const blob = new Blob(chunksRef.current, { type: blobType });
         options.onStop?.(blob);
         
         // Clean up

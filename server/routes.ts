@@ -3,7 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSessionSchema, insertQuestionSchema, insertConversationSchema, insertClipSchema, insertContentPieceSchema } from "@shared/schema";
 import { generateAIQuestion, analyzeResponse, generateLinkedInContent, generateVideoClips } from "./anthropic";
+import { transcribeAudioBuffer } from "./openai";
 import { z } from "zod";
+import multer from "multer";
+
+// Configure multer for file uploads
+const upload = multer({ dest: '/tmp/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sessions
@@ -219,6 +224,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('AI feedback error:', error);
       res.status(500).json({ message: "Failed to analyze response" });
+    }
+  });
+
+  // Audio Transcription with OpenAI Whisper
+  app.post("/api/transcribe", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const fs = await import('fs');
+      const audioBuffer = fs.readFileSync(req.file.path);
+      const transcription = await transcribeAudioBuffer(audioBuffer, req.file.originalname || 'audio.wav');
+      
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+      
+      res.json({
+        text: transcription.text,
+        duration: transcription.duration
+      });
+    } catch (error) {
+      console.error('Transcription error:', error);
+      res.status(500).json({ message: "Failed to transcribe audio" });
     }
   });
 

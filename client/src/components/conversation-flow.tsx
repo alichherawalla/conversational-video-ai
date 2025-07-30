@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, User, Send } from "lucide-react";
+import { Bot, User, Send, Mic, MicOff, Volume2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useAudioTranscription } from "@/hooks/use-audio-transcription";
+import { useMediaRecorder } from "@/hooks/use-media-recorder";
 import type { Conversation } from "@shared/schema";
 
 interface ConversationFlowProps {
@@ -18,7 +20,32 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
   const [needsCorrection, setNeedsCorrection] = useState(false);
   const [currentBaseQuestion, setCurrentBaseQuestion] = useState<string>("");
   const [currentQuestion, setCurrentQuestion] = useState<string>("");
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [transcribedText, setTranscribedText] = useState("");
   const queryClient = useQueryClient();
+
+  // Audio transcription hook
+  const { transcribeAudio, isTranscribing } = useAudioTranscription();
+
+  // Voice recording hook
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+  } = useMediaRecorder({
+    onStop: async (blob) => {
+      try {
+        const result = await transcribeAudio(blob);
+        setTranscribedText(result.text);
+        setUserResponse(result.text);
+        setIsRecordingVoice(false);
+      } catch (error) {
+        console.error('Transcription failed:', error);
+        setIsRecordingVoice(false);
+      }
+    },
+    audio: true, // Audio only for transcription
+  });
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ["/api/sessions", sessionId, "conversations"],
@@ -75,6 +102,20 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
       getAIQuestionMutation.mutate({ sessionId });
     }
   }, [sessionId, conversations.length]);
+
+  const handleVoiceRecording = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      setIsRecordingVoice(true);
+      try {
+        await startRecording();
+      } catch (error) {
+        console.error('Failed to start recording:', error);
+        setIsRecordingVoice(false);
+      }
+    }
+  };
 
   const handleSubmitResponse = async () => {
     if (!userResponse.trim()) return;
@@ -260,22 +301,86 @@ export default function ConversationFlow({ sessionId }: ConversationFlowProps) {
         )}
       </div>
 
-      {/* Response input */}
-      <div className="flex space-x-2">
-        <Textarea
-          value={userResponse}
-          onChange={(e) => setUserResponse(e.target.value)}
-          placeholder="Type your response..."
-          className="flex-1"
-          rows={2}
-        />
-        <Button
-          onClick={handleSubmitResponse}
-          disabled={!userResponse.trim() || createConversationMutation.isPending}
-          className="bg-primary hover:bg-primary/90"
-        >
-          <Send size={16} />
-        </Button>
+      {/* Voice Recording Interface */}
+      <div className="space-y-4">
+        {/* Recording Status */}
+        {(isRecording || isTranscribing) && (
+          <div className="flex items-center justify-center p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-3">
+              {isRecording && (
+                <>
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-red-800 font-medium">Recording your response...</span>
+                </>
+              )}
+              {isTranscribing && (
+                <>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-blue-800 font-medium">Transcribing audio...</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Transcribed Text Display */}
+        {transcribedText && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-800"><strong>Transcribed:</strong> {transcribedText}</p>
+          </div>
+        )}
+
+        {/* Voice Controls */}
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={handleVoiceRecording}
+            disabled={isTranscribing}
+            className={`flex-1 ${
+              isRecording 
+                ? "bg-red-600 hover:bg-red-700 text-white" 
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            {isRecording ? (
+              <>
+                <MicOff className="mr-2" size={16} />
+                Stop Recording
+              </>
+            ) : (
+              <>
+                <Mic className="mr-2" size={16} />
+                Start Voice Response
+              </>
+            )}
+          </Button>
+
+          {userResponse.trim() && (
+            <Button
+              onClick={handleSubmitResponse}
+              disabled={createConversationMutation.isPending}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Send className="mr-2" size={16} />
+              Submit Response
+            </Button>
+          )}
+        </div>
+
+        {/* Fallback text input */}
+        <details className="text-sm">
+          <summary className="text-neutral-600 cursor-pointer hover:text-neutral-800">
+            Or type your response instead
+          </summary>
+          <div className="mt-2 flex space-x-2">
+            <Textarea
+              value={userResponse}
+              onChange={(e) => setUserResponse(e.target.value)}
+              placeholder="Type your response..."
+              className="flex-1"
+              rows={2}
+            />
+          </div>
+        </details>
       </div>
     </div>
   );
