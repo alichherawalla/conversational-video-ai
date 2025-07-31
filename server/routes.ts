@@ -1595,7 +1595,7 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
   return markdown;
 }
 
-// Helper function to generate markdown content for uploads
+// Helper function to generate comprehensive markdown content for uploads
 function generateUploadContentMarkdown(transcript: string, content: any[], clips: any[]): string {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -1711,6 +1711,23 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
       markdown += `**Time:** ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)} (${formatTime(clip.endTime - clip.startTime)} duration)\n`;
       markdown += `**Description:** ${clip.description}\n`;
       markdown += `**Social Score:** ${clip.socialScore}/100\n\n`;
+      
+      if (clip.detailed_caption) {
+        markdown += `**Detailed Caption (300-500 words):**\n${clip.detailed_caption}\n\n`;
+      }
+      
+      if (clip.key_moments && clip.key_moments.length > 0) {
+        markdown += `**Key Moments:**\n`;
+        clip.key_moments.forEach((moment: string) => {
+          markdown += `- ${moment}\n`;
+        });
+        markdown += `\n`;
+      }
+      
+      if (clip.tags && clip.tags.length > 0) {
+        markdown += `**Tags:** ${clip.tags.join(' ')}\n\n`;
+      }
+      
       markdown += `---\n\n`;
     });
   }

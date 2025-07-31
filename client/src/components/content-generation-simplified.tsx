@@ -935,6 +935,22 @@ export default function ContentGeneration({
                       <div className="text-xs text-neutral-500 mt-2">
                         Social Score: {clip.socialScore}/100
                       </div>
+                      {clip.detailed_caption && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <h6 className="text-xs font-medium text-blue-800 mb-1">Detailed Caption:</h6>
+                          <p className="text-xs text-blue-700">{clip.detailed_caption}</p>
+                        </div>
+                      )}
+                      {clip.key_moments && (
+                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <h6 className="text-xs font-medium text-green-800 mb-1">Key Moments:</h6>
+                          <ul className="text-xs text-green-700 list-disc pl-4">
+                            {clip.key_moments.map((moment: string, idx: number) => (
+                              <li key={idx}>{moment}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -984,11 +1000,13 @@ export default function ContentGeneration({
                             ),
                           )}
                       </div>
-                      <div className="bg-neutral-50 p-4 rounded-lg">
-                        <h5 className="font-medium mb-2">Post Caption:</h5>
-                        <p className="text-sm text-neutral-700 mb-3">
-                          {(viewingContent.content as any)?.title}
-                        </p>
+                      <div className="bg-neutral-50 p-4 rounded-lg mb-4">
+                        <h5 className="font-medium mb-2">Detailed Post Caption:</h5>
+                        <div className="text-sm text-neutral-700 whitespace-pre-wrap mb-3">
+                          {(viewingContent.content as any)?.detailed_caption ||
+                            (viewingContent.content as any)?.title ||
+                            "Professional carousel content"}
+                        </div>
                         <div className="flex flex-wrap gap-1">
                           {(viewingContent.content as any)?.tags?.map(
                             (tag: string, idx: number) => (
@@ -1003,6 +1021,41 @@ export default function ContentGeneration({
                           )}
                         </div>
                       </div>
+
+                      {/* Creative Direction for Carousels */}
+                      {(viewingContent.content as any)?.creative_direction && (
+                        <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-green-800">
+                            Creative Direction for Designers:
+                          </h5>
+                          <p className="text-sm text-green-700">
+                            {(viewingContent.content as any).creative_direction}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Design Specifications */}
+                      {(viewingContent.content as any)?.design_specifications && (
+                        <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-purple-800">
+                            Design Specifications:
+                          </h5>
+                          <div className="space-y-2 text-sm text-purple-700">
+                            {(viewingContent.content as any).design_specifications.layout && (
+                              <div><strong>Layout:</strong> {(viewingContent.content as any).design_specifications.layout}</div>
+                            )}
+                            {(viewingContent.content as any).design_specifications.colors && (
+                              <div><strong>Colors:</strong> {(viewingContent.content as any).design_specifications.colors}</div>
+                            )}
+                            {(viewingContent.content as any).design_specifications.typography && (
+                              <div><strong>Typography:</strong> {(viewingContent.content as any).design_specifications.typography}</div>
+                            )}
+                            {(viewingContent.content as any).design_specifications.brand_integration && (
+                              <div><strong>Brand Integration:</strong> {(viewingContent.content as any).design_specifications.brand_integration}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1066,6 +1119,42 @@ export default function ContentGeneration({
                               ),
                             )}
                           </ul>
+                        </div>
+                      )}
+
+                      {/* Typography & Design Details */}
+                      {(viewingContent.content as any)?.typography && (
+                        <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-indigo-800">
+                            Typography Guidelines:
+                          </h5>
+                          <p className="text-sm text-indigo-700">
+                            {(viewingContent.content as any).typography}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Composition Details */}
+                      {(viewingContent.content as any)?.composition && (
+                        <div className="bg-teal-50 border border-teal-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-teal-800">
+                            Composition Layout:
+                          </h5>
+                          <p className="text-sm text-teal-700">
+                            {(viewingContent.content as any).composition}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Design Mood */}
+                      {(viewingContent.content as any)?.design_mood && (
+                        <div className="bg-rose-50 border border-rose-200 p-4 rounded-lg mb-4">
+                          <h5 className="font-medium mb-2 text-rose-800">
+                            Design Mood & Personality:
+                          </h5>
+                          <p className="text-sm text-rose-700">
+                            {(viewingContent.content as any).design_mood}
+                          </p>
                         </div>
                       )}
 
@@ -1144,6 +1233,39 @@ export default function ContentGeneration({
                             </div>
                           </>
                         )}
+
+                        {/* Key Quotes */}
+                        {(viewingContent.content as any)?.key_quotes && (
+                          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                            <h5 className="font-medium mb-2 text-blue-800">
+                              Key Quotes for Social Sharing:
+                            </h5>
+                            <ul className="text-sm text-blue-700 list-disc pl-4">
+                              {(viewingContent.content as any).key_quotes.map(
+                                (quote: string, idx: number) => (
+                                  <li key={idx} className="mb-1">"{quote}"</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Engagement Hooks */}
+                        {(viewingContent.content as any)?.engagement_hooks && (
+                          <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                            <h5 className="font-medium mb-2 text-green-800">
+                              Engagement Hooks:
+                            </h5>
+                            <ul className="text-sm text-green-700 list-disc pl-4">
+                              {(viewingContent.content as any).engagement_hooks.map(
+                                (hook: string, idx: number) => (
+                                  <li key={idx} className="mb-1">{hook}</li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
                         <div>
                           <h5 className="font-medium mb-2 text-primary">
                             Hashtags:

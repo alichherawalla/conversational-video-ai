@@ -193,40 +193,73 @@ Interview Content: "${conversationText}"
 
 Generate 2-3 carousel posts, 2-3 image posts, and 2-3 text posts. Each post should explore a different angle or insight from the interview. Use contrarian viewpoints, provocative statements, and challenge conventional thinking. Use authentic information from the transcript only.
 
+REQUIREMENTS:
+- DETAILED CAPTIONS: 400-600 words minimum for all content types
+- COMPREHENSIVE CREATIVE DIRECTION: Complete design specifications for carousels and images
+- VIDEO CAPTIONS: Full descriptions with timestamps and key quotes for clips
+- Structure: Hook → Context → Insights → Value → Call-to-Action
+
 Generate in JSON format:
 {
   "carousel_posts": [
     {
-      "title": "Post title",
-      "detailed_caption": "Caption content",
+      "title": "Professional carousel title",
+      "detailed_caption": "COMPREHENSIVE 400-600 word caption with bold hook, deep context, revolutionary insights, transformative value, and compelling call-to-action. Use power words and contrarian viewpoints.",
+      "creative_direction": "COMPLETE design specifications: layout style, color palette, typography recommendations, visual hierarchy, brand elements, graphic style, illustration approach",
       "slides": [
-        {"title": "Slide title", "content": "Slide content"}
+        {
+          "title": "Slide title", 
+          "content": "60-80 words of substantive, educative content",
+          "visual_direction": "Specific visual elements, icons, colors, layout for this slide"
+        }
       ],
+      "design_specifications": {
+        "layout": "Design layout approach",
+        "colors": "Specific color scheme with hex codes",
+        "typography": "Font recommendations and hierarchy",
+        "visual_elements": ["Specific icons", "Graphics", "Charts"],
+        "brand_integration": "Wednesday Solutions branding elements"
+      },
       "tags": ["#tag1", "#tag2"]
     }
   ],
   "image_posts": [
     {
-      "title": "Post title", 
-      "detailed_caption": "Caption content",
-      "illustration_direction": "Visual design direction",
-      "quote_overlay": "Key quote for the image",
-      "visual_elements": ["element1", "element2"],
-      "color_scheme": "Color description",
+      "title": "Compelling image post title", 
+      "detailed_caption": "COMPREHENSIVE 400-600 word caption with structure: bold hook, deep context, revolutionary insight, transformative value, compelling call-to-action. Include contrarian viewpoints and thought-provoking statements.",
+      "illustration_direction": "COMPLETE creative brief: visual concept, design style, composition, mood, artistic approach, brand integration",
+      "quote_overlay": "Powerful quote from interview for image overlay",
+      "visual_elements": ["Specific design elements", "Icons", "Graphics"],
+      "color_scheme": "Detailed color palette with hex codes and emotional rationale",
+      "typography": "Font specifications, hierarchy, text placement",
+      "composition": "Layout description, focal points, visual flow",
+      "design_mood": "Emotional tone and visual personality",
+      "brand_elements": "Wednesday Solutions integration approach",
       "tags": ["#tag1", "#tag2"]
     }
   ],
   "text_posts": [
     {
-      "title": "Post title",
-      "detailed_content": "Full text post content", 
+      "title": "Engaging text post title",
+      "detailed_content": "COMPREHENSIVE 400-600 word text post with bold structure: provocative hook, detailed context, contrarian insights, practical value, compelling call-to-action. Challenge conventional thinking.", 
+      "key_quotes": ["Notable quote 1", "Notable quote 2"],
+      "engagement_hooks": ["Question for comments", "Controversial statement"],
+      "tags": ["#tag1", "#tag2"]
+    }
+  ],
+  "video_clips": [
+    {
+      "title": "Video clip title",
+      "detailed_caption": "COMPREHENSIVE 300-500 word caption explaining the video content, key insights, why it matters, and call-to-action",
+      "key_moments": ["Timestamp 1: Key insight", "Timestamp 2: Important quote"],
+      "description": "Detailed description of video content and value proposition",
       "tags": ["#tag1", "#tag2"]
     }
   ]
 }`;
 
     const response = await anthropic.messages.create({
-      max_tokens: 4000,
+      max_tokens: 6000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -571,6 +604,8 @@ Requirements:
 - Focus on complete thoughts or key insights
 - Match clip boundaries to actual word timings for seamless editing
 - Provide accurate start/end times based on word timestamps
+- Include comprehensive 300-500 word captions for LinkedIn posting
+- Identify key moments with specific timestamps and quotes
 
 Generate clips in JSON format:
 {
@@ -578,9 +613,12 @@ Generate clips in JSON format:
     {
       "title": "Specific topic from interview",
       "description": "Description based on actual content discussed",
+      "detailed_caption": "Comprehensive 300-500 word LinkedIn caption with hook, context, insights, value proposition, and call-to-action using only authentic content from this interview",
+      "key_moments": ["Timestamp X:XX - Key insight or quote", "Timestamp Y:YY - Important revelation"],
       "startTime": number (exact word start time),
       "endTime": number (exact word end time),
-      "socialScore": number (1-100 based on authentic value)
+      "socialScore": number (1-100 based on authentic value),
+      "tags": ["#relevant", "#hashtags", "#for", "#social", "#media"]
     }
   ]
 }
@@ -600,6 +638,8 @@ Requirements:
 - Focus on the most valuable and engaging parts of the actual interview
 - Provide realistic timestamps based on content flow
 - No fictional examples or fabricated content
+- Include comprehensive 300-500 word captions for LinkedIn posting
+- Identify key moments with estimated timestamps and quotes
 
 Generate clips in JSON format:
 {
@@ -607,9 +647,12 @@ Generate clips in JSON format:
     {
       "title": "Specific topic from interview",
       "description": "Description based on actual content discussed",
+      "detailed_caption": "Comprehensive 300-500 word LinkedIn caption with hook, context, insights, value proposition, and call-to-action using only authentic content from this interview",
+      "key_moments": ["Estimated X:XX - Key insight or quote", "Estimated Y:YY - Important revelation"],
       "startTime": number,
       "endTime": number,
-      "socialScore": number (1-100 based on authentic value)
+      "socialScore": number (1-100 based on authentic value),
+      "tags": ["#relevant", "#hashtags", "#for", "#social", "#media"]
     }
   ]
 }
@@ -618,7 +661,7 @@ Base timestamps on logical conversation flow and actual content segments.`;
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 800,
+      max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
