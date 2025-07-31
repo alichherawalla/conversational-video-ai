@@ -259,7 +259,7 @@ Generate in JSON format:
 }`;
 
     const response = await anthropic.messages.create({
-      max_tokens: 6000,
+      max_tokens: 40000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -286,7 +286,7 @@ Generate in JSON format:
         carousel_posts: [],
         image_posts: [],
         text_posts: [],
-        error: "Failed to parse generated content"
+        error: "Failed to parse generated content",
       };
     }
   } catch (error) {
