@@ -191,7 +191,9 @@ export default function CameraPreview({
 
       await Promise.all([startVideoRecording(), startTranscriptRecording()]);
 
-      console.log("Video and audio transcription recording started - manual transcript only");
+      console.log(
+        "Video and audio transcription recording started - manual transcript only",
+      );
     } catch (error) {
       console.error("Recording failed:", error);
       setIsRecordingAudio(false);
@@ -233,26 +235,16 @@ export default function CameraPreview({
 
   const handleManualTranscript = async () => {
     if (isProcessingTranscript || !isRecordingTranscript) {
-      console.log("Manual transcript skipped - already processing or not recording");
+      console.log(
+        "Manual transcript skipped - already processing or not recording",
+      );
       return;
     }
 
     console.log("Manual transcript requested");
     setIsProcessingTranscript(true);
-    
-    try {
-      // If we have accumulated transcript chunks, submit them immediately
-      if (transcriptionChunksRef.current.length > 0) {
-        const existingTranscript = transcriptionChunksRef.current.join(" ");
-        console.log("Submitting existing accumulated transcript immediately:", existingTranscript);
-        onTranscriptionComplete?.(existingTranscript);
-        
-        // Clear accumulation after submission
-        transcriptionChunksRef.current = [];
-        setAccumulatedTranscript("");
-        lastSubmissionTimeRef.current = Date.now();
-      }
 
+    try {
       console.log("Forcing transcription by stopping audio recording");
       stopTranscriptRecording();
 
@@ -263,7 +255,7 @@ export default function CameraPreview({
           startTranscriptRecording();
         }
         setIsProcessingTranscript(false);
-      }, 500);
+      }, 3000);
     } catch (error) {
       console.error("Error during manual transcription:", error);
       setIsProcessingTranscript(false);
@@ -333,20 +325,6 @@ export default function CameraPreview({
             <Settings className="text-white" size={16} />
           </Button>
         </div>
-
-        {/* Audio transcription indicator */}
-        {isRecordingAudio && (
-          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-            Recording audio for transcription
-            <div className="ml-2 w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 transition-all duration-100"
-                style={{ width: `${Math.min(audioLevel * 2, 100)}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Recording Stats */}
@@ -381,17 +359,30 @@ export default function CameraPreview({
             }`}
             disabled={!isRecordingTranscript || isProcessingTranscript}
           >
-            {isProcessingTranscript 
-              ? "Processing Transcript..." 
-              : isRecordingTranscript 
-                ? "Get Transcript" 
+            {isProcessingTranscript
+              ? "Processing Transcript..."
+              : isRecordingTranscript
+                ? "Get Transcript"
                 : "Not Recording"}
           </Button>
           <div className="ml-3 text-sm text-gray-600 self-center">
-            {isProcessingTranscript 
-              ? "Transcribing audio..." 
+            {isProcessingTranscript
+              ? "Transcribing audio..."
               : "Manual transcription • Click when ready"}
           </div>
+          {/* Audio transcription indicator */}
+          {isRecordingAudio && (
+            <div className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+              Recording audio for transcription
+              <div className="ml-2 w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 transition-all duration-100"
+                  style={{ width: `${Math.min(audioLevel * 2, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
