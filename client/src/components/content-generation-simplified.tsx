@@ -974,10 +974,7 @@ export default function ContentGeneration({
                                 key={idx}
                                 className="bg-gradient-to-br from-primary to-secondary text-white p-3 rounded-lg text-center min-h-[120px] flex flex-col justify-center"
                               >
-                                <div className="text-2xl mb-1">
-                                  {slide.icon}
-                                </div>
-                                <div className="text-sm font-semibold mb-1">
+                                <div className="text-sm font-semibold mb-2">
                                   {slide.title}
                                 </div>
                                 <div className="text-xs opacity-90">
@@ -1488,9 +1485,8 @@ export default function ContentGeneration({
                           .map((slide: any, idx: number) => (
                             <p key={idx} className="mb-1">
                               <span className="text-primary font-medium">
-                                {slide.icon}
-                              </span>{" "}
-                              {slide.title}
+                                {slide.title}
+                              </span>
                             </p>
                           ))}
                       {Array.isArray((content.content as any)?.slides) &&
@@ -1704,8 +1700,7 @@ export default function ContentGeneration({
                             key={idx}
                             className="bg-gradient-to-br from-primary to-secondary text-white p-3 rounded-lg text-center min-h-[120px] flex flex-col justify-center"
                           >
-                            <div className="text-2xl mb-1">{slide.icon}</div>
-                            <div className="text-sm font-semibold mb-1">
+                            <div className="text-sm font-semibold mb-2">
                               {slide.title}
                             </div>
                             <div className="text-xs opacity-90">

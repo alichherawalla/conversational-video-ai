@@ -248,7 +248,7 @@ export default function ContentGeneration() {
                           {Array.isArray((content.content as any)?.slides) && 
                             (content.content as any).slides.slice(0, 3).map((slide: any, idx: number) => (
                               <p key={idx} className="mb-1">
-                                <span className="text-primary font-medium">{slide.icon}</span> {slide.title}
+                                <span className="text-primary font-medium">{slide.title}</span>
                               </p>
                             ))
                           }

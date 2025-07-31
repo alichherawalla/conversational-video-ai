@@ -187,88 +187,43 @@ export async function generateAllLinkedInContent(
   conversationText: string,
 ): Promise<any> {
   try {
-    const prompt = `Create a comprehensive set of 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. No emoticons, no emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company LinkedIn Account.
+    const prompt = `Create 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is).
 
 Interview Content: "${conversationText}"
 
-Create a diverse content mix with different angles:
-- 2-3 Carousel posts (different frameworks/lessons/insights)
-- 2-3 Image posts (quotes, statistics, key takeaways)  
-- 2-3 Text posts (contrarian views, processes, results)
-
-Requirements:
-- Each post should explore a different angle or insight from the interview
-- Use contrarian viewpoints, provocative statements, and challenge conventional thinking
-- Create VERY DETAILED, comprehensive captions (300-500 words) with bold, educative tone
-- Structure captions with: BOLD Hook → Deep Context → Revolutionary Insights → Transformative Value → Compelling Call-to-Action
-- Use authentic information from the transcript only
-- Make content that stops the scroll and demands attention
+Generate 2-3 carousel posts, 2-3 image posts, and 2-3 text posts. Each post should explore a different angle or insight from the interview. Use contrarian viewpoints, provocative statements, and challenge conventional thinking. Use authentic information from the transcript only.
 
 Generate in JSON format:
 {
   "carousel_posts": [
     {
-      "title": "Strategic Framework Carousel",
-      "detailed_caption": "FRAMEWORK ALERT: The 6-step system that [specific result from interview]\\n\\nMost business frameworks are theoretical garbage written by people who've never built anything.\\n\\nThis one is different. It's battle-tested through [specific experience from interview].\\n\\nWhile everyone else was following cookie-cutter advice, we discovered something that fundamentally changes how you approach [relevant area].\\n\\nHere's what makes this framework revolutionary:\\n\\n→ It challenges the conventional [common approach]\\n→ It focuses on [contrarian insight from interview]\\n→ It delivers results even when [specific constraint]\\n\\nThe breakthrough came when we realized [key insight from interview].\\n\\nMost people won't implement this because it requires [specific change]. They prefer comfortable mediocrity over uncertain greatness.\\n\\nBut if you're ready to think differently, each slide contains insights that took us [time period] to learn the hard way.\\n\\nThe last slide alone could save you months of wasted effort.\\n\\nWhich 'proven' framework have you found to be completely useless? Share your framework failures below - let's challenge some sacred cows.",
+      "title": "Post title",
+      "detailed_caption": "Caption content",
       "slides": [
-        {"title": "The Problem", "content": "Detailed description of the specific challenge or situation from the interview that required a new approach"},
-        {"title": "The Insight", "content": "Key realization or breakthrough moment that changed everything, with specific details from the interview"},
-        {"title": "The Analysis", "content": "How the situation was analyzed and what data or evidence supported the new approach"},
-        {"title": "The Framework", "content": "Step-by-step breakdown of the methodology developed, with specific tactics from the interview"},
-        {"title": "The Results", "content": "Measurable outcomes and impact achieved using this framework, with specific metrics if available"},
-        {"title": "Your Application", "content": "How others can adapt and apply this framework to their own situations"}
+        {"title": "Slide title", "content": "Slide content"}
       ],
-      "tags": ["#Framework", "#Strategy", "#BusinessGrowth", "#Innovation"]
-    },
-    {
-      "title": "Lessons Learned Carousel", 
-      "detailed_caption": "⚡ HARD TRUTHS: What [specific experience from interview] taught me about business reality\\n\\nEveryone loves success stories. Nobody talks about the brutal lessons that actually matter.\\n\\nLet me share what really happened during [specific situation from interview] - the part that doesn't make it into case studies.\\n\\nThe conventional wisdom told us to [standard advice]. We followed it religiously. It failed spectacularly.\\n\\nThen we learned something that goes against everything business schools teach:\\n\\n💥 [First contrarian lesson with specific details]\\n💥 [Second uncomfortable truth from experience]\\n💥 [Third insight that challenges norms]\\n\\nThis experience cost us [specific cost/impact], but taught us lessons worth 10x that investment.\\n\\nMost entrepreneurs will ignore these lessons because they're uncomfortable. They prefer motivational quotes over hard truths.\\n\\nBut if you want real growth, you need real lessons - not LinkedIn inspiration porn.\\n\\nSwipe through each slide. These aren't feel-good takeaways. They're survival insights from the trenches.\\n\\nWhat's the most expensive lesson business has taught you? Share it below - your failure might be someone else's breakthrough. 👇",
-      "slides": [
-        {"icon": "📚", "title": "The Setup", "content": "Initial situation and assumptions that led to this learning experience, with full context"},
-        {"icon": "⚠️", "title": "The Reality Check", "content": "What went wrong and why conventional approaches failed in this specific situation"},
-        {"icon": "🔧", "title": "The Pivot", "content": "How the approach was changed and what new strategy was developed from the experience"},
-        {"icon": "💪", "title": "The Hard Lesson", "content": "The most important insight gained that fundamentally changed perspective or approach"},
-        {"icon": "🌟", "title": "The Application", "content": "How this lesson has been applied since and what it means for future decisions"},
-        {"icon": "🎯", "title": "Your Takeaway", "content": "Specific actionable advice for others based on this hard-earned experience"}
-      ],
-      "tags": ["#Lessons", "#Experience", "#BusinessReality", "#Growth"]
+      "tags": ["#tag1", "#tag2"]
     }
   ],
   "image_posts": [
     {
-      "title": "Key Quote Image Post",
-      "detailed_caption": "🚨 REALITY CHECK: [Powerful quote or insight from interview]\\n\\nEveryone talks about [common topic], but this quote reveals the brutal truth most people ignore.\\n\\nContext: [Detailed background from interview about when/why this was said]\\n\\nWhy this matters: Most people approach [relevant area] completely backwards. They focus on [common focus] when they should be focusing on [contrarian focus from interview].\\n\\nThe data doesn't lie: [Supporting evidence or example from interview if available]\\n\\nThis isn't motivational fluff. This is hard-earned wisdom from [specific experience that led to this insight].\\n\\nWhile competitors were doing [standard approach], this insight led to [specific different approach or outcome].\\n\\nThe uncomfortable truth: [Key lesson that challenges conventional thinking]\\n\\nMost people won't act on this because it requires [specific change or courage]. They prefer comfortable illusions over uncomfortable truths.\\n\\nBut if you're ready to challenge your assumptions: [Actionable next step based on the insight]\\n\\nWhat 'obvious' business truth have you discovered to be completely wrong? Call it out below - let's start a truth revolution. 👇",
-      "illustration_direction": "Bold, minimalist design with dark background and contrasting text. Main quote prominently displayed in large, bold typography. Include subtle geometric elements or lines that frame the quote. Color scheme: Deep navy (#1B365D) background, white (#FFFFFF) primary text, orange (#FF6B35) accent for key words or elements",
-      "quote_overlay": "Most impactful quote or key insight from the interview",
-      "visual_elements": ["Bold typography hierarchy", "Geometric framing elements", "Subtle background texture"],
-      "color_scheme": "Navy blue for authority, white for clarity, orange for emphasis",
-      "tags": ["#Truth", "#Insights", "#BusinessWisdom", "#Reality"]
-    },
-    {
-      "title": "Process Breakdown Image",
-      "detailed_caption": "💣 PROCESS REVOLUTION: Why we threw out the playbook and built something better\\n\\nEvery expert teaches the same tired process for [relevant area]. It's killing innovation and keeping everyone mediocre.\\n\\nHere's what happened when we decided to ignore the 'best practices' during [specific situation from interview]:\\n\\nThe standard approach: [Conventional method that everyone follows]\\nOur contrarian approach: [Different method from interview]\\nThe shocking result: [Specific outcome that defied expectations]\\n\\nThis wasn't luck. This was the result of [key principle or insight that drove the different approach].\\n\\nMost companies won't try this because it challenges their entire framework. They prefer predictable mediocrity over uncertain greatness.\\n\\nBut here's the reality: Following everyone else's process guarantees you'll get everyone else's average results.\\n\\nThe breakthrough insight: [Core process philosophy from interview]\\n\\nThis approach requires [specific mindset or capability], which is why most people stick with the safe, ineffective methods.\\n\\nWhat industry 'best practice' have you completely ignored to get better results? Share your process rebellions below. 🚀",
-      "illustration_direction": "Split-screen design showing 'Old Way vs New Way' or step-by-step process visualization. Use arrows, icons, and clear visual hierarchy. Modern, clean design with plenty of white space",
-      "quote_overlay": "Key process insight or methodology breakthrough from interview",
-      "visual_elements": ["Process flow arrows", "Comparative sections", "Step indicators", "Results showcase"],
-      "color_scheme": "Clean whites and grays with strategic color highlights for process steps",
-      "tags": ["#Process", "#Innovation", "#Methodology", "#Breakthrough"]
+      "title": "Post title", 
+      "detailed_caption": "Caption content",
+      "illustration_direction": "Visual design direction",
+      "quote_overlay": "Key quote for the image",
+      "visual_elements": ["element1", "element2"],
+      "color_scheme": "Color description",
+      "tags": ["#tag1", "#tag2"]
     }
   ],
   "text_posts": [
     {
-      "title": "Contrarian Business Insight",
-      "detailed_content": "🚨 CONTRARIAN ALERT: Why [common business belief] is destroying your results\\n\\nEveryone in [industry/field] believes [specific common assumption]. I believed it too. I was spectacularly wrong.\\n\\nHere's what actually happened during [specific situation from interview]:\\n\\n[Detailed context and background with specific details]\\n\\nThe conventional wisdom says [standard advice that everyone follows]. We tried this approach first. The results were mediocre at best.\\n\\nThen we discovered something that challenges everything the 'experts' teach:\\n\\n💥 [First contrarian insight with specific evidence]\\n💥 [Second provocative finding with real examples]\\n💥 [Third disruptive conclusion with measurable impact]\\n\\nThis isn't another feel-good business post. This is the brutal reality that most people refuse to accept.\\n\\nThe data is clear: [Supporting evidence from interview if available]\\n\\nMost people won't implement this because it requires [specific change or courage]. They'll keep following the same failed playbook and wondering why they get the same disappointing results.\\n\\nBut if you're ready to think differently: [Key actionable insight from interview]\\n\\nThe uncomfortable truth: [Core lesson that challenges industry norms]\\n\\nWhile everyone else optimizes for [common focus], we learned to optimize for [contrarian focus from interview].\\n\\nWhat sacred business principle do you think is complete nonsense? Let's challenge some assumptions together. 👇",
-      "tags": ["#Contrarian", "#BusinessTruth", "#Innovation", "#Results"]
-    },
-    {
-      "title": "Results That Break Rules",
-      "detailed_content": "💥 RULE-BREAKING RESULTS: [Specific surprising outcome from interview]\\n\\nWhen we started [situation from interview], every expert predicted [conventional expectation]. They were wrong. Dead wrong.\\n\\nHere's what actually happened: [Detailed timeline and specific results from interview]\\n\\nWhile our competitors were playing it safe with [conventional approach], we decided to try something radical: [unconventional approach from interview].\\n\\nThe 'smart money' said this would never work. The results tell a different story:\\n\\n🔥 [First shocking result with specific metrics]\\n🔥 [Second unexpected outcome with context]\\n🔥 [Third game-changing achievement with impact]\\n\\nBut here's what the numbers don't show: [Deeper insight about the success from interview]\\n\\nThis wasn't beginner's luck. This was the result of [key strategic insight or principle that others missed].\\n\\nMost companies won't attempt this approach because it requires [specific capability or mindset change]. They prefer predictable mediocrity over uncertain excellence.\\n\\nThe breakthrough realization: [Core insight about achieving unconventional results]\\n\\nWhile everyone else was focused on [common industry focus], we discovered that [contrarian focus from interview] was the real game-changer.\\n\\nThe lesson: Extraordinary results require extraordinary approaches.\\n\\nWhat 'impossible' result are you working toward? Share your moonshot goals below - let's normalize ambitious thinking. 🚀",
-      "tags": ["#Results", "#Success", "#Innovation", "#Breakthrough"]
+      "title": "Post title",
+      "detailed_content": "Full text post content", 
+      "tags": ["#tag1", "#tag2"]
     }
   ]
-}
-
-Make each post authentic to the interview content with different angles and perspectives.`;
+}`;
 
     const response = await anthropic.messages.create({
       max_tokens: 4000,

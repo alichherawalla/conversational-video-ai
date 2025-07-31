@@ -1504,7 +1504,7 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
       if (post.content.slides) {
         markdown += `**Slides:**\n`;
         post.content.slides.forEach((slide: any, slideIndex: number) => {
-          markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
+          markdown += `**Slide ${slideIndex + 1}:** ${slide.title}\n`;
           markdown += `${slide.content}\n\n`;
         });
       }
@@ -1627,7 +1627,7 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
       if (post.content.slides) {
         markdown += `**Slides:**\n`;
         post.content.slides.forEach((slide: any, slideIndex: number) => {
-          markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
+          markdown += `**Slide ${slideIndex + 1}:** ${slide.title}\n`;
           markdown += `${slide.content}\n\n`;
         });
       }
