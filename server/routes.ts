@@ -1262,31 +1262,90 @@ For more information, visit the Video Library section.`;
     }
   });
 
+  // Serve video clip file for viewing (streaming)
+  app.get("/api/clips/:clipId/video", async (req, res) => {
+    try {
+      const { clipId } = req.params;
+      console.log('Attempting to serve video for clip:', clipId);
+      
+      // For upload clips, we need to find the clip file in the uploads/clips directory
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Look for the clip file by ID
+      const clipsDir = 'uploads/clips';
+      if (!fs.existsSync(clipsDir)) {
+        return res.status(404).json({ error: "Clips directory not found" });
+      }
+      
+      // Find files that match the clip ID pattern
+      const files = fs.readdirSync(clipsDir);
+      const clipFile = files.find(file => file.includes(clipId.split('-').slice(-1)[0]));
+      
+      if (!clipFile) {
+        console.log('Available clip files:', files);
+        return res.status(404).json({ error: "Clip video file not found" });
+      }
+      
+      const clipPath = path.join(clipsDir, clipFile);
+      
+      if (!fs.existsSync(clipPath)) {
+        return res.status(404).json({ error: "Video file not found on disk" });
+      }
+
+      const stat = fs.statSync(clipPath);
+      
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Content-Length', stat.size);
+      res.setHeader('Accept-Ranges', 'bytes');
+      
+      const readStream = fs.createReadStream(clipPath);
+      readStream.pipe(res);
+    } catch (error) {
+      console.error('Video serving error:', error);
+      res.status(500).json({ error: "Failed to serve video" });
+    }
+  });
+
   // Download individual video clip
   app.get("/api/clips/:clipId/download", async (req, res) => {
     try {
       const { clipId } = req.params;
+      console.log('Attempting to download clip:', clipId);
       
-      const clip = await storage.getClip(clipId);
-      if (!clip || !clip.videoPath) {
-        return res.status(404).json({ error: "Clip or video file not found" });
-      }
-
+      // For upload clips, we need to find the clip file in the uploads/clips directory
       const fs = await import('fs');
       const path = await import('path');
       
-      if (!fs.existsSync(clip.videoPath)) {
+      // Look for the clip file by ID
+      const clipsDir = 'uploads/clips';
+      if (!fs.existsSync(clipsDir)) {
+        return res.status(404).json({ error: "Clips directory not found" });
+      }
+      
+      // Find files that match the clip ID pattern
+      const files = fs.readdirSync(clipsDir);
+      const clipFile = files.find(file => file.includes(clipId.split('-').slice(-1)[0]));
+      
+      if (!clipFile) {
+        console.log('Available clip files:', files);
+        return res.status(404).json({ error: "Clip video file not found" });
+      }
+      
+      const clipPath = path.join(clipsDir, clipFile);
+      
+      if (!fs.existsSync(clipPath)) {
         return res.status(404).json({ error: "Video file not found on disk" });
       }
 
-      const fileName = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
-      const stat = fs.statSync(clip.videoPath);
+      const fileName = clipFile;
+      const stat = fs.statSync(clipPath);
       
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Content-Length', stat.size);
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       
-      const readStream = fs.createReadStream(clip.videoPath);
+      const readStream = fs.createReadStream(clipPath);
       readStream.pipe(res);
     } catch (error) {
       console.error('Clip download error:', error);
@@ -1374,12 +1433,25 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
     markdown += `### Carousel Posts\n\n`;
     carouselPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      
+      // Add detailed caption if available
+      if (post.content.detailed_caption) {
+        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
+      }
+      
       if (post.content.slides) {
+        markdown += `**Slides:**\n`;
         post.content.slides.forEach((slide: any, slideIndex: number) => {
           markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
           markdown += `${slide.content}\n\n`;
         });
       }
+      
+      // Add visual direction if available
+      if (post.content.visual_direction) {
+        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }
@@ -1391,6 +1463,12 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
     markdown += `### Image Posts\n\n`;
     imagePosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      
+      // Add detailed caption if available
+      if (post.content.detailed_caption) {
+        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
+      }
+      
       if (post.content.quote) {
         markdown += `**Quote:** "${post.content.quote}"\n\n`;
       }
@@ -1400,6 +1478,12 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
       if (post.content.statistic) {
         markdown += `**Statistic:** ${post.content.statistic}\n\n`;
       }
+      
+      // Add visual direction if available
+      if (post.content.visual_direction) {
+        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }
@@ -1411,15 +1495,23 @@ function generateContentMarkdown(session: any, contentPieces: any[], clips: any[
     markdown += `### Text Posts\n\n`;
     textPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
-      if (post.content.hook) {
-        markdown += `**Hook:** ${post.content.hook}\n\n`;
+      
+      // Add detailed content if available (this is the full post content)
+      if (post.content.detailed_content) {
+        markdown += `**Full Post Content:**\n${post.content.detailed_content}\n\n`;
+      } else {
+        // Fallback to individual components
+        if (post.content.hook) {
+          markdown += `**Hook:** ${post.content.hook}\n\n`;
+        }
+        if (post.content.body) {
+          markdown += `**Body:**\n${post.content.body}\n\n`;
+        }
+        if (post.content.callToAction) {
+          markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
+        }
       }
-      if (post.content.body) {
-        markdown += `**Body:**\n${post.content.body}\n\n`;
-      }
-      if (post.content.callToAction) {
-        markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
-      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }
@@ -1464,12 +1556,25 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
     markdown += `### Carousel Posts\n\n`;
     carouselPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      
+      // Add detailed caption if available
+      if (post.content.detailed_caption) {
+        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
+      }
+      
       if (post.content.slides) {
+        markdown += `**Slides:**\n`;
         post.content.slides.forEach((slide: any, slideIndex: number) => {
           markdown += `**Slide ${slideIndex + 1}:** ${slide.icon} ${slide.title}\n`;
           markdown += `${slide.content}\n\n`;
         });
       }
+      
+      // Add visual direction if available
+      if (post.content.visual_direction) {
+        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }
@@ -1481,6 +1586,12 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
     markdown += `### Image Posts\n\n`;
     imagePosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
+      
+      // Add detailed caption if available
+      if (post.content.detailed_caption) {
+        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
+      }
+      
       if (post.content.quote) {
         markdown += `**Quote:** "${post.content.quote}"\n\n`;
       }
@@ -1490,6 +1601,12 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
       if (post.content.statistic) {
         markdown += `**Statistic:** ${post.content.statistic}\n\n`;
       }
+      
+      // Add visual direction if available
+      if (post.content.visual_direction) {
+        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }
@@ -1501,15 +1618,23 @@ function generateUploadContentMarkdown(transcript: string, content: any[], clips
     markdown += `### Text Posts\n\n`;
     textPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
-      if (post.content.hook) {
-        markdown += `**Hook:** ${post.content.hook}\n\n`;
+      
+      // Add detailed content if available (this is the full post content)
+      if (post.content.detailed_content) {
+        markdown += `**Full Post Content:**\n${post.content.detailed_content}\n\n`;
+      } else {
+        // Fallback to individual components
+        if (post.content.hook) {
+          markdown += `**Hook:** ${post.content.hook}\n\n`;
+        }
+        if (post.content.body) {
+          markdown += `**Body:**\n${post.content.body}\n\n`;
+        }
+        if (post.content.callToAction) {
+          markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
+        }
       }
-      if (post.content.body) {
-        markdown += `**Body:**\n${post.content.body}\n\n`;
-      }
-      if (post.content.callToAction) {
-        markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
-      }
+      
       if (post.content.tags) {
         markdown += `**Tags:** ${post.content.tags.join(' ')}\n\n`;
       }

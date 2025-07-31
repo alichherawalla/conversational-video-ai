@@ -390,12 +390,6 @@ export default function ConversationFlow({
         {/* Note about voice recording */}
 
         {/* Manual input section */}
-        <div className="space-y-3">
-          <p className="text-sm text-blue-800">
-            💡 <strong>Voice-first interview:</strong> Start video recording to
-            automatically capture and transcribe your spoken responses.
-          </p>
-        </div>
 
         {/* Response Submission */}
         {userResponse.trim() && (

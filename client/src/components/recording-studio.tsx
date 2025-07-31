@@ -29,7 +29,9 @@ interface RecordingStudioProps {
   onNavigateToContent?: (sessionId: string) => void;
 }
 
-export default function RecordingStudio({ onNavigateToContent }: RecordingStudioProps) {
+export default function RecordingStudio({
+  onNavigateToContent,
+}: RecordingStudioProps) {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [sessionTranscript, setSessionTranscript] = useState<string>("");
@@ -268,32 +270,6 @@ export default function RecordingStudio({ onNavigateToContent }: RecordingStudio
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      {/* Conversation Flow Panel - Left */}
-      <div className="lg:col-span-1 max-h-screen overflow-y-auto space-y-6">
-        {currentSession && (
-          <ConversationFlow
-            sessionId={currentSession}
-            transcribedText={transcriptionText}
-            onTranscriptionProcessed={() => setTranscriptionText("")}
-          />
-        )}
-
-        {/* Voice Transcription Display */}
-        {transcriptionText &&
-          transcriptionText !== "__AUTO_SUBMIT_SILENCE__" && (
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold text-neutral-800 mb-2">
-                  Voice Transcription
-                </h3>
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">{transcriptionText}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-      </div>
-
       {/* Video Recording Panel - Center (Bigger) */}
       <div className="lg:col-span-2 space-y-6">
         <CameraPreview
@@ -325,6 +301,31 @@ export default function RecordingStudio({ onNavigateToContent }: RecordingStudio
             setAllTranscriptions((prev) => [...prev, text]);
           }}
         />
+      </div>
+      {/* Conversation Flow Panel - Left */}
+      <div className="lg:col-span-2 max-h-screen overflow-y-auto space-y-6">
+        {currentSession && (
+          <ConversationFlow
+            sessionId={currentSession}
+            transcribedText={transcriptionText}
+            onTranscriptionProcessed={() => setTranscriptionText("")}
+          />
+        )}
+
+        {/* Voice Transcription Display */}
+        {transcriptionText &&
+          transcriptionText !== "__AUTO_SUBMIT_SILENCE__" && (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="text-lg font-semibold text-neutral-800 mb-2">
+                  Voice Transcription
+                </h3>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">{transcriptionText}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
       </div>
 
       {/* Session Settings Panel - Right */}
@@ -395,30 +396,9 @@ export default function RecordingStudio({ onNavigateToContent }: RecordingStudio
                         <Trash2 size={16} />
                       </Button>
                     </div>
-                    <Button
-                      onClick={() => {
-                        if (currentSession && onNavigateToContent) {
-                          onNavigateToContent(currentSession);
-                        }
-                      }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={!currentSession}
-                    >
-                      Generate Social Media Content
-                    </Button>
                   </div>
                 </div>
               )}
-
-              <Button className="w-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200">
-                <Pause className="mr-2" size={16} />
-                Pause Recording
-              </Button>
-
-              <Button className="w-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200">
-                <RotateCcw className="mr-2" size={16} />
-                Restart Question
-              </Button>
             </div>
           </CardContent>
         </Card>

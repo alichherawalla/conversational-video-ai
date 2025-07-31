@@ -195,7 +195,7 @@ export async function generateLinkedInContent(
       case "carousel":
         if (generateAll) {
           // Generate 3 carousel posts
-          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use a BOLD, educative, and direct tone throughout.
+          prompt = `Create 3 different LinkedIn carousel posts from this interview content using ONLY the information provided. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
 
 Interview Content: "${conversationText}"
 
@@ -258,11 +258,11 @@ Generate in JSON format:
 Each slide should provide substantial value with specific details from the interview content.`;
         } else {
           // Generate single carousel post
-          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Use an educative and direct tone.
+          prompt = `Create a LinkedIn carousel post from this interview content using ONLY the information provided. Use an educative and direct tone. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
 
 Interview Content: "${conversationText}"
 
-Create a professional carousel with 6 slides and comprehensive, detailed caption:
+Create a professional carousel with multiple slides and comprehensive, detailed caption:
 
 Generate in JSON format:
 {
@@ -283,7 +283,8 @@ Generate in JSON format:
 
       case "image":
         if (generateAll) {
-          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use a BOLD, educative, and provocative tone with highly engaging captions.
+          prompt = `Create 3 different LinkedIn image posts from this interview content using ONLY the information provided. Use a BOLD, educative, and provocative tone with highly engaging captions. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
+
 
 Interview Content: "${conversationText}"
 
@@ -332,7 +333,7 @@ Generate in JSON format:
 Make each caption 150-300 words with clear structure and compelling storytelling.`;
         } else {
           // Generate single image post
-          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Use an educative and direct tone.
+          prompt = `Create a LinkedIn image post from this interview content using ONLY the information provided. Use an educative and direct tone. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
 
 Interview Content: "${conversationText}"
 
@@ -356,6 +357,7 @@ Make the caption 200-350 words with clear educative structure and direct tone.`;
       case "text":
         if (generateAll) {
           prompt = `Create 3 different LinkedIn text posts from this interview content using ONLY the information provided. Each post should be BOLD, provocative, and challenge conventional thinking. Use authentic content only.
+Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
 
 Interview Content: "${conversationText}"
 
@@ -397,6 +399,7 @@ Focus on authentic insights and real experiences shared in the interview.`;
         } else {
           // Generate single text post
           prompt = `Create a LinkedIn text post from this interview content using ONLY the information provided. Use an educative and direct tone.
+Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company Linkedin Account. 
 
 Interview Content: "${conversationText}"
 
@@ -457,7 +460,7 @@ Make the content 200-400 words with clear educative structure, practical value, 
 export async function generateVideoClips(
   conversationText: string,
   sessionDuration: number,
-  wordTimingData?: Array<{word: string, start: number, end: number}>
+  wordTimingData?: Array<{ word: string; start: number; end: number }>,
 ): Promise<
   Array<{
     title: string;
@@ -469,11 +472,13 @@ export async function generateVideoClips(
 > {
   try {
     let prompt: string;
-    
+
     if (wordTimingData && wordTimingData.length > 0) {
       // Enhanced prompt with word-level timing data
-      const wordsText = wordTimingData.map(w => `${w.word}(${w.start.toFixed(1)}s)`).join(' ');
-      
+      const wordsText = wordTimingData
+        .map((w) => `${w.word}(${w.start.toFixed(1)}s)`)
+        .join(" ");
+
       prompt = `Analyze this interview content with precise word-level timing and suggest 3-5 video clips optimized for social media:
 
 Interview Content: "${conversationText}"
@@ -561,16 +566,22 @@ Base timestamps on logical conversation flow and actual content segments.`;
       if (wordTimingData && wordTimingData.length > 0) {
         const segments = [];
         const segmentLength = Math.floor(wordTimingData.length / 3);
-        
+
         for (let i = 0; i < 3; i++) {
           const startIndex = i * segmentLength;
-          const endIndex = Math.min((i + 1) * segmentLength, wordTimingData.length - 1);
-          
-          if (startIndex < wordTimingData.length && endIndex < wordTimingData.length) {
+          const endIndex = Math.min(
+            (i + 1) * segmentLength,
+            wordTimingData.length - 1,
+          );
+
+          if (
+            startIndex < wordTimingData.length &&
+            endIndex < wordTimingData.length
+          ) {
             const startTime = wordTimingData[startIndex].start;
             const endTime = wordTimingData[endIndex].end;
             const duration = endTime - startTime;
-            
+
             // Ensure clip is within 15-90 second range
             if (duration >= 15 && duration <= 90) {
               segments.push({
@@ -583,7 +594,7 @@ Base timestamps on logical conversation flow and actual content segments.`;
             }
           }
         }
-        
+
         return segments;
       }
 

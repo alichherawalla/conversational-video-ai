@@ -43,15 +43,7 @@ export async function transcribeAudioBuffer(
     fs.unlinkSync(tempFilePath);
     console.log("transcription::", JSON.stringify(transcription));
     return {
-      text: (
-        transcription.words?.map((word) =>
-          JSON.stringify({
-            word: word.word,
-            start: word.start,
-            end: word.end,
-          }),
-        ) || []
-      ).join(" "),
+      text: transcription.text,
       duration: transcription.duration || 0,
       words:
         transcription.words?.map((word) => ({

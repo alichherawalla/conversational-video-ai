@@ -9,7 +9,8 @@ type Tab = "recording" | "questions" | "content";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("recording");
-  const [selectedSessionForContent, setSelectedSessionForContent] = useState<string>("");
+  const [selectedSessionForContent, setSelectedSessionForContent] =
+    useState<string>("");
 
   const tabs = [
     { id: "recording" as Tab, label: "Recording Studio", icon: Video },
@@ -34,10 +35,6 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="bg-primary text-white hover:bg-primary/90">
-                <Plus className="mr-2" size={16} />
-                New Session
-              </Button>
               <div className="w-8 h-8 bg-neutral-200 rounded-full flex items-center justify-center">
                 <User className="text-neutral-600" size={16} />
               </div>
@@ -78,7 +75,7 @@ export default function Home() {
 
         {/* Tab Content */}
         {activeTab === "recording" && (
-          <RecordingStudio 
+          <RecordingStudio
             onNavigateToContent={(sessionId: string) => {
               setSelectedSessionForContent(sessionId);
               setActiveTab("content");
@@ -89,7 +86,6 @@ export default function Home() {
         {activeTab === "content" && (
           <ContentGeneration selectedSessionId={selectedSessionForContent} />
         )}
-
       </main>
     </div>
   );
