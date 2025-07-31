@@ -556,10 +556,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create upload record for this transcription
           const uploadRecord = await storage.createUpload({
             originalName: originalName,
-            objectPath: videoPath || 'video-upload', // Path to the uploaded video
+            objectPath: videoPath || "video-upload", // Path to the uploaded video
             fileSize: fileSize,
-            mimeType: 'video/mp4', // Default video MIME type
-            status: 'transcribed',
+            mimeType: "video/mp4", // Default video MIME type
+            status: "transcribed",
             transcript: transcription.text,
             linkedinContentMarkdown: null, // Generated later when content is created
             contentItems: null,
@@ -959,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const linkedinMarkdown = generateUploadContentMarkdown(
           processedTranscript,
           allPosts,
-          [] // No clips in content generation - they're generated separately
+          [], // No clips in content generation - they're generated separately
         );
 
         // Create or update upload record in database
@@ -974,11 +974,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Create new upload record
           uploadRecord = await storage.createUpload({
-            originalName: 'text-content-generated', // Content generated from text, not file
-            objectPath: 'text-generated',
+            originalName: "text-content-generated", // Content generated from text, not file
+            objectPath: "text-generated",
             fileSize: 0,
-            mimeType: 'text/plain',
-            status: 'content-generated',
+            mimeType: "text/plain",
+            status: "content-generated",
             transcript: processedTranscript,
             linkedinContentMarkdown: linkedinMarkdown,
             contentItems: allPosts,
@@ -1064,7 +1064,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUpload(uploadId, {
           videoClips: clips,
         });
-        console.log(`Updated upload record ${uploadId} with ${clips.length} video clips`);
+        console.log(
+          `Updated upload record ${uploadId} with ${clips.length} video clips`,
+        );
       }
 
       res.json(clips);
@@ -1457,11 +1459,9 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
       }
 
       // Use stored markdown if available, otherwise generate it
-      const markdownContent = storedMarkdown || generateUploadContentMarkdown(
-        transcriptData,
-        contentData,
-        clipsData,
-      );
+      const markdownContent =
+        storedMarkdown ||
+        generateUploadContentMarkdown(transcriptData, contentData, clipsData);
       archive.append(markdownContent, { name: "linkedin_content.md" });
 
       // Add actual video clip files if they exist
@@ -1952,91 +1952,107 @@ function generateUploadContentMarkdown(
     : [];
 
   if (carouselPosts.length > 0) {
-    markdown += `### Carousel Posts\n\n`;
+    markdown += `### 📊 Carousel Posts\n\n`;
     carouselPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
 
-      // Add detailed caption if available
-      if (post.content.detailed_caption) {
-        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
-      }
-
-      if (post.content.slides) {
-        markdown += `**Slides:**\n`;
+      // Add slides (main content visible in frontend)
+      if (post.content.slides && Array.isArray(post.content.slides)) {
+        markdown += `**Slides (${post.content.slides.length} total):**\n\n`;
         post.content.slides.forEach((slide: any, slideIndex: number) => {
-          markdown += `**Slide ${slideIndex + 1}:** ${slide.title}\n`;
+          markdown += `**Slide ${slideIndex + 1}: ${slide.title}**\n`;
           markdown += `${slide.content}\n\n`;
         });
       }
 
-      // Add visual direction if available
-      if (post.content.visual_direction) {
-        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      // Add detailed caption (main post description)
+      if (post.content.detailed_caption) {
+        markdown += `**Post Caption:**\n${post.content.detailed_caption}\n\n`;
       }
 
-      if (post.content.tags) {
-        markdown += `**Tags:** ${post.content.tags.join(" ")}\n\n`;
+      // Add visual direction for designers (shown in frontend)
+      if (post.content.illustration_direction) {
+        markdown += `**Visual Direction for Designers:**\n${post.content.illustration_direction}\n\n`;
       }
+
+      // Add hashtags (displayed as badges in frontend)
+      if (post.content.tags && Array.isArray(post.content.tags)) {
+        markdown += `**Hashtags:**\n${post.content.tags.join(" ")}\n\n`;
+      }
+
       markdown += `---\n\n`;
     });
   }
 
   if (imagePosts.length > 0) {
-    markdown += `### Image Posts\n\n`;
+    markdown += `### 💡 Image Posts\n\n`;
     imagePosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
 
-      // Add detailed caption if available
-      if (post.content.detailed_caption) {
-        markdown += `**Caption:**\n${post.content.detailed_caption}\n\n`;
-      }
-
+      // Add the main quote (displayed prominently in frontend)
       if (post.content.quote) {
-        markdown += `**Quote:** "${post.content.quote}"\n\n`;
-      }
-      if (post.content.insight) {
-        markdown += `**Insight:** ${post.content.insight}\n\n`;
-      }
-      if (post.content.statistic) {
-        markdown += `**Statistic:** ${post.content.statistic}\n\n`;
+        markdown += `**Quote for Image:**\n"${post.content.quote}"\n\n`;
       }
 
-      // Add visual direction if available
-      if (post.content.visual_direction) {
-        markdown += `**Visual Direction:**\n${post.content.visual_direction}\n\n`;
+      // Add detailed caption (main post description)
+      if (post.content.detailed_caption) {
+        markdown += `**Post Caption:**\n${post.content.detailed_caption}\n\n`;
       }
 
-      if (post.content.tags) {
-        markdown += `**Tags:** ${post.content.tags.join(" ")}\n\n`;
+      // Add visual direction for designers (shown as special section)
+      if (post.content.illustration_direction) {
+        markdown += `**Visual Direction for Designers:**\n${post.content.illustration_direction}\n\n`;
       }
+
+      // Add hashtags (displayed as badges in frontend)
+      if (post.content.tags && Array.isArray(post.content.tags)) {
+        markdown += `**Hashtags:**\n${post.content.tags.join(" ")}\n\n`;
+      }
+
       markdown += `---\n\n`;
     });
   }
 
   if (textPosts.length > 0) {
-    markdown += `### Text Posts\n\n`;
+    markdown += `### 📝 Text Posts\n\n`;
     textPosts.forEach((post, index) => {
       markdown += `#### ${index + 1}. ${post.title}\n\n`;
 
-      // Add detailed content if available (this is the full post content)
-      if (post.content.detailed_content) {
-        markdown += `**Full Post Content:**\n${post.content.detailed_content}\n\n`;
-      } else {
-        // Fallback to individual components
-        if (post.content.hook) {
-          markdown += `**Hook:** ${post.content.hook}\n\n`;
-        }
-        if (post.content.body) {
-          markdown += `**Body:**\n${post.content.body}\n\n`;
-        }
-        if (post.content.callToAction) {
-          markdown += `**Call to Action:** ${post.content.callToAction}\n\n`;
-        }
+      // Add the opening hook (displayed prominently in frontend)
+      if (post.content.hook) {
+        markdown += `**Opening Hook:**\n${post.content.hook}\n\n`;
       }
 
-      if (post.content.tags) {
-        markdown += `**Tags:** ${post.content.tags.join(" ")}\n\n`;
+      // Add detailed content (full post text visible in frontend)
+      if (post.content.detailed_content) {
+        markdown += `**Full Post Content:**\n${post.content.detailed_content}\n\n`;
+      } else if (post.content.body) {
+        markdown += `**Post Body:**\n${post.content.body}\n\n`;
       }
+
+      // Add key quotes (displayed as highlighted sections)
+      if (post.content.key_quotes && Array.isArray(post.content.key_quotes) && post.content.key_quotes.length > 0) {
+        markdown += `**Key Quotes:**\n`;
+        post.content.key_quotes.forEach((quote) => {
+          markdown += `- "${quote}"\n`;
+        });
+        markdown += "\n";
+      }
+
+      // Add engagement hooks (interaction prompts shown in frontend)
+      if (post.content.engagement_hooks && Array.isArray(post.content.engagement_hooks) && post.content.engagement_hooks.length > 0) {
+        markdown += `**Engagement Questions:**\n`;
+        post.content.engagement_hooks.forEach((hook) => {
+          markdown += `- ${hook}\n`;
+        });
+        markdown += "\n";
+      }
+
+      // Add hashtags (displayed as badges in frontend)
+      if (post.content.tags && Array.isArray(post.content.tags)) {
+        markdown += `**Hashtags:**\n${post.content.tags.join(" ")}\n\n`;
+      }
+
       markdown += `---\n\n`;
     });
   }

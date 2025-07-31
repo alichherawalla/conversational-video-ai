@@ -217,18 +217,10 @@ export default function ContentGeneration({
       );
       const contentResult = await contentRes.json();
 
-      // Generate video clips
-      const clipsRes = await apiRequest(
-        "POST",
-        "/api/generate-clips-from-upload",
-        { transcript },
-      );
-      const clips = await clipsRes.json();
-
-      return { 
-        content: contentResult.posts || [], 
+      return {
+        content: contentResult.posts || [],
         clips,
-        summary: contentResult.summary
+        summary: contentResult.summary,
       };
     },
     onSuccess: (data) => {
@@ -236,7 +228,7 @@ export default function ContentGeneration({
       setUploadGeneratedClips(data.clips);
       toast({
         title: "Content Generated Successfully",
-        description: data.summary 
+        description: data.summary
           ? `Generated ${data.summary.total} LinkedIn posts: ${data.summary.carousels} carousels, ${data.summary.images} images, ${data.summary.texts} text posts, and ${data.clips.length} video clips!`
           : `Generated ${data.content.length} LinkedIn posts and ${data.clips.length} video clips!`,
       });
@@ -728,7 +720,8 @@ export default function ContentGeneration({
                       <div className="text-sm text-neutral-600 mt-2">
                         <p>Creating comprehensive LinkedIn content...</p>
                         <p className="text-xs mt-1">
-                          Generating 7-8 unique posts with different angles and variations...
+                          Generating 7-8 unique posts with different angles and
+                          variations...
                         </p>
                       </div>
                     )}
@@ -937,17 +930,25 @@ export default function ContentGeneration({
                       </div>
                       {clip.detailed_caption && (
                         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <h6 className="text-xs font-medium text-blue-800 mb-1">Detailed Caption:</h6>
-                          <p className="text-xs text-blue-700">{clip.detailed_caption}</p>
+                          <h6 className="text-xs font-medium text-blue-800 mb-1">
+                            Detailed Caption:
+                          </h6>
+                          <p className="text-xs text-blue-700">
+                            {clip.detailed_caption}
+                          </p>
                         </div>
                       )}
                       {clip.key_moments && (
                         <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <h6 className="text-xs font-medium text-green-800 mb-1">Key Moments:</h6>
+                          <h6 className="text-xs font-medium text-green-800 mb-1">
+                            Key Moments:
+                          </h6>
                           <ul className="text-xs text-green-700 list-disc pl-4">
-                            {clip.key_moments.map((moment: string, idx: number) => (
-                              <li key={idx}>{moment}</li>
-                            ))}
+                            {clip.key_moments.map(
+                              (moment: string, idx: number) => (
+                                <li key={idx}>{moment}</li>
+                              ),
+                            )}
                           </ul>
                         </div>
                       )}
@@ -1001,7 +1002,9 @@ export default function ContentGeneration({
                           )}
                       </div>
                       <div className="bg-neutral-50 p-4 rounded-lg mb-4">
-                        <h5 className="font-medium mb-2">Detailed Post Caption:</h5>
+                        <h5 className="font-medium mb-2">
+                          Detailed Post Caption:
+                        </h5>
                         <div className="text-sm text-neutral-700 whitespace-pre-wrap mb-3">
                           {(viewingContent.content as any)?.detailed_caption ||
                             (viewingContent.content as any)?.title ||
@@ -1035,23 +1038,52 @@ export default function ContentGeneration({
                       )}
 
                       {/* Design Specifications */}
-                      {(viewingContent.content as any)?.design_specifications && (
+                      {(viewingContent.content as any)
+                        ?.design_specifications && (
                         <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-4">
                           <h5 className="font-medium mb-2 text-purple-800">
                             Design Specifications:
                           </h5>
                           <div className="space-y-2 text-sm text-purple-700">
-                            {(viewingContent.content as any).design_specifications.layout && (
-                              <div><strong>Layout:</strong> {(viewingContent.content as any).design_specifications.layout}</div>
+                            {(viewingContent.content as any)
+                              .design_specifications.layout && (
+                              <div>
+                                <strong>Layout:</strong>{" "}
+                                {
+                                  (viewingContent.content as any)
+                                    .design_specifications.layout
+                                }
+                              </div>
                             )}
-                            {(viewingContent.content as any).design_specifications.colors && (
-                              <div><strong>Colors:</strong> {(viewingContent.content as any).design_specifications.colors}</div>
+                            {(viewingContent.content as any)
+                              .design_specifications.colors && (
+                              <div>
+                                <strong>Colors:</strong>{" "}
+                                {
+                                  (viewingContent.content as any)
+                                    .design_specifications.colors
+                                }
+                              </div>
                             )}
-                            {(viewingContent.content as any).design_specifications.typography && (
-                              <div><strong>Typography:</strong> {(viewingContent.content as any).design_specifications.typography}</div>
+                            {(viewingContent.content as any)
+                              .design_specifications.typography && (
+                              <div>
+                                <strong>Typography:</strong>{" "}
+                                {
+                                  (viewingContent.content as any)
+                                    .design_specifications.typography
+                                }
+                              </div>
                             )}
-                            {(viewingContent.content as any).design_specifications.brand_integration && (
-                              <div><strong>Brand Integration:</strong> {(viewingContent.content as any).design_specifications.brand_integration}</div>
+                            {(viewingContent.content as any)
+                              .design_specifications.brand_integration && (
+                              <div>
+                                <strong>Brand Integration:</strong>{" "}
+                                {
+                                  (viewingContent.content as any)
+                                    .design_specifications.brand_integration
+                                }
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1243,7 +1275,9 @@ export default function ContentGeneration({
                             <ul className="text-sm text-blue-700 list-disc pl-4">
                               {(viewingContent.content as any).key_quotes.map(
                                 (quote: string, idx: number) => (
-                                  <li key={idx} className="mb-1">"{quote}"</li>
+                                  <li key={idx} className="mb-1">
+                                    "{quote}"
+                                  </li>
                                 ),
                               )}
                             </ul>
@@ -1257,9 +1291,13 @@ export default function ContentGeneration({
                               Engagement Hooks:
                             </h5>
                             <ul className="text-sm text-green-700 list-disc pl-4">
-                              {(viewingContent.content as any).engagement_hooks.map(
+                              {(
+                                viewingContent.content as any
+                              ).engagement_hooks.map(
                                 (hook: string, idx: number) => (
-                                  <li key={idx} className="mb-1">{hook}</li>
+                                  <li key={idx} className="mb-1">
+                                    {hook}
+                                  </li>
                                 ),
                               )}
                             </ul>
@@ -1314,20 +1352,28 @@ export default function ContentGeneration({
                         className="w-full h-full object-cover"
                         src={`/api/clips/${viewingClip.id}/video`}
                         onError={(e) => {
-                          console.error('Video loading error:', e);
+                          console.error("Video loading error:", e);
                           // Fallback to placeholder if video fails to load
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                          e.currentTarget.style.display = "none";
+                          e.currentTarget.nextElementSibling.style.display =
+                            "flex";
                         }}
                       >
                         Your browser does not support the video tag.
                       </video>
                     ) : null}
-                    <div className="bg-neutral-900 aspect-video rounded-lg flex items-center justify-center relative" style={{ display: viewingClip.videoPath ? 'none' : 'flex' }}>
+                    <div
+                      className="bg-neutral-900 aspect-video rounded-lg flex items-center justify-center relative"
+                      style={{
+                        display: viewingClip.videoPath ? "none" : "flex",
+                      }}
+                    >
                       <div className="text-center text-white">
                         <Play className="mx-auto mb-2" size={48} />
                         <p className="text-sm">Video clip available</p>
-                        <p className="text-xs text-neutral-400">Download to play locally</p>
+                        <p className="text-xs text-neutral-400">
+                          Download to play locally
+                        </p>
                       </div>
                     </div>
                     <div className="absolute bottom-3 left-3 bg-black/50 text-white text-sm px-3 py-1 rounded">
