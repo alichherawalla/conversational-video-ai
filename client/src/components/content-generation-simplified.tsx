@@ -203,29 +203,19 @@ export default function ContentGeneration({
 
   const uploadContentMutation = useMutation({
     mutationFn: async ({ transcript }: { transcript: string }) => {
-      const allContent = [];
       setUploadGeneratedContent([]); // Clear previous results
       setUploadGeneratedClips([]);
 
-      // Generate 3 posts for each content type (9 total) with separate API calls
-      const contentTypes = ["carousel", "image", "text"];
-
-      for (const contentType of contentTypes) {
-        // Make 3 separate API calls for each content type
-        for (let i = 0; i < 3; i++) {
-          const res = await apiRequest(
-            "POST",
-            "/api/generate-content-from-upload",
-            {
-              transcript,
-              contentType,
-              generateAll: false, // Single post per call
-            },
-          );
-          const result = await res.json();
-          allContent.push(result);
-        }
-      }
+      // Generate comprehensive content (7-8 posts across all types) in one API call
+      const contentRes = await apiRequest(
+        "POST",
+        "/api/generate-content-from-upload",
+        {
+          transcript,
+          generateComprehensive: true, // Use new comprehensive generation
+        },
+      );
+      const contentResult = await contentRes.json();
 
       // Generate video clips
       const clipsRes = await apiRequest(
@@ -235,14 +225,20 @@ export default function ContentGeneration({
       );
       const clips = await clipsRes.json();
 
-      return { content: allContent, clips };
+      return { 
+        content: contentResult.posts || [], 
+        clips,
+        summary: contentResult.summary
+      };
     },
     onSuccess: (data) => {
       setUploadGeneratedContent(data.content);
       setUploadGeneratedClips(data.clips);
       toast({
-        title: "Content Generated",
-        description: `Generated ${data.content.length} LinkedIn posts and ${data.clips.length} video clips!`,
+        title: "Content Generated Successfully",
+        description: data.summary 
+          ? `Generated ${data.summary.total} LinkedIn posts: ${data.summary.carousels} carousels, ${data.summary.images} images, ${data.summary.texts} text posts, and ${data.clips.length} video clips!`
+          : `Generated ${data.content.length} LinkedIn posts and ${data.clips.length} video clips!`,
       });
     },
     onError: (error) => {
@@ -724,16 +720,15 @@ export default function ContentGeneration({
                       ) : (
                         <>
                           <Sparkles className="mr-2" size={16} />
-                          Generate LinkedIn Content
+                          Generate All Content (7-8 Posts)
                         </>
                       )}
                     </Button>
                     {uploadContentMutation.isPending && (
                       <div className="text-sm text-neutral-600 mt-2">
-                        <p>Creating LinkedIn content...</p>
+                        <p>Creating comprehensive LinkedIn content...</p>
                         <p className="text-xs mt-1">
-                          Generated {uploadGeneratedContent.length}/9 content
-                          pieces
+                          Generating 7-8 unique posts with different angles and variations...
                         </p>
                       </div>
                     )}

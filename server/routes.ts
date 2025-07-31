@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertSessionSchema, insertQuestionSchema, insertConversationSchema, insertClipSchema, insertContentPieceSchema } from "@shared/schema";
-import { generateAIQuestion, analyzeResponse, generateLinkedInContent, generateVideoClips } from "./anthropic";
+import { generateAIQuestion, analyzeResponse, generateLinkedInContent, generateAllLinkedInContent, generateVideoClips } from "./anthropic";
 import { transcribeAudioBuffer } from "./openai";
 import { z } from "zod";
 import multer from "multer";
@@ -741,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Content Generation from Uploaded Transcript
   app.post("/api/generate-content-from-upload", async (req, res) => {
     try {
-      const { transcript, contentType = 'text', generateAll = false } = req.body;
+      const { transcript, generateComprehensive = true, contentType = 'text', generateAll = false } = req.body;
       
       if (!transcript || transcript.trim().length === 0) {
         return res.status(400).json({ 
@@ -750,35 +750,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('Generating content from upload');
-      console.log('Content type:', contentType);
+      console.log('Generate comprehensive:', generateComprehensive);
       console.log('Transcript length:', transcript.length);
       console.log('Sample content:', transcript.substring(0, 200) + '...');
       
-      // Generate content using Claude with the uploaded transcript
-      const content = await generateLinkedInContent(transcript, contentType, generateAll);
-      
-      if (generateAll && content.posts) {
-        // Return multiple posts
+      if (generateComprehensive) {
+        // Use new comprehensive content generation (7-8 posts across all types)
+        const allContent = await generateAllLinkedInContent(transcript);
+        
+        // Transform the comprehensive response into individual posts
+        const allPosts: any[] = [];
+        const timestamp = Date.now();
+        
+        // Add carousel posts
+        if (allContent.carousel_posts) {
+          allContent.carousel_posts.forEach((post: any, index: number) => {
+            allPosts.push({
+              id: `upload-carousel-${timestamp}-${index}`,
+              title: post.title,
+              content: post,
+              type: 'carousel',
+              platform: 'linkedin',
+              createdAt: new Date().toISOString()
+            });
+          });
+        }
+        
+        // Add image posts
+        if (allContent.image_posts) {
+          allContent.image_posts.forEach((post: any, index: number) => {
+            allPosts.push({
+              id: `upload-image-${timestamp}-${index}`,
+              title: post.title,
+              content: post,
+              type: 'image',
+              platform: 'linkedin',
+              createdAt: new Date().toISOString()
+            });
+          });
+        }
+        
+        // Add text posts
+        if (allContent.text_posts) {
+          allContent.text_posts.forEach((post: any, index: number) => {
+            allPosts.push({
+              id: `upload-text-${timestamp}-${index}`,
+              title: post.title,
+              content: post,
+              type: 'text',
+              platform: 'linkedin',
+              createdAt: new Date().toISOString()
+            });
+          });
+        }
+        
         res.json({
-          posts: content.posts.map((post: any, index: number) => ({
-            id: `upload-${Date.now()}-${index}`,
-            title: post.title,
-            content: post,
+          comprehensive: true,
+          posts: allPosts,
+          summary: {
+            total: allPosts.length,
+            carousels: allContent.carousel_posts?.length || 0,
+            images: allContent.image_posts?.length || 0,
+            texts: allContent.text_posts?.length || 0
+          }
+        });
+      } else {
+        // Use original single-type generation for backward compatibility
+        const content = await generateLinkedInContent(transcript, contentType, generateAll);
+        
+        if (generateAll && content.posts) {
+          // Return multiple posts
+          res.json({
+            posts: content.posts.map((post: any, index: number) => ({
+              id: `upload-${Date.now()}-${index}`,
+              title: post.title,
+              content: post,
+              type: contentType,
+              platform: "linkedin",
+              createdAt: new Date().toISOString()
+            }))
+          });
+        } else {
+          // Return single post (legacy support)
+          res.json({
+            id: `upload-${Date.now()}`,
+            title: content.title,
+            content: content,
             type: contentType,
             platform: "linkedin",
             createdAt: new Date().toISOString()
-          }))
-        });
-      } else {
-        // Return single post (legacy support)
-        res.json({
-          id: `upload-${Date.now()}`,
-          title: content.title,
-          content: content,
-          type: contentType,
-          platform: "linkedin",
-          createdAt: new Date().toISOString()
-        });
+          });
+        }
       }
     } catch (error) {
       console.error('Content generation from upload error:', error);
