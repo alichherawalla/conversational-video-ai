@@ -740,6 +740,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Content Generation from Uploaded Transcript
   app.post("/api/generate-content-from-upload", async (req, res) => {
+    // Set longer timeout for comprehensive content generation
+    req.setTimeout(10 * 60 * 1000); // 10 minutes
+    res.setTimeout(10 * 60 * 1000); // 10 minutes
+    
     try {
       const { transcript, generateComprehensive = true, contentType = 'text', generateAll = false } = req.body;
       
@@ -754,9 +758,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Transcript length:', transcript.length);
       console.log('Sample content:', transcript.substring(0, 200) + '...');
       
+      // Truncate very long transcripts to prevent API timeouts
+      const maxTranscriptLength = 50000; // ~50k characters max
+      const processedTranscript = transcript.length > maxTranscriptLength 
+        ? transcript.substring(0, maxTranscriptLength) + "... [truncated for processing]"
+        : transcript;
+      
+      if (transcript.length > maxTranscriptLength) {
+        console.log(`Truncated transcript from ${transcript.length} to ${processedTranscript.length} characters`);
+      }
+      
       if (generateComprehensive) {
         // Use new comprehensive content generation (7-8 posts across all types)
-        const allContent = await generateAllLinkedInContent(transcript);
+        console.log('Starting comprehensive content generation...');
+        const allContent = await generateAllLinkedInContent(processedTranscript);
+        console.log('Comprehensive content generation completed successfully');
         
         // Transform the comprehensive response into individual posts
         const allPosts: any[] = [];
