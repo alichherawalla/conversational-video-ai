@@ -1284,6 +1284,10 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
 
   // Download session package (video, transcript, content)
   app.get("/api/download-session-package/:sessionId", async (req, res) => {
+    // Set longer timeout for large package downloads
+    req.setTimeout(15 * 60 * 1000); // 15 minutes
+    res.setTimeout(15 * 60 * 1000); // 15 minutes
+
     try {
       const { sessionId } = req.params;
       const session = await storage.getSession(sessionId);
@@ -1340,8 +1344,27 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
 
   // Download upload package (transcript, content, video clips)
   app.post("/api/download-upload-package", async (req, res) => {
+    // Set longer timeout for large package downloads
+    req.setTimeout(15 * 60 * 1000); // 15 minutes
+    res.setTimeout(15 * 60 * 1000); // 15 minutes
+
     try {
       const { transcript, content, clips } = req.body;
+
+      // Debug logging to understand data structure
+      console.log("Download package data received:");
+      console.log("- Transcript length:", transcript?.length || 0);
+      console.log("- Content items:", content?.length || 0);
+      console.log("- Clips items:", clips?.length || 0);
+      if (content && content.length > 0) {
+        console.log("- First content item keys:", Object.keys(content[0]));
+        if (content[0].content) {
+          console.log("- First content.content keys:", Object.keys(content[0].content));
+        }
+      }
+      if (clips && clips.length > 0) {
+        console.log("- First clip keys:", Object.keys(clips[0]));
+      }
 
       const archiver = await import("archiver");
       const archive = archiver.default("zip", { zlib: { level: 9 } });
@@ -1829,14 +1852,20 @@ function generateUploadContentMarkdown(
 
   let markdown = `# Upload Content Package\n\n`;
   markdown += `**Generated:** ${new Date().toLocaleDateString()}\n`;
-  markdown += `**Transcript Length:** ${transcript.length} characters\n\n`;
+  markdown += `**Transcript Length:** ${transcript?.length || 0} characters\n`;
+  markdown += `**Content Items:** ${content?.length || 0}\n`;
+  markdown += `**Video Clips:** ${clips?.length || 0}\n\n`;
 
-  markdown += `## LinkedIn Content\n\n`;
+  if (!content || content.length === 0) {
+    markdown += `## LinkedIn Content\n\n*No content generated yet. Please generate content first.*\n\n`;
+  } else {
+    markdown += `## LinkedIn Content\n\n`;
+  }
 
-  // Group content by type
-  const carouselPosts = content.filter((c) => c.type === "carousel");
-  const imagePosts = content.filter((c) => c.type === "image");
-  const textPosts = content.filter((c) => c.type === "text");
+  // Group content by type and ensure safety
+  const carouselPosts = content ? content.filter((c) => c && c.type === "carousel") : [];
+  const imagePosts = content ? content.filter((c) => c && c.type === "image") : [];
+  const textPosts = content ? content.filter((c) => c && c.type === "text") : [];
 
   if (carouselPosts.length > 0) {
     markdown += `### Carousel Posts\n\n`;
