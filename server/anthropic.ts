@@ -95,7 +95,7 @@ Generate only the follow-up question text, no other content.`;
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 150,
+      max_tokens: 20000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -145,7 +145,7 @@ Provide response in JSON format:
 Be encouraging but honest. Flag responses that are too short (under 20 words), too vague, or lack examples.`;
 
     const response = await anthropic.messages.create({
-      max_tokens: 500,
+      max_tokens: 20000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -259,7 +259,7 @@ Generate in JSON format:
 }`;
 
     const response = await anthropic.messages.create({
-      max_tokens: 40000,
+      max_tokens: 20000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -534,7 +534,7 @@ Make the content 200-400 words with clear educative structure, practical value, 
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 2000,
+      max_tokens: 20000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
@@ -661,7 +661,7 @@ Base timestamps on logical conversation flow and actual content segments.`;
     }
 
     const response = await anthropic.messages.create({
-      max_tokens: 2000,
+      max_tokens: 20000,
       messages: [{ role: "user", content: prompt }],
       model: DEFAULT_MODEL_STR,
     });
