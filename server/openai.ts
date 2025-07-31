@@ -208,7 +208,11 @@ async function extractAudioChunk(
       '-i', sourcePath,
       '-ss', startTime.toString(),
       '-t', duration.toString(),
-      '-acodec', 'mp3',
+      '-acodec', 'mp3', // MP3 for compatibility
+      '-ar', '48000', // Preserve high sample rate
+      '-ac', '2', // Stereo
+      '-ab', '320k', // High quality bitrate
+      '-q:a', '0', // Highest quality VBR setting
       '-y',
       outputPath
     ]);
@@ -334,10 +338,11 @@ async function extractAudioFromVideo(
     const ffmpeg = spawn('ffmpeg', [
       '-i', videoPath,
       '-vn', // No video
-      '-acodec', 'mp3', // Convert to MP3
-      '-ar', '44100', // Sample rate
+      '-acodec', 'mp3', // Convert to MP3 for OpenAI compatibility
+      '-ar', '48000', // High sample rate (48kHz)
       '-ac', '2', // Stereo
-      '-ab', '192k', // Bitrate
+      '-ab', '320k', // High quality bitrate (320kbps)
+      '-q:a', '0', // Highest quality VBR setting
       '-y', // Overwrite output file
       audioPath
     ]);
