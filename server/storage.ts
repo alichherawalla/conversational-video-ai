@@ -1,4 +1,4 @@
-import { sessions, questions, conversations, clips, contentPieces, type Session, type InsertSession, type Question, type InsertQuestion, type Conversation, type InsertConversation, type Clip, type InsertClip, type ContentPiece, type InsertContentPiece } from "@shared/schema";
+import { sessions, questions, conversations, clips, contentPieces, uploads, type Session, type InsertSession, type Question, type InsertQuestion, type Conversation, type InsertConversation, type Clip, type InsertClip, type ContentPiece, type InsertContentPiece, type Upload, type InsertUpload } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -37,6 +37,13 @@ export interface IStorage {
   getContentPiecesBySession(sessionId: string): Promise<ContentPiece[]>;
   createContentPiece(contentPiece: InsertContentPiece): Promise<ContentPiece>;
   deleteContentPiece(id: string): Promise<boolean>;
+
+  // Uploads
+  getUpload(id: string): Promise<Upload | undefined>;
+  getUploads(): Promise<Upload[]>;
+  createUpload(upload: InsertUpload): Promise<Upload>;
+  updateUpload(id: string, upload: Partial<InsertUpload>): Promise<Upload | undefined>;
+  deleteUpload(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -275,6 +282,47 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContentPiece(id: string): Promise<boolean> {
     const result = await db.delete(contentPieces).where(eq(contentPieces.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Uploads
+  async getUpload(id: string): Promise<Upload | undefined> {
+    await this.ensureInitialized();
+    const [upload] = await db.select().from(uploads).where(eq(uploads.id, id));
+    return upload || undefined;
+  }
+
+  async getUploads(): Promise<Upload[]> {
+    await this.ensureInitialized();
+    return await db.select().from(uploads);
+  }
+
+  async createUpload(insertUpload: InsertUpload): Promise<Upload> {
+    await this.ensureInitialized();
+    const [newUpload] = await db
+      .insert(uploads)
+      .values({ 
+        id: randomUUID(), 
+        ...insertUpload,
+        createdAt: new Date()
+      })
+      .returning();
+    return newUpload;
+  }
+
+  async updateUpload(id: string, updateUpload: Partial<InsertUpload>): Promise<Upload | undefined> {
+    await this.ensureInitialized();
+    const [updatedUpload] = await db
+      .update(uploads)
+      .set(updateUpload)
+      .where(eq(uploads.id, id))
+      .returning();
+    return updatedUpload || undefined;
+  }
+
+  async deleteUpload(id: string): Promise<boolean> {
+    await this.ensureInitialized();
+    const result = await db.delete(uploads).where(eq(uploads.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

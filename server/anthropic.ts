@@ -187,7 +187,7 @@ export async function generateAllLinkedInContent(
   conversationText: string,
 ): Promise<any> {
   try {
-    const prompt = `Create 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is).
+    const prompt = `Create 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a authorotative, educative, and direct tone throughout. Write in the style of greg isenberg. Never use smileys. Never use emoticons. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is).
 
 Interview Content: "${conversationText}"
 
@@ -607,6 +607,7 @@ Requirements:
 - Include comprehensive 300-500 word captions for LinkedIn posting
 - Identify key moments with specific timestamps and quotes
 
+Use a authorotative, educative, and direct tone throughout. Write in the style of greg isenberg. Never use smileys. Never use emoticons. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is).
 Generate clips in JSON format:
 {
   "clips": [

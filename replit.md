@@ -1,275 +1,50 @@
 # VideoAI Pro - Video Content Generation Platform
 
 ## Overview
-
-VideoAI Pro is a full-stack web application for creating AI-powered video interview sessions and generating social media content. The platform allows users to conduct video interviews with AI personalities, manage question banks, and automatically generate clips and content pieces for various social media platforms.
+VideoAI Pro is a full-stack web application designed for creating AI-powered video interview sessions and generating social media content. Its primary purpose is to enable users to conduct video interviews with AI personalities, manage question banks, and automatically produce video clips and content pieces tailored for various social media platforms. The platform aims to streamline content creation workflows, leveraging AI to transform raw interview footage into engaging social media assets, thereby unlocking market potential for efficient content production.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
+### UI/UX Decisions
+- **Framework**: React 18 with TypeScript and Vite.
+- **UI Library**: Shadcn/ui components built on Radix UI primitives.
+- **Styling**: Tailwind CSS with CSS variables for theming, adopting a mobile-first responsive design.
+- **Component Architecture**: Utilizes Shadcn/ui for a consistent, accessible, and customizable design system.
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript and Vite
-- **UI Library**: Shadcn/ui components built on Radix UI primitives
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **State Management**: TanStack Query (React Query) for server state
-- **Routing**: Wouter for lightweight client-side routing
-- **Form Handling**: React Hook Form with Zod validation
+### Technical Implementations
+- **Frontend State Management**: TanStack Query (React Query) for server state management, optimized for caching and synchronization.
+- **Frontend Routing**: Wouter for lightweight client-side routing.
+- **Form Handling**: React Hook Form with Zod validation.
+- **Backend Runtime**: Node.js with Express.js server.
+- **Backend Language**: TypeScript with ES modules.
+- **Database**: PostgreSQL with Drizzle ORM, utilizing Neon Database for serverless PostgreSQL.
+- **API Pattern**: RESTful APIs with JSON responses.
+- **Storage Interface**: Abstracted storage layer.
+- **Build System**: Vite for frontend, esbuild for backend server bundling, with shared TypeScript types.
+- **Media Recording**: Browser-based video/audio capture using MediaRecorder API, supporting MP4 (preferred) and WebM formats with automatic audio recording.
+- **Transcription**: OpenAI Whisper integration for word-level transcription with precise timestamps.
+- **Video Processing**: FFmpeg integration for actual video clipping, supporting large files via streaming multipart uploads (busboy).
+- **AI Integration**: Enhanced AI conversation features including contextual follow-up questions, response correction, and smart content analysis using models like Claude.
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js server
-- **Language**: TypeScript with ES modules
-- **Database**: PostgreSQL with Drizzle ORM
-- **Database Provider**: Neon Database (serverless PostgreSQL)
-- **API Pattern**: RESTful APIs with JSON responses
-- **Storage Interface**: Abstracted storage layer with in-memory implementation
+### Feature Specifications
+- **Core Modules**: Recording Studio (video capture, AI conversation), Question Bank (CRUD operations), Content Generation (automated clip and social media content), Video Library (session management).
+- **Content Generation**: Automated creation of diverse social media content (LinkedIn carousel, image, text posts, and video clips) from interview transcripts, with detailed captions and creative direction for designers. Content generation strictly uses authentic transcript data.
+- **Upload Functionality**: Users can upload existing video files and transcripts for content generation.
+- **Workflow Separation**: Distinct workflows for transcript extraction, LinkedIn content generation (transcript-based), and video clip processing (video file + transcript-based).
 
-### Build System
-- **Frontend Build**: Vite with React plugin
-- **Backend Build**: esbuild for server bundling
-- **Development**: Hot module replacement via Vite dev server
-- **TypeScript**: Shared types between client and server
-
-## Key Components
-
-### Core Modules
-1. **Recording Studio**: Video capture, AI conversation flow, session management
-2. **Question Bank**: CRUD operations for interview questions with categorization
-3. **Content Generation**: Automated clip creation and social media content generation
-4. **Video Library**: Session browsing, filtering, and media management
-
-### Database Schema
-- **Sessions**: Video interview sessions with metadata (title, topic, duration, status)
-- **Questions**: Interview questions with follow-ups and categorization
-- **Conversations**: AI-user interaction logs with timestamps
-- **Clips**: Generated video clips with social media scoring
-- **Content Pieces**: Generated text content for social platforms
-
-### UI Components
-- **Responsive Design**: Mobile-first approach with Tailwind breakpoints
-- **Component Library**: Comprehensive set of reusable UI components
-- **Media Recording**: Browser-based video/audio capture with MediaRecorder API
-- **Real-time Updates**: React Query for automatic data synchronization
-
-## Data Flow
-
-1. **Session Creation**: User configures interview settings and starts recording
-2. **AI Interaction**: Real-time conversation between user and AI personality
-3. **Content Storage**: Video data and conversation logs stored in database
-4. **Content Generation**: Automated analysis creates clips and social media content
-5. **Library Management**: Users browse, filter, and manage generated content
+### System Design Choices
+- **Database Choice**: PostgreSQL with Drizzle ORM for strong typing, flexible schema management, and serverless compatibility.
+- **Monorepo Structure**: Single repository with shared types between client and server for simplified development and deployment.
+- **State Management**: React Query chosen over alternatives for optimized server state handling and reduced boilerplate.
 
 ## External Dependencies
-
-### Core Dependencies
-- **Database**: Neon Database (serverless PostgreSQL)
-- **ORM**: Drizzle with PostgreSQL dialect
-- **UI Framework**: Radix UI primitives with Shadcn/ui styling
-- **State Management**: TanStack Query for server state
-- **Validation**: Zod for runtime type checking
-- **Media Handling**: Browser MediaRecorder API for video capture
-
-### Development Tools
-- **Build Tools**: Vite, esbuild, TypeScript compiler
-- **Code Quality**: ESLint, Prettier (implied by project structure)
-- **Development Environment**: Replit-specific plugins for hot reloading
-
-## Deployment Strategy
-
-### Environment Configuration
-- **Development**: Vite dev server with Express backend
-- **Production**: Static build served alongside Express API
-- **Database**: Environment-based DATABASE_URL configuration
-- **Assets**: Vite handles asset optimization and bundling
-
-### Build Process
-1. **Frontend**: Vite builds React app to `dist/public`
-2. **Backend**: esbuild bundles Express server to `dist/index.js`
-3. **Database**: Drizzle migrations applied via `db:push` command
-4. **Serving**: Express serves static frontend and API routes
-
-### Key Architectural Decisions
-
-**Database Choice**: PostgreSQL with Drizzle ORM chosen for:
-- Strong typing with TypeScript integration
-- Flexible schema management with migrations
-- Serverless compatibility with Neon Database
-
-**Monorepo Structure**: Single repository with shared types:
-- Reduces type duplication between client/server
-- Simplified deployment and development workflow
-- Shared validation schemas via Zod
-
-**Component Architecture**: Shadcn/ui over custom components:
-- Consistent design system with Tailwind CSS
-- Accessible components via Radix UI primitives
-- Customizable and maintainable component library
-
-**State Management**: React Query over Redux:
-- Optimized for server state management
-- Built-in caching and synchronization
-- Reduced boilerplate for API interactions
-
-## Recent Changes: Latest modifications with dates
-
-### January 30, 2025 - Enhanced AI Conversation Features
-- **AI Follow-up Questions**: AI now asks exactly 2 relevant follow-up questions after each response
-- **Response Correction System**: AI analyzes responses and provides corrections when answers are inadequate
-- **Smart Content Analysis**: AI checks for response length, examples, emotional content, and vague language
-- **Enhanced Video Clips**: Generated clips are now optimized for 15-90 second social media formats
-- **Advanced LinkedIn Content**: Three content types with sophisticated templates:
-  - Carousel posts with 5-7 professional slides
-  - Image posts with quotes, statistics, and personal insights  
-  - Text posts with story threads, contrarian takes, and behind-the-scenes content
-
-### January 30, 2025 - Contextual AI Follow-ups and Enhanced Question Display
-- **Smart Follow-up Questions**: AI now generates contextual follow-up questions based on base questions and user responses
-- **Enhanced AI Conversation**: Follow-ups are personalized using Claude to dig deeper into specific user answers
-- **Prominent Question Display**: Current question is prominently displayed above the conversation for user context
-- **Visual Question Reference**: Users can easily reference the question they're responding to throughout the conversation
-- **Contextual Understanding**: AI analyzes both the original question and user response to create relevant follow-ups
-
-### January 30, 2025 - Video Recording and Audio Integration
-- **MP4 Video Format**: Switched from WebM to MP4 format for better audio compatibility and universal playback
-- **Automatic Audio Recording**: Video recording now automatically starts parallel audio transcription recording
-- **Enhanced Download**: Download now includes both video file (MP4/WebM) and transcript text file simultaneously  
-- **Smart Format Detection**: MediaRecorder automatically selects best supported format (MP4 preferred, WebM fallback)
-- **Audio Codec Support**: Added proper opus audio codec support for WebM when MP4 not available
-- **Real-time Transcription**: Audio transcription happens in parallel with video recording for immediate text generation
-
-### January 30, 2025 - Database Integration
-- **PostgreSQL Database**: Successfully migrated from in-memory storage to persistent PostgreSQL database
-- **Database Connection**: Integrated Neon Database with Drizzle ORM for robust data persistence
-- **Sample Data**: Automatically initializes with sample questions when database is empty
-- **Schema Migration**: Database tables created for sessions, questions, conversations, clips, and content pieces
-- **Data Persistence**: All video sessions, conversations, and generated content now persist between app restarts
-
-### January 30, 2025 - Enhanced Content Generation with Detailed Captions
-- **Detailed Image Post Captions**: Comprehensive caption structure with hook, context, insight, value proposition, and call-to-action
-- **Visual Direction for Designers**: Specific illustration guidance including color schemes, layout, typography, and visual elements
-- **Enhanced Carousel Posts**: Detailed slide content (40-60 words each) with comprehensive captions and structured storytelling
-- **Professional Caption Templates**: Structured approach for LinkedIn engagement with specific formatting and hashtag strategies
-- **Authentic Content Focus**: All content generation uses only real transcript data with detailed storytelling frameworks
-- **Three Content Variations**: Each type generates 3 distinct approaches (strategic insights, frameworks, lessons learned)
-
-### January 30, 2025 - Video Clipping and Download Functionality
-- **Actual Video Clipping**: Implemented FFmpeg integration to cut actual video files at generated timestamps
-- **Individual Clip Downloads**: Added download buttons for individual video clips with proper file naming
-- **Bulk Clip Downloads**: "Download All Clips" button creates ZIP package with all session clips and metadata
-- **Video File Management**: Updated database schema to track video file paths for clipped segments
-- **Enhanced User Interface**: Added "Create Video Files" button that processes timestamps into actual video clips
-- **Error Handling**: Comprehensive error handling for video processing and file management
-- **Metadata Export**: Clip downloads include JSON metadata with timestamps, descriptions, and social scores
-
-### January 30, 2025 - Enhanced Content Generation with Full-View Modals
-- **Authentic Data Usage**: All LinkedIn content generation now uses only real transcript data, no fictional stories or fabricated statistics
-- **Simplified Content Page**: Removed video library and other content types, focusing solely on LinkedIn content and video clips
-- **Interactive Content Modals**: Added comprehensive "View Full" functionality for all content types:
-  - **Carousel Posts**: Full carousel preview with all slides, icons, titles, content, and professional hashtags
-  - **Image Posts**: Mock image card display with quotes, insights, captions, and key statistics
-  - **Text Posts**: Complete post breakdown showing hook, body content, call-to-action, and hashtags
-  - **Video Clips**: Detailed view with precise start/end timestamps, duration, description, and social scores
-- **Enhanced Video Clips**: Clips now provide accurate timestamps based on actual conversation moments using transcript timing data
-- **Transcript Storage**: Added fullTranscript field to sessions table for precise content generation and clip timing
-
-### January 31, 2025 - Emoji-Free Content Generation and Simplified Prompts
-- **Removed All Emojis**: Completely eliminated all emojis from `generateAllLinkedInContent` function and frontend expectations
-- **Simplified AI Prompts**: Reduced prompt complexity to only specify JSON structure, letting LLM decide content approach naturally
-- **No Icon Dependencies**: Updated carousel and image post components to not expect or display icons
-- **Clean Content Generation**: AI now focuses purely on authentic content without emoji distractions
-- **Frontend Updates**: Removed icon references from content-generation.tsx, content-generation-simplified.tsx, and server routes
-- **Authentic Content Focus**: System generates 7-8 unique LinkedIn posts (carousels, images, text) based solely on interview content
-
-### January 31, 2025 - Comprehensive Content Generation Enhancement with Detailed Captions & Creative Direction
-- **Unified Content Generation**: LinkedIn content generation now creates 7-8 unique posts in one API call instead of separate requests
-- **Multi-Type Variety**: Single generation produces 2-3 carousels, 2-3 image posts, and 2-3 text posts with different angles
-- **Enhanced Content Strategy**: Each post explores different insights, contrarian viewpoints, and strategic angles from the same source material
-- **Improved User Experience**: Simplified interface with single "Generate All Content" button replacing multiple individual generate buttons
-- **Comprehensive API Response**: New `generateAllLinkedInContent` function creates diverse content mix with detailed captions and varied perspectives
-- **Better Content Discovery**: Generated posts cover frameworks, lessons, quotes, processes, and results from multiple angles for maximum reach
-
-### January 31, 2025 - Comprehensive Creative Direction & Detailed Captions System
-- **Enhanced Content Generation Prompts**: Upgraded to generate 400-600 word detailed captions for all content types (carousels, images, text posts)
-- **Complete Creative Direction for Designers**: 
-  - **Carousel Posts**: Creative direction, design specifications (layout, colors, typography, visual elements, brand integration)
-  - **Image Posts**: Comprehensive illustration direction, visual elements, color schemes, typography, composition, design mood, brand elements
-  - **Text Posts**: Key quotes for social sharing, engagement hooks, and comprehensive content structure
-- **Enhanced Video Clip Captions**: Video clips now include 300-500 word detailed captions and key moments with timestamps
-- **Frontend Display Enhancements**: Modal views display all creative specifications with color-coded sections for different design elements
-- **Download Package Improvements**: LinkedIn.md files include all detailed captions, creative direction, design specifications, and visual elements
-- **Increased Token Limits**: Enhanced API calls to support comprehensive content generation (6000 tokens for main generation, 2000 for video clips)
-- **Professional Design Integration**: All content includes specific guidance for graphic designers with Wednesday Solutions branding elements
-
-### January 30, 2025 - Upload Functionality for Content Generation
-- **Video & Transcript Upload**: Users can now upload existing video files and transcript text to generate LinkedIn content
-- **Flexible Input Options**: Support for transcript file uploads (.txt, .md, .doc, .docx) or direct text pasting
-- **Upload Interface**: Dedicated upload mode accessible from Content Generation tab with user-friendly file handling
-- **Same Content Engine**: Upload-generated content uses the same authentic data processing as session-based content
-- **Batch Content Generation**: Single click generates all three LinkedIn content types (carousel, image, text) automatically
-- **Content Preview Grid**: Generated content displays in organized cards with individual "View Full" buttons
-- **Modal Integration**: Generated content from uploads displays in the same detailed modals as session content
-
-### January 30, 2025 - Word-Level Transcription and Enhanced Auto-Submission
-- **Word-Level Timing**: Upgraded OpenAI Whisper integration to use `verbose_json` format with word-level timestamps
-- **Enhanced Transcription System**: New `useEnhancedTranscription` hook provides real-time word-level timing and smart chunking
-- **5-Second Auto-Transcription**: Automatic transcription processing every 5 seconds with intelligent accumulation
-- **Smart Auto-Submit**: Refined 5-second silence detection triggers automatic transcript submission for user confirmation
-- **Real-Time Word Tracking**: Each transcribed word includes absolute start/end timestamps for precise timing
-- **Improved User Experience**: Live transcription preview with auto-submit pending indicators
-- **Fallback Manual Transcript**: Maintained manual "Get Transcript" button for user-controlled submission
-- **Word-Level Accuracy**: Transcription now provides precise timing for each word instead of sentence-level timestamps
-
-### January 30, 2025 - Enhanced Content Generation with Detailed Educative Captions
-- **Detailed LinkedIn Captions**: All content types now generate comprehensive 200-400 word captions with educative and direct tone
-- **Structured Caption Framework**: Consistent format using Hook → Context → Key Insights → Practical Value → Call-to-Action structure
-- **Educative Content Focus**: Direct, educational voice that breaks down complex concepts into clear, actionable insights
-- **Enhanced Carousel Posts**: Detailed slide content (40-60 words each) with comprehensive captions and storytelling frameworks
-- **Comprehensive Image Posts**: Detailed visual direction for designers with specific color schemes, layout, and typography guidance
-- **Authentic Data Only**: All content generation strictly uses real transcript data with no fictional stories or fabricated statistics
-- **Generate All Content Feature**: Added bulk content generation for sessions creating 9 LinkedIn posts plus video clips in one click
-- **Session Navigation Integration**: "Generate Social Media Content" button seamlessly navigates from Recording Studio to Content Generation
-
-### January 30, 2025 - Enhanced Bold and Educative Content Generation
-- **Bold Content Revolution**: Transformed all LinkedIn content to use provocative, contrarian viewpoints that challenge conventional thinking
-- **Scroll-Stopping Captions**: Enhanced all content types with 350-600 word bold, educative captions that demand attention
-- **Provocative Messaging**: Added power words, controversial hooks, and thought-provoking statements throughout all content
-- **Contrarian Positioning**: Content now challenges industry norms and presents unconventional wisdom from interview insights
-- **Enhanced Token Limits**: Increased Anthropic API max tokens to 2000 to support much more detailed content generation
-- **Revolutionary Templates**: Updated carousel, image, and text post templates with bold, disruptive messaging frameworks
-
-### January 30, 2025 - Reverted to Manual-Only Transcription
-- **Removed Auto-Transcription**: Eliminated all automatic transcription functionality due to transcript quality issues
-- **Manual Control Only**: Users now control when to generate transcripts by clicking "Get Transcript" button
-- **Cleaner Transcription Process**: No more fragmented transcripts from frequent auto-processing
-- **Simplified UI**: Updated interface to show "Manual transcription • Click 'Get Transcript' when ready"
-- **Better User Experience**: Users can speak naturally without interruption and transcript when they choose
-- **Code Cleanup**: Removed unused auto-transcription timers, refs, and logic for cleaner codebase
-
-### January 30, 2025 - Enhanced Streaming Video Upload for Large Files (100MB+)
-- **Streaming Multipart Uploads**: Replaced multer with busboy for proper streaming file handling of large video files
-- **Large File Support**: Increased limits to 500MB with 15-minute processing timeouts for video files over 100MB
-- **Progress Tracking**: Real-time upload progress logging every 10MB and audio extraction progress indicators
-- **Optimized FFmpeg Processing**: Using spawn instead of execSync for better memory management and progress tracking
-- **Enhanced Error Handling**: Comprehensive error messages for file size limits, upload failures, and processing errors
-- **Frontend Validation**: File size warnings and processing time estimates for users uploading large files
-- **Streaming Architecture**: Videos now stream directly to disk during upload rather than loading entirely in memory
-- **Word-Level Timing Integration**: Maintained OpenAI Whisper word-level transcription for precise video clip generation
-
-### January 30, 2025 - Fixed Word-Level Timing for Accurate Video Clips
-- **Critical Fix**: Video clip timing was completely inaccurate due to missing word-level timestamps from OpenAI Whisper transcription
-- **Word-Level Transcription**: Upload video clip generation now extracts audio and gets precise word-level timing using OpenAI `verbose_json` format
-- **Accurate Clip Boundaries**: Video clips now use exact word timestamps for precise start/end timing instead of estimated durations
-- **Enhanced Audio Processing**: Added FFmpeg audio extraction specifically for word-level timing analysis during video clip generation
-- **Improved Video Workflow**: Fixed `/api/upload-video-generate-clips` endpoint to properly utilize word timing data for clip generation
-- **LinkedIn Text Post Display**: Fixed text post preview and modal display to properly show `detailed_content` format content
-
-### January 30, 2025 - Separate Workflows for Content vs Video Processing
-- **Separate Processing Buttons**: Created distinct workflows for content generation (transcript-based) and video clip processing (video file-based)
-- **Three-Step Workflow**: 1) Extract transcript from video, 2a) Generate LinkedIn content from transcript, 2b) Generate video clips from video + transcript
-- **Independent Operations**: Content generation works with transcript only, video clipping requires both video file and transcript
-- **Enhanced User Experience**: Clear step-by-step workflow with color-coded buttons (blue for transcription, orange for content, green for video clips)
-- **Flexible Processing**: Users can choose to generate content only, video clips only, or both depending on their needs
-- **API Separation**: Three separate endpoints: `/api/upload-video-transcribe`, `/api/upload-content-generate`, `/api/upload-video-generate-clips`
-- **Memory Efficient**: Each process handles only its specific requirements, reducing memory usage and processing time
+- **Database**: Neon Database (serverless PostgreSQL).
+- **ORM**: Drizzle (with PostgreSQL dialect).
+- **UI Framework**: Radix UI primitives with Shadcn/ui.
+- **State Management**: TanStack Query (React Query).
+- **Validation**: Zod.
+- **Media Handling**: Browser MediaRecorder API, FFmpeg.
+- **AI Services**: OpenAI Whisper, Claude.
+- **Build Tools**: Vite, esbuild.

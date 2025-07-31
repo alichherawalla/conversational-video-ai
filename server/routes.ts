@@ -553,7 +553,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             `Successfully transcribed ${originalName}: ${transcription.text.length} characters`,
           );
 
+          // Create upload record for this transcription
+          const uploadRecord = await storage.createUpload({
+            originalFileName: originalName,
+            videoPath: null, // Video file deleted after transcription
+            transcript: transcription.text,
+            linkedinContentMarkdown: null, // Generated later when content is created
+            contentItems: null,
+            videoClips: null,
+          });
+
+          console.log(`Created upload record with ID: ${uploadRecord.id}`);
+
           res.json({
+            uploadId: uploadRecord.id, // Return unique upload ID
             transcript: {
               text: transcription.text,
               duration: transcription.duration,
@@ -689,12 +702,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (!videoPath || !originalName || !transcript.trim()) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Video file and transcript are both required for video clipping",
-            });
+          return res.status(400).json({
+            message:
+              "Video file and transcript are both required for video clipping",
+          });
         }
 
         console.log(
@@ -857,6 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const {
         transcript,
+        uploadId, // Optional: if provided, update existing upload record
         generateComprehensive = true,
         contentType = "text",
         generateAll = false,
@@ -940,9 +952,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Auto-create LinkedIn.md file
+        const linkedinMarkdown = generateUploadContentMarkdown(
+          processedTranscript,
+          allPosts,
+          [] // No clips in content generation - they're generated separately
+        );
+
+        // Create or update upload record in database
+        let uploadRecord;
+        if (uploadId) {
+          // Update existing upload record
+          uploadRecord = await storage.updateUpload(uploadId, {
+            linkedinContentMarkdown: linkedinMarkdown,
+            contentItems: allPosts,
+          });
+          console.log(`Updated upload record with ID: ${uploadId}`);
+        } else {
+          // Create new upload record
+          uploadRecord = await storage.createUpload({
+            originalFileName: null, // Content generated from text, not file
+            videoPath: null,
+            transcript: processedTranscript,
+            linkedinContentMarkdown: linkedinMarkdown,
+            contentItems: allPosts,
+            videoClips: null, // Clips generated separately
+          });
+          console.log(`Created upload record with ID: ${uploadRecord.id}`);
+        }
+
         res.json({
           comprehensive: true,
+          uploadId: uploadRecord.id, // Return unique upload ID
           posts: allPosts,
+          linkedinMarkdown, // Include markdown in response for immediate download
           summary: {
             total: allPosts.length,
             carousels: allContent.carousel_posts?.length || 0,
@@ -993,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate clips from uploaded content
   app.post("/api/generate-clips-from-upload", async (req, res) => {
     try {
-      const { transcript } = req.body;
+      const { transcript, uploadId } = req.body;
 
       if (!transcript) {
         return res.status(400).json({ error: "Transcript is required" });
@@ -1009,6 +1052,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Math.floor(transcript.split(" ").length / 2.5),
       );
       const clips = await generateVideoClips(transcript, estimatedDuration);
+
+      // If uploadId provided, update the upload record with video clips
+      if (uploadId) {
+        await storage.updateUpload(uploadId, {
+          videoClips: clips,
+        });
+        console.log(`Updated upload record ${uploadId} with ${clips.length} video clips`);
+      }
 
       res.json(clips);
     } catch (error) {
@@ -1349,21 +1400,43 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
     res.setTimeout(15 * 60 * 1000); // 15 minutes
 
     try {
-      const { transcript, content, clips } = req.body;
+      const { uploadId, transcript, content, clips } = req.body;
 
-      // Debug logging to understand data structure
-      console.log("Download package data received:");
-      console.log("- Transcript length:", transcript?.length || 0);
-      console.log("- Content items:", content?.length || 0);
-      console.log("- Clips items:", clips?.length || 0);
-      if (content && content.length > 0) {
-        console.log("- First content item keys:", Object.keys(content[0]));
-        if (content[0].content) {
-          console.log("- First content.content keys:", Object.keys(content[0].content));
+      // Try to get data from upload record if uploadId provided
+      let transcriptData = transcript;
+      let contentData = content;
+      let clipsData = clips;
+      let storedMarkdown = null;
+
+      if (uploadId) {
+        const uploadRecord = await storage.getUpload(uploadId);
+        if (uploadRecord) {
+          transcriptData = uploadRecord.transcript || transcript;
+          contentData = uploadRecord.contentItems || content;
+          clipsData = uploadRecord.videoClips || clips;
+          storedMarkdown = uploadRecord.linkedinContentMarkdown;
+          console.log(`Using stored upload record ${uploadId}`);
         }
       }
-      if (clips && clips.length > 0) {
-        console.log("- First clip keys:", Object.keys(clips[0]));
+
+      // Debug logging to understand data structure
+      console.log("Download package data:");
+      console.log("- Upload ID:", uploadId || "none");
+      console.log("- Transcript length:", transcriptData?.length || 0);
+      console.log("- Content items:", contentData?.length || 0);
+      console.log("- Clips items:", clipsData?.length || 0);
+      console.log("- Stored markdown:", storedMarkdown ? "yes" : "no");
+      if (contentData && contentData.length > 0) {
+        console.log("- First content item keys:", Object.keys(contentData[0]));
+        if (contentData[0].content) {
+          console.log(
+            "- First content.content keys:",
+            Object.keys(contentData[0].content),
+          );
+        }
+      }
+      if (clipsData && clipsData.length > 0) {
+        console.log("- First clip keys:", Object.keys(clipsData[0]));
       }
 
       const archiver = await import("archiver");
@@ -1373,22 +1446,22 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
       archive.pipe(res);
 
       // Add transcript
-      if (transcript) {
-        archive.append(transcript, { name: "transcript.txt" });
+      if (transcriptData) {
+        archive.append(transcriptData, { name: "transcript.txt" });
       }
 
-      // Generate and add LinkedIn content markdown
-      const markdownContent = generateUploadContentMarkdown(
-        transcript,
-        content,
-        clips,
+      // Use stored markdown if available, otherwise generate it
+      const markdownContent = storedMarkdown || generateUploadContentMarkdown(
+        transcriptData,
+        contentData,
+        clipsData,
       );
       archive.append(markdownContent, { name: "linkedin_content.md" });
 
       // Add actual video clip files if they exist
-      if (clips && clips.length > 0) {
+      if (clipsData && clipsData.length > 0) {
         const fs = await import("fs");
-        for (const clip of clips) {
+        for (const clip of clipsData) {
           if (clip.videoPath && fs.existsSync(clip.videoPath)) {
             const clipFileName = `${clip.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.mp4`;
             archive.file(clip.videoPath, {
@@ -1398,7 +1471,7 @@ Total Duration: ${Math.max(...conversations.map((c) => c.timestamp))} seconds`;
         }
 
         // Add clips metadata
-        const clipsMetadata = clips.map((clip: any) => ({
+        const clipsMetadata = clipsData.map((clip: any) => ({
           filename: `${clip.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.mp4`,
           title: clip.title,
           description: clip.description,
@@ -1467,11 +1540,9 @@ For more information, visit the Video Library section.`;
 
       const clips = await storage.getClips(sessionId);
       if (!clips || clips.length === 0) {
-        return res
-          .status(400)
-          .json({
-            error: "No clips found for this session. Generate clips first.",
-          });
+        return res.status(400).json({
+          error: "No clips found for this session. Generate clips first.",
+        });
       }
 
       // Check if video file exists
@@ -1844,6 +1915,7 @@ function generateUploadContentMarkdown(
   content: any[],
   clips: any[],
 ): string {
+  console.log("mac12345::", JSON.stringify({ content }));
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -1863,9 +1935,15 @@ function generateUploadContentMarkdown(
   }
 
   // Group content by type and ensure safety
-  const carouselPosts = content ? content.filter((c) => c && c.type === "carousel") : [];
-  const imagePosts = content ? content.filter((c) => c && c.type === "image") : [];
-  const textPosts = content ? content.filter((c) => c && c.type === "text") : [];
+  const carouselPosts = content
+    ? content.filter((c) => c && c.type === "carousel")
+    : [];
+  const imagePosts = content
+    ? content.filter((c) => c && c.type === "image")
+    : [];
+  const textPosts = content
+    ? content.filter((c) => c && c.type === "text")
+    : [];
 
   if (carouselPosts.length > 0) {
     markdown += `### Carousel Posts\n\n`;

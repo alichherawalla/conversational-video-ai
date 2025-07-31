@@ -60,6 +60,17 @@ export const contentPieces = pgTable("content_pieces", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const uploads = pgTable("uploads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  originalFileName: text("original_file_name"),
+  videoPath: text("video_path"), // Path to uploaded video file
+  transcript: text("transcript"), // Extracted transcript
+  linkedinContentMarkdown: text("linkedin_content_markdown"), // Auto-generated markdown
+  contentItems: jsonb("content_items"), // Generated LinkedIn content
+  videoClips: jsonb("video_clips"), // Generated video clips
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertSessionSchema = createInsertSchema(sessions).omit({
   id: true,
   createdAt: true,
@@ -85,6 +96,11 @@ export const insertContentPieceSchema = createInsertSchema(contentPieces).omit({
   createdAt: true,
 });
 
+export const insertUploadSchema = createInsertSchema(uploads).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type Session = typeof sessions.$inferSelect;
 
@@ -99,3 +115,6 @@ export type Clip = typeof clips.$inferSelect;
 
 export type InsertContentPiece = z.infer<typeof insertContentPieceSchema>;
 export type ContentPiece = typeof contentPieces.$inferSelect;
+
+export type InsertUpload = z.infer<typeof insertUploadSchema>;
+export type Upload = typeof uploads.$inferSelect;
