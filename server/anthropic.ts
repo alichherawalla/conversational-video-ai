@@ -187,7 +187,7 @@ export async function generateAllLinkedInContent(
   conversationText: string,
 ): Promise<any> {
   try {
-    const prompt = `Create a comprehensive set of 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company LinkedIn Account.
+    const prompt = `Create a comprehensive set of 7-8 unique LinkedIn posts from this interview content using ONLY the information provided. Generate different types with multiple angles and variations. Use a BOLD, educative, and direct tone throughout. Write in the style of greg isenberg. Never use emojis. No emoticons, no emojis. Be professional. Write from the perspective of Wednesday Solutions(wednesday.is). These posts will go out from the company LinkedIn Account.
 
 Interview Content: "${conversationText}"
 
@@ -209,14 +209,14 @@ Generate in JSON format:
   "carousel_posts": [
     {
       "title": "Strategic Framework Carousel",
-      "detailed_caption": "🚨 FRAMEWORK ALERT: The 6-step system that [specific result from interview]\\n\\nMost business frameworks are theoretical garbage written by people who've never built anything.\\n\\nThis one is different. It's battle-tested through [specific experience from interview].\\n\\nWhile everyone else was following cookie-cutter advice, we discovered something that fundamentally changes how you approach [relevant area].\\n\\nHere's what makes this framework revolutionary:\\n\\n→ It challenges the conventional [common approach]\\n→ It focuses on [contrarian insight from interview]\\n→ It delivers results even when [specific constraint]\\n\\nThe breakthrough came when we realized [key insight from interview].\\n\\nMost people won't implement this because it requires [specific change]. They prefer comfortable mediocrity over uncertain greatness.\\n\\nBut if you're ready to think differently, each slide contains insights that took us [time period] to learn the hard way.\\n\\nThe last slide alone could save you months of wasted effort.\\n\\nWhich 'proven' framework have you found to be completely useless? Share your framework failures below - let's challenge some sacred cows. 👇",
+      "detailed_caption": "FRAMEWORK ALERT: The 6-step system that [specific result from interview]\\n\\nMost business frameworks are theoretical garbage written by people who've never built anything.\\n\\nThis one is different. It's battle-tested through [specific experience from interview].\\n\\nWhile everyone else was following cookie-cutter advice, we discovered something that fundamentally changes how you approach [relevant area].\\n\\nHere's what makes this framework revolutionary:\\n\\n→ It challenges the conventional [common approach]\\n→ It focuses on [contrarian insight from interview]\\n→ It delivers results even when [specific constraint]\\n\\nThe breakthrough came when we realized [key insight from interview].\\n\\nMost people won't implement this because it requires [specific change]. They prefer comfortable mediocrity over uncertain greatness.\\n\\nBut if you're ready to think differently, each slide contains insights that took us [time period] to learn the hard way.\\n\\nThe last slide alone could save you months of wasted effort.\\n\\nWhich 'proven' framework have you found to be completely useless? Share your framework failures below - let's challenge some sacred cows.",
       "slides": [
-        {"icon": "🎯", "title": "The Problem", "content": "Detailed description of the specific challenge or situation from the interview that required a new approach"},
-        {"icon": "💡", "title": "The Insight", "content": "Key realization or breakthrough moment that changed everything, with specific details from the interview"},
-        {"icon": "📊", "title": "The Analysis", "content": "How the situation was analyzed and what data or evidence supported the new approach"},
-        {"icon": "🚀", "title": "The Framework", "content": "Step-by-step breakdown of the methodology developed, with specific tactics from the interview"},
-        {"icon": "📈", "title": "The Results", "content": "Measurable outcomes and impact achieved using this framework, with specific metrics if available"},
-        {"icon": "🔑", "title": "Your Application", "content": "How others can adapt and apply this framework to their own situations"}
+        {"title": "The Problem", "content": "Detailed description of the specific challenge or situation from the interview that required a new approach"},
+        {"title": "The Insight", "content": "Key realization or breakthrough moment that changed everything, with specific details from the interview"},
+        {"title": "The Analysis", "content": "How the situation was analyzed and what data or evidence supported the new approach"},
+        {"title": "The Framework", "content": "Step-by-step breakdown of the methodology developed, with specific tactics from the interview"},
+        {"title": "The Results", "content": "Measurable outcomes and impact achieved using this framework, with specific metrics if available"},
+        {"title": "Your Application", "content": "How others can adapt and apply this framework to their own situations"}
       ],
       "tags": ["#Framework", "#Strategy", "#BusinessGrowth", "#Innovation"]
     },
