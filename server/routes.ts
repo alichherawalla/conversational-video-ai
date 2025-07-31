@@ -1970,9 +1970,23 @@ function generateUploadContentMarkdown(
         markdown += `**Post Caption:**\n${post.content.detailed_caption}\n\n`;
       }
 
-      // Add visual direction for designers (shown in frontend)
-      if (post.content.illustration_direction) {
-        markdown += `**Visual Direction for Designers:**\n${post.content.illustration_direction}\n\n`;
+      // Add creative direction (comprehensive design guidance)
+      if (post.content.creative_direction) {
+        markdown += `**Creative Direction:**\n${post.content.creative_direction}\n\n`;
+      }
+
+      // Add detailed design specifications
+      if (post.content.design_specifications) {
+        const specs = post.content.design_specifications;
+        markdown += `**Design Specifications:**\n`;
+        if (specs.layout) markdown += `- **Layout:** ${specs.layout}\n`;
+        if (specs.colors) markdown += `- **Colors:** ${specs.colors}\n`;
+        if (specs.typography) markdown += `- **Typography:** ${specs.typography}\n`;
+        if (specs.brand_integration) markdown += `- **Brand Integration:** ${specs.brand_integration}\n`;
+        if (specs.visual_elements && Array.isArray(specs.visual_elements)) {
+          markdown += `- **Visual Elements:** ${specs.visual_elements.join(", ")}\n`;
+        }
+        markdown += `\n`;
       }
 
       // Add hashtags (displayed as badges in frontend)
@@ -1999,9 +2013,48 @@ function generateUploadContentMarkdown(
         markdown += `**Post Caption:**\n${post.content.detailed_caption}\n\n`;
       }
 
-      // Add visual direction for designers (shown as special section)
+      // Add quote overlay (prominent text for image)
+      if (post.content.quote_overlay) {
+        markdown += `**Quote Overlay Text:**\n"${post.content.quote_overlay}"\n\n`;
+      }
+
+      // Add illustration direction (visual design guidance)
       if (post.content.illustration_direction) {
-        markdown += `**Visual Direction for Designers:**\n${post.content.illustration_direction}\n\n`;
+        markdown += `**Illustration Direction:**\n${post.content.illustration_direction}\n\n`;
+      }
+
+      // Add detailed visual elements
+      if (post.content.visual_elements && Array.isArray(post.content.visual_elements)) {
+        markdown += `**Visual Elements:**\n`;
+        post.content.visual_elements.forEach(element => {
+          markdown += `- ${element}\n`;
+        });
+        markdown += `\n`;
+      }
+
+      // Add color scheme
+      if (post.content.color_scheme) {
+        markdown += `**Color Scheme:**\n${post.content.color_scheme}\n\n`;
+      }
+
+      // Add typography
+      if (post.content.typography) {
+        markdown += `**Typography:**\n${post.content.typography}\n\n`;
+      }
+
+      // Add composition details
+      if (post.content.composition) {
+        markdown += `**Composition:**\n${post.content.composition}\n\n`;
+      }
+
+      // Add design mood
+      if (post.content.design_mood) {
+        markdown += `**Design Mood:**\n${post.content.design_mood}\n\n`;
+      }
+
+      // Add brand elements
+      if (post.content.brand_elements) {
+        markdown += `**Brand Elements:**\n${post.content.brand_elements}\n\n`;
       }
 
       // Add hashtags (displayed as badges in frontend)
