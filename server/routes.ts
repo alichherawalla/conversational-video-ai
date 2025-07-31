@@ -556,9 +556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create upload record for this transcription
           const uploadRecord = await storage.createUpload({
             originalName: originalName,
-            objectPath: fieldname || 'video-upload', // Use field name or default
-            fileSize: contentLength || 0,
-            mimeType: mimetype || 'video/mp4',
+            objectPath: videoPath || 'video-upload', // Path to the uploaded video
+            fileSize: fileSize,
+            mimeType: 'video/mp4', // Default video MIME type
             status: 'transcribed',
             transcript: transcription.text,
             linkedinContentMarkdown: null, // Generated later when content is created
@@ -989,7 +989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         res.json({
           comprehensive: true,
-          uploadId: uploadRecord.id, // Return unique upload ID
+          uploadId: uploadRecord?.id, // Return unique upload ID
           posts: allPosts,
           linkedinMarkdown, // Include markdown in response for immediate download
           summary: {
