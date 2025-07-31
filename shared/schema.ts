@@ -62,13 +62,17 @@ export const contentPieces = pgTable("content_pieces", {
 
 export const uploads = pgTable("uploads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  originalFileName: text("original_file_name"),
-  videoPath: text("video_path"), // Path to uploaded video file
+  originalName: text("original_name").notNull(), // Original file name
+  objectPath: text("object_path").notNull(), // Path to stored file
+  fileSize: integer("file_size").notNull(), // File size in bytes
+  mimeType: varchar("mime_type").notNull(), // File MIME type
   transcript: text("transcript"), // Extracted transcript
+  status: varchar("status").notNull(), // processing status
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Additional columns for enhanced functionality
   linkedinContentMarkdown: text("linkedin_content_markdown"), // Auto-generated markdown
   contentItems: jsonb("content_items"), // Generated LinkedIn content
   videoClips: jsonb("video_clips"), // Generated video clips
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertSessionSchema = createInsertSchema(sessions).omit({

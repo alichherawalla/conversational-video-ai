@@ -555,8 +555,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Create upload record for this transcription
           const uploadRecord = await storage.createUpload({
-            originalFileName: originalName,
-            videoPath: null, // Video file deleted after transcription
+            originalName: originalName,
+            objectPath: fieldname || 'video-upload', // Use field name or default
+            fileSize: contentLength || 0,
+            mimeType: mimetype || 'video/mp4',
+            status: 'transcribed',
             transcript: transcription.text,
             linkedinContentMarkdown: null, // Generated later when content is created
             contentItems: null,
@@ -971,8 +974,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Create new upload record
           uploadRecord = await storage.createUpload({
-            originalFileName: null, // Content generated from text, not file
-            videoPath: null,
+            originalName: 'text-content-generated', // Content generated from text, not file
+            objectPath: 'text-generated',
+            fileSize: 0,
+            mimeType: 'text/plain',
+            status: 'content-generated',
             transcript: processedTranscript,
             linkedinContentMarkdown: linkedinMarkdown,
             contentItems: allPosts,
