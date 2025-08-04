@@ -326,6 +326,14 @@ export default function RecordingStudio({
               </CardContent>
             </Card>
           )}
+        <Card>
+          <CardContent>
+            <textarea
+              placeholder="NOTES"
+              style={{ padding: "4px", width: "100%" }}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Session Settings Panel - Right */}
